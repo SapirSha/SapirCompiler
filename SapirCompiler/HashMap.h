@@ -32,7 +32,7 @@ int hashmap_exists(HashMap* hashMap, char* key);
 int hashmap_get(HashMap* hashMap, char* key);
 
 // Print the hash map
-void hashmap_printHashMap(HashMap* hashMap);
+void hashmap_print(HashMap* hashMap);
 
 // Free the hash map
 void freeHashMap(HashMap* hashMap);

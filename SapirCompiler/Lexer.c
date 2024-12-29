@@ -18,6 +18,12 @@ typedef enum {
     NUM_STATES
 } State;
 
+static const State STATE_TO_TOKEN_CONVERTER[NUM_STATES] = {
+	[IDENTIFIER] = TOKEN_IDENTIFIER,
+	[NUMBER] = TOKEN_NUMBER,
+	[OPERATOR] = TOKEN_OPERATOR,
+};
+
 // Define character classes
 typedef enum {
     CHAR_INVALID = 0,
@@ -38,8 +44,8 @@ static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
     { ERROR,          ERROR,           ERROR,         ERROR,          ERROR,}     // ERROR
 };
 
-// Lookup table for key to class match
-static const CharClass classifier_lookup[256] = {
+// Lookup table for all allowable charachters
+static const CharClass classifier_lookup[] = {
     // All other characters are invalid
     [0] = CHAR_INVALID,
 
@@ -67,13 +73,16 @@ static const CharClass classifier_lookup[256] = {
 
     //OPERATORS
     ['+'] = CHAR_OPERATOR,['-'] = CHAR_OPERATOR,['*'] = CHAR_OPERATOR,['/'] = CHAR_OPERATOR,
-	['='] = CHAR_OPERATOR,['>'] = CHAR_OPERATOR,['<'] = CHAR_OPERATOR,['!'] = CHAR_OPERATOR,
+	['='] = CHAR_OPERATOR,['>'] = CHAR_OPERATOR,['<'] = CHAR_OPERATOR,
 	['&'] = CHAR_OPERATOR,['|'] = CHAR_OPERATOR,['^'] = CHAR_OPERATOR,['%'] = CHAR_OPERATOR,
 	[';'] = CHAR_OPERATOR,['('] = CHAR_OPERATOR,[')'] = CHAR_OPERATOR,['{'] = CHAR_OPERATOR,
 	['}'] = CHAR_OPERATOR,['['] = CHAR_OPERATOR,[']'] = CHAR_OPERATOR,
 
     //Spaces
 	['\n'] = CHAR_WHITESPACE,[' '] = CHAR_WHITESPACE,['\t'] = CHAR_WHITESPACE,
+
+    // All other characters are invalid
+    [255] = CHAR_INVALID,
 };
 
 static HashMap* keywords_map = NULL;
@@ -94,13 +103,13 @@ bool is_keyword(const char* token) {
 	return hashmap_exists(keywords_map, token);
 }
 
-
-
 // FSM for tokenization
-void tokenize(const char* input) {
+Tokens* tokenize(const char* input) {
     State state = START;
     char token[MAX_TOKEN_LENGHT];
     int token_index = 0;
+
+    TokensQueue* tokens = tokens_init();
 
     init_keywords();
 
@@ -120,24 +129,15 @@ void tokenize(const char* input) {
 
         // Handle state transitions
         if (next_state != state) {
-            // Emit token if transitioning to START or a different state
-            if (state == IDENTIFIER || state == NUMBER || state == OPERATOR) {
-                token[token_index] = '\0'; // Null-terminate the token
-                if (state == IDENTIFIER) {
-                    if (is_keyword(token)) {
-                        printf("KEYWORD: %s\n", token);
-                    }
-                    else {
-                        printf("IDENTIFIER: %s\n", token);
-                    }
-                }
-                else if (state == NUMBER) {
-                    printf("NUMBER: %s\n", token);
-                }
-                else if (state == OPERATOR) {
-                    printf("OPERATOR: %s\n", token);
-                }
-            }
+            token[token_index] = '\0'; // Null-terminate the token
+
+			if (state == IDENTIFIER && is_keyword(token)) {
+                tokens_enqueue(tokens, _strdup(token), TOKEN_KEYWORD);
+			}
+			else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR) {
+                tokens_enqueue(tokens, _strdup(token), STATE_TO_TOKEN_CONVERTER[state]);
+			}
+
             token_index = 0; // Reset token for new state
         }
 
@@ -149,19 +149,20 @@ void tokenize(const char* input) {
         state = next_state;
     }
 
+
+
     // Emit the last token if any
     if (token_index > 0) {
         token[token_index] = '\0';
-        if (state == IDENTIFIER) {
-            printf("IDENTIFIER: %s\n", token);
+        if (state == IDENTIFIER && is_keyword(token)) {
+            tokens_enqueue(tokens, _strdup(token), TOKEN_KEYWORD);
         }
-        else if (state == NUMBER) {
-            printf("NUMBER: %s\n", token);
-        }
-        else if (state == OPERATOR) {
-            printf("OPERATOR: %s\n", token);
+        else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR) {
+            tokens_enqueue(tokens, _strdup(token), STATE_TO_TOKEN_CONVERTER[state]);
         }
     }
+
+    return tokens;
 }
 
 

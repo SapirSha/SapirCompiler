@@ -112,7 +112,7 @@ int hashmap_exists(HashMap* hashMap, char* key) {
 }
 
 // Print the hash map
-void hashmap_printHashMap(HashMap* hashMap) {
+void hashmap_print(HashMap* hashMap) {
     for (int i = 0; i < hashMap->size; i++) {
         KeyValuePair* current = hashMap->table[i];
         if (current != NULL) {

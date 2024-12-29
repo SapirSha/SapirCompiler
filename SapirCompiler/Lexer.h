@@ -1,6 +1,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-void tokenize(const char* input);
+#include "Tokens.h"
+
+Tokens* tokenize(const char* input);
 
 #endif
