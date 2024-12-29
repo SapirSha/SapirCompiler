@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
+#include "HashMap.h"
 
 #define MAX_TOKEN_LENGHT 100
 
@@ -38,10 +40,14 @@ static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
 
 // Lookup table for key to class match
 static const CharClass classifier_lookup[256] = {
+    // All other characters are invalid
+    [0] = CHAR_INVALID,
+
     //NUMBERS
     ['1'] = CHAR_DIGIT,['2'] = CHAR_DIGIT,['3'] = CHAR_DIGIT,['4'] = CHAR_DIGIT,
     ['5'] = CHAR_DIGIT,['6'] = CHAR_DIGIT,['7'] = CHAR_DIGIT,['8'] = CHAR_DIGIT,
     ['9'] = CHAR_DIGIT,['0'] = CHAR_DIGIT,
+
     //LETTERS
     ['A'] = CHAR_LETTER,['B'] = CHAR_LETTER,['C'] = CHAR_LETTER,['D'] = CHAR_LETTER,
     ['E'] = CHAR_LETTER,['F'] = CHAR_LETTER,['G'] = CHAR_LETTER,['H'] = CHAR_LETTER,
@@ -56,21 +62,39 @@ static const CharClass classifier_lookup[256] = {
     ['m'] = CHAR_LETTER,['n'] = CHAR_LETTER,['o'] = CHAR_LETTER,['p'] = CHAR_LETTER,
     ['q'] = CHAR_LETTER,['r'] = CHAR_LETTER,['s'] = CHAR_LETTER,['t'] = CHAR_LETTER,
     ['u'] = CHAR_LETTER,['v'] = CHAR_LETTER,['w'] = CHAR_LETTER,['x'] = CHAR_LETTER,
-    ['y'] = CHAR_LETTER,['z'] = CHAR_LETTER,
+	['y'] = CHAR_LETTER,['z'] = CHAR_LETTER,
+	['_'] = CHAR_LETTER,
+
     //OPERATORS
     ['+'] = CHAR_OPERATOR,['-'] = CHAR_OPERATOR,['*'] = CHAR_OPERATOR,['/'] = CHAR_OPERATOR,
-    ['='] = CHAR_OPERATOR,
+	['='] = CHAR_OPERATOR,['>'] = CHAR_OPERATOR,['<'] = CHAR_OPERATOR,['!'] = CHAR_OPERATOR,
+	['&'] = CHAR_OPERATOR,['|'] = CHAR_OPERATOR,['^'] = CHAR_OPERATOR,['%'] = CHAR_OPERATOR,
+	[';'] = CHAR_OPERATOR,['('] = CHAR_OPERATOR,[')'] = CHAR_OPERATOR,['{'] = CHAR_OPERATOR,
+	['}'] = CHAR_OPERATOR,['['] = CHAR_OPERATOR,[']'] = CHAR_OPERATOR,
+
     //Spaces
-    ['\n'] = CHAR_WHITESPACE,[' '] = CHAR_WHITESPACE,
-
-
-    [255] = CHAR_INVALID // = 0
+	['\n'] = CHAR_WHITESPACE,[' '] = CHAR_WHITESPACE,['\t'] = CHAR_WHITESPACE,
 };
 
-// Helper to classify a character
-static CharClass classify_char(unsigned char ch) {
-    return classifier_lookup[ch];
+static HashMap* keywords_map = NULL;
+static const char* keywords_list[] = {
+    "if", "while", "return", "for", "else", "int", "char", NULL
+};
+
+void init_keywords() {
+    if (keywords_map != NULL) return;
+
+	keywords_map = createHashMap(100);
+
+	for (int i = 0; keywords_list[i] != NULL; i++)
+		hashmap_insert(keywords_map, keywords_list[i], 1);
 }
+
+bool is_keyword(const char* token) {
+	return hashmap_exists(keywords_map, token);
+}
+
+
 
 // FSM for tokenization
 void tokenize(const char* input) {
@@ -78,9 +102,11 @@ void tokenize(const char* input) {
     char token[MAX_TOKEN_LENGHT];
     int token_index = 0;
 
+    init_keywords();
+
     for (int i = 0; input[i] != '\0'; i++) {
         char ch = input[i];
-        CharClass char_class = classify_char(ch);
+        CharClass char_class = classifier_lookup[ch];
 
         // Get the next state from the table
         State next_state = state_table[state][char_class];
@@ -98,7 +124,12 @@ void tokenize(const char* input) {
             if (state == IDENTIFIER || state == NUMBER || state == OPERATOR) {
                 token[token_index] = '\0'; // Null-terminate the token
                 if (state == IDENTIFIER) {
-                    printf("IDENTIFIER: %s\n", token);
+                    if (is_keyword(token)) {
+                        printf("KEYWORD: %s\n", token);
+                    }
+                    else {
+                        printf("IDENTIFIER: %s\n", token);
+                    }
                 }
                 else if (state == NUMBER) {
                     printf("NUMBER: %s\n", token);
