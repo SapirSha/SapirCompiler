@@ -4,7 +4,7 @@
 
 
 int main() {
-    const char* code = "for (int i = 5; i < 7; i++){\n}";
+    const char* code = "";
     printf("Tokenizing: %s\n", code);
     Tokens* tokens = tokenize(code);
     tokens_print(tokens);

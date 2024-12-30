@@ -176,7 +176,7 @@ Tokens* tokenize(const char* input) {
     }
 
     // Emit the last token if any
-    if (array_list_is_empty(token)) {
+    if (!array_list_is_empty(token)) {
         arraylist_add(token, '\0'); // Null-terminate the token
         char* str_token = token->array;
         if (state == IDENTIFIER && is_keyword(str_token)) {
@@ -189,6 +189,8 @@ Tokens* tokenize(const char* input) {
             tokens_enqueue(tokens, _strdup(str_token + 1), TOKEN_STRING);
         }
     }
+
+	arraylist_free(token);
 
     return tokens;
 }
