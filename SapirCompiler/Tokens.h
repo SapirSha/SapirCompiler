@@ -6,6 +6,7 @@ typedef enum {
     TOKEN_NUMBER,
     TOKEN_OPERATOR,
     TOKEN_KEYWORD,
+    TOKEN_STRING,
 } Token_Types;
 
 

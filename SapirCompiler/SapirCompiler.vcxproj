@@ -127,12 +127,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArrayList.c" />
     <ClCompile Include="HashMap.c" />
     <ClCompile Include="Lexer.c" />
     <ClCompile Include="Program.c" />
     <ClCompile Include="Token.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArrayList.h" />
     <ClInclude Include="HashMap.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Tokens.h" />

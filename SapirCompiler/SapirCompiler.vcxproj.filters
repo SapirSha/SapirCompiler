@@ -27,6 +27,9 @@
     <ClCompile Include="Token.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ArrayList.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lexer.h">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Tokens.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArrayList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
