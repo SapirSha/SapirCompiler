@@ -7,15 +7,15 @@
 #include "HashMap.h"
 #include "ArrayList.h"
 
-#define MAX_TOKEN_LENGHT 100
-
 // Define states
 typedef enum {
-    START,
+    START = 0,
     IDENTIFIER,
     NUMBER,
     OPERATOR,
     STRING_LITERAL, // New state for string literals
+	COMMENT, // New state for comments
+    SEPARATOR,
     ERROR,
     NUM_STATES
 } State;
@@ -24,6 +24,7 @@ static const State STATE_TO_TOKEN_CONVERTER[NUM_STATES] = {
     [IDENTIFIER] = TOKEN_IDENTIFIER,
     [NUMBER] = TOKEN_NUMBER,
     [OPERATOR] = TOKEN_OPERATOR,
+	[SEPARATOR] = TOKEN_SEPARATOR,
     [STRING_LITERAL] = TOKEN_STRING, // New state mapping
 };
 
@@ -35,18 +36,22 @@ typedef enum {
     CHAR_OPERATOR,
     CHAR_WHITESPACE,
     CHAR_QUOTE, // For handling the double quote for string literals
+	CHAR_COMMENT, // For handling comments
+    CHAR_SEPARATOR,
     NUM_CHAR_CLASSES
 } CharClass;
 
 // Lookup table for state transitions
 static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
-    // State: / Got:        CHAR_INVALID    CHAR_LETTER     CHAR_DIGIT      CHAR_OPERATOR    CHAR_WHITESPACE   CHAR_QUOTE
-    /* START */           { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL },
-    /* IDENTIFIER */      { ERROR,          IDENTIFIER,     IDENTIFIER,     OPERATOR,        START,            ERROR           },
-    /* NUMBER */          { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            ERROR           },
-    /* OPERATOR */        { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL },
-    /* STRING_LITERAL */  { ERROR,          STRING_LITERAL, STRING_LITERAL, STRING_LITERAL,  STRING_LITERAL,   START           },
-    /* ERROR */           { ERROR,          ERROR,          ERROR,          ERROR,           ERROR,            ERROR           }
+	// State: / Got:        CHAR_INVALID    CHAR_LETTER     CHAR_DIGIT      CHAR_OPERATOR    CHAR_WHITESPACE   CHAR_QUOTE          CHAR_COMMENT     CHAR_SEPARATOR
+    /* START */           { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* IDENTIFIER */      { ERROR,          IDENTIFIER,     IDENTIFIER,     OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
+    /* NUMBER */          { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
+    /* OPERATOR */        { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* STRING_LITERAL */  { ERROR,          STRING_LITERAL, STRING_LITERAL, STRING_LITERAL,  STRING_LITERAL,   START,              STRING_LITERAL,   STRING_LITERAL},
+	/* COMMENT */         { ERROR,          COMMENT,        COMMENT,        COMMENT,         COMMENT,          COMMENT,            START,            SEPARATOR},
+    /* SEPARATOR */       { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* ERROR */           { ERROR,          ERROR,          ERROR,          ERROR,           ERROR,            ERROR,              ERROR,            ERROR}
 };
 
 
@@ -79,13 +84,19 @@ static const CharClass classifier_lookup[] = {
 
     //OPERATORS
     ['+'] = CHAR_OPERATOR,['-'] = CHAR_OPERATOR,['*'] = CHAR_OPERATOR,['/'] = CHAR_OPERATOR,
-    ['='] = CHAR_OPERATOR,['>'] = CHAR_OPERATOR,['<'] = CHAR_OPERATOR,
-    ['&'] = CHAR_OPERATOR,['|'] = CHAR_OPERATOR,['^'] = CHAR_OPERATOR,['%'] = CHAR_OPERATOR,
-    [';'] = CHAR_OPERATOR,['('] = CHAR_OPERATOR,[')'] = CHAR_OPERATOR,['{'] = CHAR_OPERATOR,
-    ['}'] = CHAR_OPERATOR,['['] = CHAR_OPERATOR,[']'] = CHAR_OPERATOR,
+    ['='] = CHAR_OPERATOR,['>'] = CHAR_OPERATOR,['<'] = CHAR_OPERATOR,['%'] = CHAR_OPERATOR,
+    ['&'] = CHAR_OPERATOR,['|'] = CHAR_OPERATOR,['^'] = CHAR_OPERATOR,['!'] = CHAR_OPERATOR,
+    
+	//SEPARATORS
+	['('] = CHAR_SEPARATOR,[')'] = CHAR_SEPARATOR,['{'] = CHAR_SEPARATOR,['}'] = CHAR_SEPARATOR,
+	['['] = CHAR_SEPARATOR,[']'] = CHAR_SEPARATOR,[';'] = CHAR_SEPARATOR,[','] = CHAR_SEPARATOR,
+    
 
     //Spaces
     ['\n'] = CHAR_WHITESPACE,[' '] = CHAR_WHITESPACE,['\t'] = CHAR_WHITESPACE,
+
+	//Comments
+	['#'] = CHAR_COMMENT,
 
     //Double quote for string literals
     ['"'] = CHAR_QUOTE,
@@ -103,9 +114,9 @@ void init_keywords() {
     if (keywords_map != NULL) return;
 
     keywords_map = createHashMap(100);
-
+    int doesnt_matter = 1;
     for (int i = 0; keywords_list[i] != NULL; i++)
-        hashmap_insert(keywords_map, keywords_list[i], 1);
+        hashmap_insert(keywords_map, keywords_list[i], &doesnt_matter);
 }
 
 bool is_keyword(const char* token) {
@@ -157,7 +168,7 @@ Tokens* tokenize(const char* input) {
             if (state == IDENTIFIER && is_keyword(str_token)) {
                 tokens_enqueue(tokens, _strdup(str_token), TOKEN_KEYWORD);
             }
-            else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR) {
+            else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
                 tokens_enqueue(tokens, _strdup(str_token), STATE_TO_TOKEN_CONVERTER[state]);
             }
             else if (state == STRING_LITERAL) {
@@ -168,7 +179,7 @@ Tokens* tokenize(const char* input) {
         }
 
         // Add character to token if in a valid state
-        if (next_state == IDENTIFIER || next_state == NUMBER || next_state == OPERATOR || next_state == STRING_LITERAL) {
+        if (next_state == IDENTIFIER || next_state == NUMBER || next_state == OPERATOR || next_state == STRING_LITERAL || next_state == SEPARATOR) {
             arraylist_add(token, ch);
 		}
 
@@ -182,11 +193,11 @@ Tokens* tokenize(const char* input) {
         if (state == IDENTIFIER && is_keyword(str_token)) {
             tokens_enqueue(tokens, _strdup(str_token), TOKEN_KEYWORD);
         }
-        else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR) {
+        else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
             tokens_enqueue(tokens, _strdup(str_token), STATE_TO_TOKEN_CONVERTER[state]);
         }
         else if (state == STRING_LITERAL) {
-            tokens_enqueue(tokens, _strdup(str_token + 1), TOKEN_STRING);
+            printf("Error at line %d, col %d: Unclosed string literal. '%c'\n", line, col + 1, '"');
         }
     }
 

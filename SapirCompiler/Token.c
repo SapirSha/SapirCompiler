@@ -55,6 +55,7 @@ void tokens_print(TokensQueue* queue) {
         [TOKEN_OPERATOR] = "OPERATOR",
         [TOKEN_KEYWORD] = "KEYWORD",
         [TOKEN_STRING] = "String Literal",
+        [TOKEN_SEPARATOR] = "SEPARATOR",
     };
 
     printf("TOKENS:\n");

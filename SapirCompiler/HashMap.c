@@ -30,7 +30,7 @@ HashMap* createHashMap(int size) {
 }
 
 // Insert a key-value pair into the hash map
-void hashmap_insert(HashMap* hashMap, char* key, int value) {
+void hashmap_insert(HashMap* hashMap, char* key, void* value) {
     // Resize if the load factor exceeds the threshold
     if ((float)(hashMap->count + 1) / hashMap->size > MAX_LOAD_FACTOR) {
         printf("Resizing the hash table...\n");
@@ -87,7 +87,7 @@ void hashmap_insert(HashMap* hashMap, char* key, int value) {
 }
 
 // Get a value by key from the hash map
-int hashmap_get(HashMap* hashMap, char* key) {
+void* hashmap_get(HashMap* hashMap, char* key) {
     unsigned int index = hash(key, hashMap->size);
     KeyValuePair* current = hashMap->table[index];
     while (current != NULL) {
@@ -99,7 +99,7 @@ int hashmap_get(HashMap* hashMap, char* key) {
     return NULL;  // Return 0 if key is not found
 }
 
-int hashmap_exists(HashMap* hashMap, char* key) {
+bool hashmap_exists(HashMap* hashMap, char* key) {
     unsigned int index = hash(key, hashMap->size);
     KeyValuePair* current = hashMap->table[index];
     while (current != NULL) {
