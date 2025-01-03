@@ -28,10 +28,6 @@ void hashmap_insert(HashMap* hashMap, char* key, void* value);
 
 // Get a value by key from the hash map
 void* hashmap_get(HashMap* hashMap, char* key);
-bool hashmap_exists(HashMap* hashMap, char* key);
-
-// Print the hash map
-void hashmap_print(HashMap* hashMap);
 
 // Free the hash map
 void freeHashMap(HashMap* hashMap);

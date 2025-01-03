@@ -122,7 +122,7 @@ void init_keywords() {
     keywords_finder = stringin_init(); 
     
 	for (int i = 0; keywords_list[i] != NULL; i++) {
-		stringin_insertString(keywords_finder, keywords_list[i]);
+		stringin_insert_string(keywords_finder, keywords_list[i]);
 	}
 }
 
@@ -133,9 +133,6 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* s
     StringIn* pos = keywords_finder;
     
     while (input[*index] != EOF && *next_state == KEYWORD) {
-		printf("Index: %d\n", *index);
-		printf("Char: %c\n", input[*index]);
-        printf("Next Char: %c\n", input[(*index) + 1]);
 		if (*next_state == ERROR) {
 			handle_error(input[*index], 0, 0);
 			*state = START;
@@ -150,21 +147,18 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* s
         }
 		(*index)++;
 
-		printf("state: %d\n", *next_state);
         *state = *next_state;
         CharClass char_class = classifier_lookup[input[*index]];
         *next_state = state_table[KEYWORD][char_class];
-		printf("Next state: %d\n", *next_state);
     }
-    printf("AWASD:%s\n", &input[*index]);
 
-    char BACKSLASH_ZERO = '\0';
+    char BACKSLASH_ZERO = '\0'; // Simulating end of string
     if (stringin_next_key(&pos, &BACKSLASH_ZERO) == FOUND)
         *next_state = KEYWORD;
     else
         *next_state = IDENTIFIER;
 
-    (*index)--;
+	(*index)--;
 }
 
 // FSM for tokenization
@@ -206,10 +200,10 @@ Tokens* tokenize(const char* input) {
             char* str_token = token->array;
 
             if (state == IDENTIFIER || state == KEYWORD || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
-                tokens_enqueue(tokens, _strdup(str_token), STATE_TO_TOKEN_CONVERTER[state]);
+                tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
             }
             else if (state == STRING_LITERAL) {
-                tokens_enqueue(tokens, _strdup(str_token + 1), TOKEN_STRING);
+                tokens_enqueue(tokens, str_token + 1, TOKEN_STRING);
             }
 
             arraylist_reset(token);// Reset token for new state
@@ -232,7 +226,7 @@ Tokens* tokenize(const char* input) {
         arraylist_add(token, '\0'); // Null-terminate the token
         char* str_token = token->array;
         if (state == IDENTIFIER || state == KEYWORD || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
-            tokens_enqueue(tokens, _strdup(str_token), STATE_TO_TOKEN_CONVERTER[state]);
+            tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
         }
         else if (state == STRING_LITERAL) {
             printf("Error at line %d, col %d: Unclosed string literal. '%c'\n", line, col + 1, '"');
@@ -240,6 +234,7 @@ Tokens* tokenize(const char* input) {
     }
 
 	arraylist_free(token);
+	stringin_free(keywords_finder);
 
     return tokens;
 }

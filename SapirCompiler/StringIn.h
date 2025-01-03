@@ -16,8 +16,8 @@ typedef struct StringIn {
 } StringIn;
 
 StringIn* stringin_init();
-void stringin_insertString(StringIn* root, const char* str);
-bool stringin_searchString(StringIn* root, const char* str);
+void stringin_insert_string(StringIn* root, const char* str);
+bool stringin_search_string(StringIn* root, const char* str);
 int stringin_next_key(StringIn** pos, const char* str);
 void stringin_free(StringIn* root);
 

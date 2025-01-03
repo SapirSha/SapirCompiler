@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 // Initialize the queue
 TokensQueue* tokens_init() {
@@ -14,7 +15,7 @@ TokensQueue* tokens_init() {
 // Enqueue a new token
 void tokens_enqueue(TokensQueue* queue, char* lexeme, int type) {
     Tokens* new_token = malloc(sizeof(Tokens));
-    new_token->lexeme = lexeme;
+    new_token->lexeme = _strdup(lexeme);
     new_token->type = type;
     new_token->next = NULL;
 
