@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include "HashMap.h"
 #include "ArrayList.h"
+#include "StringIn.h"
+
+#define DEFAULT_TOKEN_SIZE 32
 
 // Define states
 typedef enum {
@@ -13,11 +16,12 @@ typedef enum {
     IDENTIFIER,
     NUMBER,
     OPERATOR,
-    STRING_LITERAL, // New state for string literals
-	COMMENT, // New state for comments
+    STRING_LITERAL,
+	COMMENT,
     SEPARATOR,
+    KEYWORD,
     ERROR,
-    NUM_STATES
+    NUM_STATES,
 } State;
 
 static const State STATE_TO_TOKEN_CONVERTER[NUM_STATES] = {
@@ -26,6 +30,7 @@ static const State STATE_TO_TOKEN_CONVERTER[NUM_STATES] = {
     [OPERATOR] = TOKEN_OPERATOR,
 	[SEPARATOR] = TOKEN_SEPARATOR,
     [STRING_LITERAL] = TOKEN_STRING, // New state mapping
+    [KEYWORD] = TOKEN_KEYWORD,
 };
 
 // Define character classes
@@ -44,14 +49,15 @@ typedef enum {
 // Lookup table for state transitions
 static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
 	// State: / Got:        CHAR_INVALID    CHAR_LETTER     CHAR_DIGIT      CHAR_OPERATOR    CHAR_WHITESPACE   CHAR_QUOTE          CHAR_COMMENT     CHAR_SEPARATOR
-    /* START */           { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* START */           { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
     /* IDENTIFIER */      { ERROR,          IDENTIFIER,     IDENTIFIER,     OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
-    /* NUMBER */          { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
-    /* OPERATOR */        { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* NUMBER */          { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
+    /* OPERATOR */        { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
     /* STRING_LITERAL */  { ERROR,          STRING_LITERAL, STRING_LITERAL, STRING_LITERAL,  STRING_LITERAL,   START,              STRING_LITERAL,   STRING_LITERAL},
 	/* COMMENT */         { ERROR,          COMMENT,        COMMENT,        COMMENT,         COMMENT,          COMMENT,            START,            SEPARATOR},
     /* SEPARATOR */       { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
-    /* ERROR */           { ERROR,          ERROR,          ERROR,          ERROR,           ERROR,            ERROR,              ERROR,            ERROR}
+	/* KeyWord */         { ERROR,          KEYWORD,        KEYWORD,        OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* ERROR */           { ERROR,          ERROR,          ERROR,          ERROR,           ERROR,            ERROR,              ERROR,            ERROR},
 };
 
 
@@ -105,26 +111,60 @@ static const CharClass classifier_lookup[] = {
     [255] = CHAR_INVALID,
 };
 
-static HashMap* keywords_map = NULL;
 static const char* keywords_list[] = {
     "if", "while", "return", "for", "else", "int", "char", NULL
 };
 
+StringIn* keywords_finder = NULL;
 void init_keywords() {
-    if (keywords_map != NULL) return;
+    if (keywords_finder != NULL) return;
 
-    keywords_map = createHashMap(100);
-    int doesnt_matter = 1;
-    for (int i = 0; keywords_list[i] != NULL; i++)
-        hashmap_insert(keywords_map, keywords_list[i], &doesnt_matter);
-}
-
-bool is_keyword(const char* token) {
-    return hashmap_exists(keywords_map, token);
+    keywords_finder = stringin_init(); 
+    
+	for (int i = 0; keywords_list[i] != NULL; i++) {
+		stringin_insertString(keywords_finder, keywords_list[i]);
+	}
 }
 
 void handle_error(char ch, int line, int col) {
     printf("Error at line %d, col %d: Unrecognized character '%c'\n", line, col, ch);
+}
+void handle_identifier(const char* input, int* index, ArrayList* token, State* state, State* next_state){
+    StringIn* pos = keywords_finder;
+    
+    while (input[*index] != EOF && *next_state == KEYWORD) {
+		printf("Index: %d\n", *index);
+		printf("Char: %c\n", input[*index]);
+        printf("Next Char: %c\n", input[(*index) + 1]);
+		if (*next_state == ERROR) {
+			handle_error(input[*index], 0, 0);
+			*state = START;
+			arraylist_reset(token);
+			return;
+		}
+
+        arraylist_add(token, input[*index]);
+        if (stringin_next_key(&pos, &input[*index]) == NOT_FOUND) {
+            *next_state = IDENTIFIER;
+            return;
+        }
+		(*index)++;
+
+		printf("state: %d\n", *next_state);
+        *state = *next_state;
+        CharClass char_class = classifier_lookup[input[*index]];
+        *next_state = state_table[KEYWORD][char_class];
+		printf("Next state: %d\n", *next_state);
+    }
+    printf("AWASD:%s\n", &input[*index]);
+
+    char BACKSLASH_ZERO = '\0';
+    if (stringin_next_key(&pos, &BACKSLASH_ZERO) == FOUND)
+        *next_state = KEYWORD;
+    else
+        *next_state = IDENTIFIER;
+
+    (*index)--;
 }
 
 // FSM for tokenization
@@ -134,7 +174,7 @@ Tokens* tokenize(const char* input) {
 
 
     State state = START;
-	ArrayList *token = arraylist_init(32);
+	ArrayList *token = arraylist_init(DEFAULT_TOKEN_SIZE);
 
     TokensQueue* tokens = tokens_init();
 
@@ -151,7 +191,7 @@ Tokens* tokenize(const char* input) {
         CharClass char_class = classifier_lookup[ch];
 
         // Get the next state from the table
-        State next_state = state_table[state][char_class];
+        State next_state = state_table[state][char_class]; 
 
         if (next_state == ERROR) {
             handle_error(input[i], line, col);
@@ -165,10 +205,7 @@ Tokens* tokenize(const char* input) {
             arraylist_add(token, '\0'); // Null-terminate the token
             char* str_token = token->array;
 
-            if (state == IDENTIFIER && is_keyword(str_token)) {
-                tokens_enqueue(tokens, _strdup(str_token), TOKEN_KEYWORD);
-            }
-            else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
+            if (state == IDENTIFIER || state == KEYWORD || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
                 tokens_enqueue(tokens, _strdup(str_token), STATE_TO_TOKEN_CONVERTER[state]);
             }
             else if (state == STRING_LITERAL) {
@@ -178,10 +215,14 @@ Tokens* tokenize(const char* input) {
             arraylist_reset(token);// Reset token for new state
         }
 
+
+
         // Add character to token if in a valid state
         if (next_state == IDENTIFIER || next_state == NUMBER || next_state == OPERATOR || next_state == STRING_LITERAL || next_state == SEPARATOR) {
             arraylist_add(token, ch);
-		}
+		} else if (next_state == KEYWORD) {
+            handle_identifier(input, &i, token, &state, &next_state);
+        }
 
         state = next_state;
     }
@@ -190,10 +231,7 @@ Tokens* tokenize(const char* input) {
     if (!array_list_is_empty(token)) {
         arraylist_add(token, '\0'); // Null-terminate the token
         char* str_token = token->array;
-        if (state == IDENTIFIER && is_keyword(str_token)) {
-            tokens_enqueue(tokens, _strdup(str_token), TOKEN_KEYWORD);
-        }
-        else if (state == IDENTIFIER || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
+        if (state == IDENTIFIER || state == KEYWORD || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
             tokens_enqueue(tokens, _strdup(str_token), STATE_TO_TOKEN_CONVERTER[state]);
         }
         else if (state == STRING_LITERAL) {

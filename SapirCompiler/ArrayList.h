@@ -11,7 +11,7 @@ typedef struct ArrayList {
 } ArrayList;
 
 // Initialize an empty ArrayList
-ArrayList* arraylist_init();
+ArrayList* arraylist_init(int initial_capacity);
 
 // Add an element to the end of the ArrayList
 void arraylist_add(ArrayList* list, char element);

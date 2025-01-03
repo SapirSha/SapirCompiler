@@ -38,11 +38,8 @@ void stringin_insertString(StringIn* root, const char* str) {
 bool stringin_searchString(StringIn* root, const char* str) {
     StringIn* current = root;
     while (*str) {
-        char* ch = char_to_string(*str);
+        StringIn* child = hashmap_get(current->root, (char[]) { *str, '\0' });
 
-        StringIn* child = hashmap_get(current->root, ch);
-
-        free(ch);
 
         if (!child)
             return false;
