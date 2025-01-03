@@ -24,9 +24,9 @@ int main() {
 
 	stringin_print(Finder);
 
-	printf("%d\n", stringin_search_string(Finder, "continue"));
-	printf("%d\n", stringin_search_string(Finder, "continuew"));
-	printf("%d\n", stringin_search_string(Finder, "continuewa"));
+	printf("%d\n", stringin_search_string(Finder, "while"));
+	printf("%d\n", stringin_search_string(Finder, "interface"));
+	printf("%d\n", stringin_search_string(Finder, "if"));
 
 
 

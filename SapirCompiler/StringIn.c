@@ -187,7 +187,7 @@ void stringin_print(StringIn* root) {
     if (!root) return;
 
     if (root->is_end) {
-        printf("%s\n", root->to_clear);
+        printf("%s\n", *root->to_clear == '\0' ? "Empty Clearance" : root->to_clear);
     }
 
     if (root->paths) {
