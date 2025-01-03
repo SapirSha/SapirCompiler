@@ -14,6 +14,7 @@ static unsigned int hash(char* key, int tableSize) {
 }
 
 HashMap* createHashMap(int size) {
+    printf("CREATING HASHMAP\n");
     HashMap* hashMap = malloc(sizeof(HashMap));
     if (!hashMap) {
         printf("Memory allocation failed\n");
@@ -71,6 +72,7 @@ void hashmap_insert(HashMap* hashMap, char* key, void* value) {
     KeyValuePair* p = hashMap->table[index];
     bool found = false;
     while (p != NULL) {
+        printf("COLLISION IN HASHMAP!\n");
         if (strcmp(p->key, key) == 0) {
             p->value = value;
             found = true;

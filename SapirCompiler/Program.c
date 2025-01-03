@@ -17,12 +17,16 @@ int main() {
 	stringin_insert_string(Finder, "return");
 	stringin_insert_string(Finder, "break");
 	stringin_insert_string(Finder, "continue");
+	stringin_insert_string(Finder, "continuew");
+	stringin_insert_string(Finder, "continueaw");
+
+
 
 	stringin_print(Finder);
 
-	printf("%d\n", stringin_search_string(Finder, "int"));
-	printf("%d\n", stringin_search_string(Finder, "interface"));
-	printf("%d\n", stringin_search_string(Finder, "if"));
+	printf("%d\n", stringin_search_string(Finder, "continue"));
+	printf("%d\n", stringin_search_string(Finder, "continuew"));
+	printf("%d\n", stringin_search_string(Finder, "continuewa"));
 
 
 
