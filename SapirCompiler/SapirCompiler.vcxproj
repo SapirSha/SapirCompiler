@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="ArrayList.c" />
     <ClCompile Include="HashMap.c" />
+    <ClCompile Include="HashSet.c" />
     <ClCompile Include="Lexer.c" />
     <ClCompile Include="Program.c" />
     <ClCompile Include="StringIn.c" />
@@ -137,6 +138,7 @@
   <ItemGroup>
     <ClInclude Include="ArrayList.h" />
     <ClInclude Include="HashMap.h" />
+    <ClInclude Include="HashSet.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="StringIn.h" />
     <ClInclude Include="Tokens.h" />
