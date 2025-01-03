@@ -6,6 +6,23 @@
 
 
 int main() {
+	StringIn* Finder = stringin_init();
+	stringin_insert_string(Finder, "int");
+	stringin_insert_string(Finder, "interface");
+	stringin_insert_string(Finder, "main");
+	stringin_insert_string(Finder, "if");
+	stringin_insert_string(Finder, "else");
+	stringin_insert_string(Finder, "while");
+	stringin_insert_string(Finder, "for");
+	stringin_insert_string(Finder, "return");
+	stringin_insert_string(Finder, "break");
+	stringin_insert_string(Finder, "continue");
+
+	stringin_print(Finder);
+
+	printf("%d\n", stringin_search_string(Finder, "int"));
+	printf("%d\n", stringin_search_string(Finder, "interface"));
+	printf("%d\n", stringin_search_string(Finder, "if"));
 
 
 

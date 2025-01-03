@@ -1,24 +1,26 @@
+// StringIn.h
 #ifndef STRINGIN_H
 #define STRINGIN_H
-
 #include "HashMap.h"
 #include <stdbool.h>
 
-#define DEFAULT_HASHMAP_SIZE 5
+#define STRINGIN_INITIAL_HASHMAP 8
+#define MAX_CHAR_BUF 2
 
-#define FOUND 1
 #define NOT_FOUND 0
+#define FOUND 1
 #define YET_FOUND 2
 
 typedef struct StringIn {
-    HashMap* root;
-    bool isEndOfString;
+    char* to_clear;
+    HashMap* paths;
+    bool is_end;
 } StringIn;
 
-StringIn* stringin_init();
-void stringin_insert_string(StringIn* root, const char* str);
-bool stringin_search_string(StringIn* root, const char* str);
-int stringin_next_key(StringIn** pos, const char* str);
+StringIn* stringin_init(void);
+void stringin_insert_string(StringIn* s, const char* str);
+bool stringin_search_string(const StringIn* root, const char* str);
 void stringin_free(StringIn* root);
+void stringin_print(StringIn* root);
 
 #endif

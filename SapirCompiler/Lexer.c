@@ -131,7 +131,7 @@ void handle_error(char ch, int line, int col) {
 }
 void handle_identifier(const char* input, int* index, ArrayList* token, State* state, State* next_state){
     StringIn* pos = keywords_finder;
-    
+    /*
     while (input[*index] != EOF && *next_state == KEYWORD) {
 		if (*next_state == ERROR) {
 			handle_error(input[*index], 0, 0);
@@ -159,6 +159,7 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* s
         *next_state = IDENTIFIER;
 
 	(*index)--;
+    */
 }
 
 // FSM for tokenization

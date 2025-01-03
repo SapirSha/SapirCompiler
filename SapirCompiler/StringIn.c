@@ -3,72 +3,201 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define strdup _strdup
+#endif
+
+/*
+        char buffer[256];
+
+        for(int i = 0; i < spos - str; i++)
+            buffer[i] = str[i];
+        buffer[spos - str] = '\0';
+
+        s->to_clear = strdup(buffer);
+        */
+
 #define CHAR_TO_STRING(c) ((char[]){(c), '\0'})
 
 StringIn* stringin_init() {
-    StringIn* node = (StringIn*)malloc(sizeof(StringIn));
-    if (!node) {
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(EXIT_FAILURE);
+    StringIn* s = (StringIn*)malloc(sizeof(StringIn));
+    if (!s) return NULL;
+
+    s->to_clear = strdup("");
+    if (!s->to_clear) {
+        free(s);
+        return NULL;
     }
-    node->isEndOfString = false;
-    node->root = createHashMap(DEFAULT_HASHMAP_SIZE);
-    if (!node->root) {
-        fprintf(stderr, "Memory allocation failed\n");
-        free(node);
-        exit(EXIT_FAILURE);
-    }
-    return node;
+
+    s->paths = NULL;
+    s->is_end = false;
+    return s;
 }
+void stringin_insert_string(StringIn* s, const char* str) {
+    if (!s || !str) return;
 
-void stringin_insert_string(StringIn* root, const char* str) {
-    StringIn* current = root;
-    while (*str) {
-        char* ch = CHAR_TO_STRING(*str);
+    char* pos = s->to_clear;
+    const char* spos = str;
 
-        StringIn* child = hashmap_get(current->root, ch);
-        if (!child) {
-            child = stringin_init();
-            hashmap_insert(current->root, ch, child);
-        }
-        current = child;
-        str++;
+    // Traverse the shared prefix
+    while (*pos && *spos && *pos == *spos) {
+        pos++;
+        spos++;
     }
-    current->isEndOfString = true;
+
+    if (*spos == '\0' && *pos == '\0') {
+        // Exact match
+        s->is_end = true;
+    }
+    else if (*spos == '\0') {
+        // New string is a prefix of the existing string
+        StringIn* new_child = stringin_init();
+        if (!new_child) {
+            fprintf(stderr, "Failed to allocate memory for new child.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        new_child->to_clear = strdup(pos + 1);
+        new_child->is_end = s->is_end;
+        new_child->paths = s->paths;
+
+        s->is_end = true;
+        char* temp = s->to_clear;
+        s->to_clear = strdup(str);
+
+        s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP);
+        hashmap_insert(s->paths, CHAR_TO_STRING(*pos), new_child);
+        free(temp);
+
+    }
+    else if (*pos == '\0') {
+        // Existing string is a prefix of the new string
+        if (*s->to_clear == '\0' && !s->paths) {
+            free(s->to_clear);
+			s->to_clear = strdup(str);
+            s->is_end = true;
+			return;
+        }
+        if (!s->paths) {
+            s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP);
+            if (!s->paths) {
+                fprintf(stderr, "Failed to create hashmap.\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        StringIn* next = hashmap_get(s->paths, CHAR_TO_STRING(*spos));
+        if (!next) {
+            next = stringin_init();
+            if (!next) {
+                fprintf(stderr, "Failed to allocate memory for next node.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            next->to_clear = strdup(spos + 1);
+            next->is_end = true;
+            hashmap_insert(s->paths, CHAR_TO_STRING(*spos), next);
+        }
+        else {
+            stringin_insert_string(next, spos + 1);
+        }
+    }
+    else {
+        // Strings diverge at this point
+        StringIn* new_child = stringin_init();
+        if (!new_child) {
+            fprintf(stderr, "Failed to allocate memory for new child.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        new_child->to_clear = strdup(pos + 1);
+        new_child->is_end = s->is_end;
+        new_child->paths = s->paths;
+
+        s->is_end = false;
+
+        char buffer[256];
+		for (int i = 0; i < spos - str; i++)
+			buffer[i] = str[i];
+		buffer[spos - str] = '\0';
+
+        s->to_clear = strdup(buffer);
+
+        s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP);
+        if (!s->paths) {
+            fprintf(stderr, "Failed to create hashmap.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        hashmap_insert(s->paths, CHAR_TO_STRING(*pos), new_child);
+
+        StringIn* next = stringin_init();
+        if (!next) {
+            fprintf(stderr, "Failed to allocate memory for next node.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        next->to_clear = strdup(spos + 1);
+        next->is_end = true;
+        hashmap_insert(s->paths, CHAR_TO_STRING(*spos), next);
+    }
 }
 
 bool stringin_search_string(StringIn* root, const char* str) {
-    StringIn* current = root;
-    while (*str) {
-        StringIn* child = hashmap_get(current->root, CHAR_TO_STRING(*str));
-        if (!child) return false;
-        current = child;
+    if (!root || !str) return false;
+
+    const char* pos = root->to_clear;
+    while (*pos && *str && *pos == *str) {
+        pos++;
         str++;
     }
-    return current->isEndOfString;
-}
+    if (*pos == '\0' && *str == '\0') {
+        return root->is_end;
+    }
+    else if (*pos == '\0' && *str != '\0') {
+        if (!root->paths) return false;
 
-int stringin_next_key(StringIn** pos, const char* str) {
-    if (*str == '\0') return (*pos)->isEndOfString ? FOUND : NOT_FOUND;
-
-    StringIn* child = hashmap_get((*pos)->root, CHAR_TO_STRING(*str));
-    if (!child) return NOT_FOUND;
-
-    *pos = child;
-    return YET_FOUND;
+        StringIn* child = hashmap_get(root->paths, CHAR_TO_STRING(*str));
+        return child ? stringin_search_string(child, str + 1) : false;
+    }
+    return false;
 }
 
 void stringin_free(StringIn* root) {
     if (!root) return;
 
-    for (int i = 0; i < root->root->size; i++) {
-        KeyValuePair* current = root->root->table[i];
-        while (current) {
-            StringIn* child = (StringIn*)current->value;
-            stringin_free(child);
-            current = current->next;
+    if (root->to_clear) free(root->to_clear);
+
+    if (root->paths) {
+        for (int i = 0; i < root->paths->size; i++) {
+            KeyValuePair* current = root->paths->table[i];
+            while (current) {
+                StringIn* child = (StringIn*)current->value;
+                stringin_free(child);
+                current = current->next;
+            }
+        }
+        freeHashMap(root->paths);
+    }
+
+    free(root);
+}
+
+void stringin_print(StringIn* root) {
+    if (!root) return;
+
+    if (root->is_end) {
+        printf("%s\n", root->to_clear);
+    }
+
+    if (root->paths) {
+        for (int i = 0; i < root->paths->size; i++) {
+            KeyValuePair* current = root->paths->table[i];
+            while (current) {
+                printf("%s\n", current->key);
+                stringin_print((StringIn*)current->value);
+                current = current->next;
+            }
         }
     }
-    freeHashMap(root->root);
-    free(root);
 }
