@@ -162,6 +162,37 @@ bool stringin_search_string(StringIn* root, const char* str) {
     }
     return false;
 }
+int stringin_next(StringIn** pos, char** remaining_clearance, char next_letter) {
+    // Case 1: If we've reached the end of both the node and the string
+    if (**remaining_clearance == '\0' && next_letter == '\0') {
+        return (*pos)->is_end ? FOUND : NOT_FOUND;
+    }
+
+    // Case 2: If we're still in the string, but we've reached the end of the node
+    if (**remaining_clearance != '\0' && next_letter == '\0') {
+        return NOT_FOUND;
+    }
+
+    // Case 3: If we're at the end of the node, but still have characters left in the string
+    if (**remaining_clearance == '\0' && next_letter != '\0') {
+		if ((*pos)->paths == NULL) return NOT_FOUND;
+        StringIn* child = hashmap_get((*pos)->paths, CHAR_TO_STRING(next_letter));
+        if (!child) return NOT_FOUND;
+        *pos = child;
+        *remaining_clearance = child->to_clear;
+        return YET_FOUND;
+    }
+
+    // Case 4: If the current character doesn't match the next letter, it's a mismatch
+    if (**remaining_clearance != next_letter) {
+        return NOT_FOUND;
+    }
+
+    // Case 5: If the current character matches the next letter, move forward
+    (*remaining_clearance)++;
+    return YET_FOUND;
+}
+
 
 void stringin_free(StringIn* root) {
     if (!root) return;
@@ -182,6 +213,9 @@ void stringin_free(StringIn* root) {
 
     free(root);
 }
+
+
+
 
 void stringin_print(StringIn* root) {
     if (!root) return;

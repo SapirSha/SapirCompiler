@@ -4,14 +4,15 @@
 #include <stdio.h>
 #include <string.h>
 
-static unsigned int hash(char* key, int tableSize) {
-    unsigned long hashValue = 5381;
-    while (*key) {
-        hashValue = ((hashValue << 5) + hashValue) + *key;
-        key++;
+static unsigned int hash(const char* str, int capacity) {
+    unsigned int hashValue = 13;
+    while (*str) {
+        hashValue = (hashValue * 33) ^ (unsigned char)(*str);
+        str++;
     }
-    return hashValue % tableSize;
+    return hashValue % capacity;
 }
+
 
 HashMap* createHashMap(int size) {
     printf("CREATING HASHMAP\n");
@@ -96,6 +97,7 @@ void* hashmap_get(HashMap* hashMap, char* key) {
         if (strcmp(current->key, key) == 0) {
             return current->value;
         }
+        printf("--- HASHMAP_SEARCH_COLLISION ---\n");
         current = current->next;
     }
     return NULL;

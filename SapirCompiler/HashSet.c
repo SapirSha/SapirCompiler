@@ -4,14 +4,13 @@
 #include <string.h>
 #include <stdio.h>
 
-// Helper function to calculate a hash for a string
 static unsigned int hash(const char* str, int capacity) {
-    unsigned int hashValue = 31;
+    unsigned int hashValue = 13;
     while (*str) {
-        hashValue = ((hashValue + 31) *  *str) % capacity;
+        hashValue = (hashValue * 33) ^ (unsigned char)(*str);
         str++;
     }
-    return hashValue;
+    return hashValue % capacity;
 }
 
 // Create a new HashSet
