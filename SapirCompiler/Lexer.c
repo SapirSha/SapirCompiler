@@ -129,37 +129,30 @@ void init_keywords() {
 void handle_error(char ch, int line, int col) {
     printf("Error at line %d, col %d: Unrecognized character '%c'\n", line, col, ch);
 }
-void handle_identifier(const char* input, int* index, ArrayList* token, State* state, State* next_state){
+void handle_identifier(const char* input, int* index, ArrayList* token, State* next_state){
     StringIn* pos = keywords_finder;
-    /*
-    while (input[*index] != EOF && *next_state == KEYWORD) {
-		if (*next_state == ERROR) {
-			handle_error(input[*index], 0, 0);
-			*state = START;
-			arraylist_reset(token);
-			return;
-		}
+    char* clearance = pos->to_clear;
 
-        arraylist_add(token, input[*index]);
-        if (stringin_next_key(&pos, &input[*index]) == NOT_FOUND) {
+    while (*next_state == KEYWORD) {
+		arraylist_add(token, input[*index]);
+        if (stringin_next(&pos, &clearance, input[*index]) == NOT_FOUND) {
             *next_state = IDENTIFIER;
             return;
-        }
-		(*index)++;
-
-        *state = *next_state;
+        } 
+        
+        (*index)++;
         CharClass char_class = classifier_lookup[input[*index]];
         *next_state = state_table[KEYWORD][char_class];
     }
 
-    char BACKSLASH_ZERO = '\0'; // Simulating end of string
-    if (stringin_next_key(&pos, &BACKSLASH_ZERO) == FOUND)
-        *next_state = KEYWORD;
-    else
-        *next_state = IDENTIFIER;
 
-	(*index)--;
-    */
+    if (stringin_next(&pos, &clearance, '\0') == FOUND) {
+        *next_state = KEYWORD;
+    }
+    else {
+        *next_state = IDENTIFIER;
+    }
+    (*index)--;
 }
 
 // FSM for tokenization
@@ -216,7 +209,7 @@ Tokens* tokenize(const char* input) {
         if (next_state == IDENTIFIER || next_state == NUMBER || next_state == OPERATOR || next_state == STRING_LITERAL || next_state == SEPARATOR) {
             arraylist_add(token, ch);
 		} else if (next_state == KEYWORD) {
-            handle_identifier(input, &i, token, &state, &next_state);
+            handle_identifier(input, &i, token, &next_state);
         }
 
         state = next_state;
