@@ -140,7 +140,6 @@
     <ClInclude Include="HashMap.h" />
     <ClInclude Include="HashSet.h" />
     <ClInclude Include="Lexer.h" />
-    <ClInclude Include="Parser.h" />
     <ClInclude Include="StringIn.h" />
     <ClInclude Include="Tokens.h" />
   </ItemGroup>

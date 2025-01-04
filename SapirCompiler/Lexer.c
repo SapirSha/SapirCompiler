@@ -145,7 +145,9 @@ static const CharClass classifier_lookup[] = {
 };
 
 static const char* keywords_list[] = {
-    "if", "while", "return", "for", "else", "int", "char", NULL
+    "if", "while", "return", "for", "else", "int", "char",
+	"string", "float", "double", "void", "bool", "true", "false",
+	NULL
 };
 
 StringIn* keywords_finder = NULL;
@@ -268,7 +270,7 @@ void handle_operator(const char* input, int* index, ArrayList* token, State* nex
     arraylist_add(token, input[*index]);
 
     (*index)++;
-    state = operator_state_table[OPERATOR][lookup_operator(input[*index])];
+    state = operator_state_table[state][lookup_operator(input[*index])];
 
     if (state == OPERATOR_ERROR) {
         return;
@@ -342,7 +344,7 @@ void handle_start(const char* input, int* index, ArrayList* token, State* next_s
 }
 
 void handle_identifier(const char* input, int* index, ArrayList* token, State* next_state) {
-    State current = IDENTIFIER;
+    State current = state_table[IDENTIFIER][classifier_lookup[input[*index]]];
     while (current == IDENTIFIER) {
         arraylist_add(token, input[*index]);
         (*index)++;
