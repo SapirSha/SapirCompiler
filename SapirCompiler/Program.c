@@ -4,8 +4,8 @@
 #include "StringIn.h"
 
 int main() {
-    //const char* code = "\nint main() {\nint x = 42;\nstring s = \"Hello, world!\"; # This is a comment#\nif (x > 10) { # Multi_line comment Example # x = x + 1;\n}\n}";
-    const char* code = "int if bool true false char Hello = 5 +! 5 ++-=^=2! 7 += 2 \"HI\"";
+    const char* code = "\nint main() {\nint x = 42.57;\nstring s = \"Hello, world!\"; # This is a comment#\nif (x >= 10) { # Multi_line comment Example # x = x + 1;\n}\n}";
+    //const char* code = "int \"Hello;\"";
     printf("Tokenizing: %s\n", code);
     Tokens* tokens = tokenize(code);
     tokens_print(tokens);

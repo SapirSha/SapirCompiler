@@ -329,9 +329,16 @@ void handle_operator(const char* input, int* index, ArrayList* token, State* nex
     add_token(token, tokens, STATE_OPERATOR_TO_TOKEN_CONVERTER[state]);
     (*index)++;
 }
+static const Token_Types SEPARATOR_TO_TOKEN_CONVERTER[] = {
+    ['('] = TOKEN_LPAREN,[')'] = TOKEN_RPAREN,
+    ['{'] = TOKEN_LBRACES,['}'] = TOKEN_RBRACES,
+    ['['] = TOKEN_LBRACES,[']'] = TOKEN_RBRACES,
+    [';'] = TOKEN_SEMICOLON,[','] = TOKEN_COMMA,
 
+};
 void handle_separator(const char* input, int* index, ArrayList* token, State* next_state) {
     arraylist_add(token, input[*index]);
+	add_token(token, tokens, SEPARATOR_TO_TOKEN_CONVERTER[input[*index]]);
     (*index)++;
 }
 
@@ -359,6 +366,10 @@ void handle_number(const char* input, int* index, ArrayList* token, State* next_
             (*index)++;
             current = state_table[NUMBER][classifier_lookup[input[*index]]];
         }
+        add_token(token, tokens, TOKEN_FLOAT_NUMBER);
+    }
+    else {
+		add_token(token, tokens, TOKEN_NUMBER);
     }
 }
 
@@ -369,10 +380,15 @@ void handle_string_literal(const char* input, int* index, ArrayList* token, Stat
         arraylist_add(token, input[*index]);
         (*index)++;
     }
-    if (current == ERROR) {
-        handle_error(input, index, token, &current);
-        return;
+    if (input[*index] == '"') {
+        add_token(token, tokens, TOKEN_STRING_LITERAL);
+        (*index)++;
+        *next_state = START;
     }
+	else {
+		printf("--- Error: Unclosed string literal ---\n");
+		handle_error(input, index, token, &current); // unclosed string literal
+	}
 }
 
 void handle_comment(const char* input, int* index, ArrayList* token, State* next_state) {
@@ -400,11 +416,12 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* n
         (*index)++;
         current = state_table[IDENTIFIER][classifier_lookup[input[*index]]];
     }
+	add_token(token, tokens, TOKEN_IDENTIFIER);
 }
 
 // FSM for tokenization
 Tokens* tokenize(const char* input) {
-    State state = START;
+    State state = START, next_state;
     ArrayList* token = arraylist_init(DEFAULT_TOKEN_SIZE);
 
     tokens = tokens_init();
@@ -412,26 +429,9 @@ Tokens* tokenize(const char* input) {
     init_keywords();
     int i = 0;
     while (input[i] != '\0') {
-
-        char ch = input[i];
-        State next_state = state_table[state][classifier_lookup[ch]];
-
-        if (state != START && state != COMMENT && state != OPERATOR && state != KEYWORD) {
-            arraylist_add(token, '\0');
-            char* str_token = token->array;
-            tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
-            arraylist_reset(token); // Reset token for new state
-        }
-
+        next_state = state_table[state][classifier_lookup[input[i]]];
         call_state_function(input, &i, token, &next_state);
         state = next_state;
-    }
-
-    // Emit the last token if any
-    if (!array_list_is_empty(token)) {
-        arraylist_add(token, '\0');
-        char* str_token = token->array;
-        tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
     }
 
     arraylist_free(token);

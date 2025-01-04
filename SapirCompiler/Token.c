@@ -51,8 +51,10 @@ Tokens* tokens_dequeue(TokensQueue* queue) {
 // Print all tokens in the queue
 void tokens_print(TokensQueue* queue) {
     char* translate_tokens[] = {
+	[TOKEN_UNKNOWN] = "UNKNOWN",
     [TOKEN_IDENTIFIER] = "IDENTIFIER",
     [TOKEN_NUMBER] = "NUMBER",
+    [TOKEN_FLOAT_NUMBER] = "FLOAT NUMBER",
     [TOKEN_OPERATOR] = "OPERATOR",
     [TOKEN_KEYWORD] = "KEYWORD",
     [TOKEN_STRING_LITERAL] = "String Literal",
@@ -103,6 +105,17 @@ void tokens_print(TokensQueue* queue) {
     [TOKEN_BOOL] = "BOOL",
     [TOKEN_TRUE] = "TRUE",
     [TOKEN_FALSE] = "FALSE",
+
+    [TOKEN_LPAREN] = "(",
+    [TOKEN_RPAREN] = ")",
+    [TOKEN_LBRACES] = "{",
+    [TOKEN_RBRACES] = "}",
+    [TOKEN_LBRACKETS] = "[",
+    [TOKEN_RBRACKETS] = "]",
+    [TOKEN_SEMICOLON] = ";",
+    [TOKEN_COMMA] = ",",
+
+
     [TOKEN_EOF] = "EOF"
     };
 
