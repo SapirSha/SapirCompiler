@@ -22,6 +22,7 @@ typedef enum {
     KEYWORD,
     ERROR,
     NUM_STATES,
+    OPERATOR_END,
 };
 typedef char State;
 
@@ -197,15 +198,15 @@ typedef enum {
 typedef char OperatorState;
 
 static const OperatorState operator_lookup[] = {
-    ['+'] = OPERATOR_PLUS,['-'] = OPERATOR_MINUS,['*'] = OPERATOR_MULTIPLY,['/'] = OPERATOR_DIVIDE,
-    ['='] = OPERATOR_EQUAL,['>'] = OPERATOR_GREATER,['<'] = OPERATOR_LESS,['%'] = OPERATOR_MODULO,
-    ['&'] = OPERATOR_AND,['|'] = OPERATOR_OR,['^'] = OPERATOR_XOR,['!'] = OPERATOR_NOT,
+    ['+'] = OPERATOR_PLUS,  ['-'] = OPERATOR_MINUS,  ['*'] = OPERATOR_MULTIPLY,['/'] = OPERATOR_DIVIDE,
+    ['='] = OPERATOR_ASSIGN,['>'] = OPERATOR_GREATER,['<'] = OPERATOR_LESS,    ['%'] = OPERATOR_MODULO,
+    ['&'] = OPERATOR_AND,  ['|'] = OPERATOR_OR,      ['^'] = OPERATOR_XOR,     ['!'] = OPERATOR_NOT,
 }; int max_oper_ascii_index = sizeof(operator_lookup) / sizeof(char);
 
 
-static const OperatorState operator_transition_state[NUM_OPERATOR_STATES][NUM_OPERATOR_STATES] = {
+static const OperatorState operator_state_table[NUM_OPERATOR_STATES][NUM_OPERATOR_STATES] = {
     // State: / Got:       +  PLUS               - MINUS               * MULTIPLY           / DIVIDE               = EQUAL                > GREATER              < LESS               % MODULO           & AND               | OR                ^ XOR           ! NOT       
-    /* Start */         {0, OPERATOR_PLUS,       OPERATOR_MINUS,       OPERATOR_MULTIPLY,   OPERATOR_DIVIDE,       OPERATOR_ASSIGN,         OPERATOR_GREATER,     OPERATOR_LESS,      OPERATOR_MODULO,   OPERATOR_AND,      OPERATOR_OR,        OPERATOR_XOR,     OPERATOR_NOT},  // Start state
+    /* Start */         {0, OPERATOR_PLUS,       OPERATOR_MINUS,       OPERATOR_MULTIPLY,   OPERATOR_DIVIDE,       OPERATOR_ASSIGN,         OPERATOR_GREATER,     OPERATOR_LESS,      OPERATOR_MODULO,   OPERATOR_AND,      OPERATOR_OR,        OPERATOR_XOR,     OPERATOR_NOT  },  // Start state
     /* PLUS */          {0, OPERATOR_INCREMENT,  OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_ADD_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // PLUS state
     /* MINUS */         {0, OPERATOR_ERROR,      OPERATOR_DECREMENT,   OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_SUB_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MINUS state
     /* MULTIPLY */      {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_MUL_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MULTIPLY state
@@ -217,16 +218,35 @@ static const OperatorState operator_transition_state[NUM_OPERATOR_STATES][NUM_OP
     /* AND */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_AND_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ALSO,     OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // AND state
     /* OR */            {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_OR_ASSIGN,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_EITHER,    OPERATOR_ERROR,   OPERATOR_ERROR},  // OR state
     /* XOR */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_XOR_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // XOR state
-    /* NOT */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_NOT_EQUAL,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},    // NOT state
+    /* NOT */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_NOT_EQUAL,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // NOT state
 };
 
-
-
-
-
-
+OperatorState lookup_operator(unsigned char c) {
+    if (c > max_oper_ascii_index) return OPERATOR_ERROR;
+    else return operator_lookup[c];
+}
 
 void handle_operator(const char* input, int* index, ArrayList* token, State* next_state) {
+    OperatorState state = operator_state_table[START][lookup_operator(input[*index])];
+
+    if (state == OPERATOR_ERROR) {
+        handle_error((input[*index]), 0, 0);
+        *next_state = START;
+        return;
+    }
+
+    arraylist_add(token, input[*index]);
+
+    (*index)++;
+
+    state = operator_state_table[state][lookup_operator(input[*index])];
+
+    if (state == OPERATOR_ERROR) {
+        (*index)--;
+        return;
+    }
+
+    arraylist_add(token, input[*index]);
     return;
 }
 // FSM for tokenization
@@ -263,7 +283,7 @@ Tokens* tokenize(const char* input) {
         }
 
         // Handle state transitions
-        if (next_state != state /* || state == OPERATOR */) {
+        if (next_state != state || state == OPERATOR) {
             arraylist_add(token, '\0'); // Null-terminate the token
             char* str_token = token->array;
 
@@ -280,7 +300,7 @@ Tokens* tokenize(const char* input) {
 
 
         // Add character to token if in a valid state
-        if (next_state == IDENTIFIER || next_state == NUMBER || next_state == OPERATOR || next_state == STRING_LITERAL || next_state == SEPARATOR) {
+        if (next_state == IDENTIFIER || next_state == NUMBER || next_state == STRING_LITERAL || next_state == SEPARATOR) {
             arraylist_add(token, ch);
 		} else if (next_state == KEYWORD) {
             handle_identifier(input, &i, token, &next_state);
