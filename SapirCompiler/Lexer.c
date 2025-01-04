@@ -68,9 +68,8 @@ static const Token_Types STATE_TO_TOKEN_CONVERTER[] = {
     [NUMBER] = TOKEN_NUMBER,
     [OPERATOR] = TOKEN_OPERATOR,
     [SEPARATOR] = TOKEN_SEPARATOR,
-    [STRING_LITERAL] = TOKEN_STRING, // New state mapping
+    [STRING_LITERAL] = TOKEN_STRING_LITERAL,
     [KEYWORD] = TOKEN_KEYWORD,
-    [STRING_LITERAL] = TOKEN_STRING,
 };
 
 // Define character classes
@@ -163,10 +162,19 @@ void init_keywords() {
     if (keywords_finder != NULL) return;
 
     keywords_finder = stringin_init();
-
-    for (int i = 0; keywords_list[i] != NULL; i++) {
-        stringin_insert_string(keywords_finder, keywords_list[i]);
-    }
+    stringin_insert_string(keywords_finder, "int", TOKEN_INT);
+    stringin_insert_string(keywords_finder, "if", TOKEN_IF);
+    stringin_insert_string(keywords_finder, "while", TOKEN_WHILE);
+    stringin_insert_string(keywords_finder, "for", TOKEN_FOR);
+	stringin_insert_string(keywords_finder, "else", TOKEN_ELSE);
+	stringin_insert_string(keywords_finder, "char", TOKEN_CHAR);
+	stringin_insert_string(keywords_finder, "string", TOKEN_STRING);
+    stringin_insert_string(keywords_finder, "float", TOKEN_FLOAT);
+	stringin_insert_string(keywords_finder, "double", TOKEN_DOUBLE);
+	stringin_insert_string(keywords_finder, "void", TOKEN_VOID);
+    stringin_insert_string(keywords_finder, "bool", TOKEN_BOOL);
+    stringin_insert_string(keywords_finder, "true", TOKEN_TRUE);
+	stringin_insert_string(keywords_finder, "false", TOKEN_FALSE);
 }
 
 void handle_error(const char* input, int* index, ArrayList* token, State* next_state) {
@@ -195,6 +203,7 @@ void handle_keyword(const char* input, int* index, ArrayList* token, State* next
     }
 
     if (stringin_next(&pos, &clearance, '\0') == FOUND) {
+		add_token(token, tokens, pos->is_end);
         *next_state = KEYWORD;
     }
     else {
@@ -407,7 +416,7 @@ Tokens* tokenize(const char* input) {
         char ch = input[i];
         State next_state = state_table[state][classifier_lookup[ch]];
 
-        if (state != START && state != COMMENT && state != OPERATOR) {
+        if (state != START && state != COMMENT && state != OPERATOR && state != KEYWORD) {
             arraylist_add(token, '\0');
             char* str_token = token->array;
             tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);

@@ -5,10 +5,9 @@
 
 int main() {
     //const char* code = "\nint main() {\nint x = 42;\nstring s = \"Hello, world!\"; # This is a comment#\nif (x > 10) { # Multi_line comment Example # x = x + 1;\n}\n}";
-    const char* code = "int if char Hello = 5 +! 5 ++-=^=2! 7 += 2 \"HI\"";
+    const char* code = "int if bool true false char Hello = 5 +! 5 ++-=^=2! 7 += 2 \"HI\"";
     printf("Tokenizing: %s\n", code);
     Tokens* tokens = tokenize(code);
     tokens_print(tokens);
     return 0;
-
 }

@@ -2,11 +2,12 @@
 #define TOKENS_H
 
 typedef enum {
+    TOKEN_UNKNOWN = 0,
     TOKEN_IDENTIFIER,
     TOKEN_NUMBER,
     TOKEN_OPERATOR,
     TOKEN_KEYWORD,
-    TOKEN_STRING,
+    TOKEN_STRING_LITERAL,
     TOKEN_SEPARATOR,
 
     TOKEN_OPERATOR_PLUS,        // +
@@ -39,9 +40,23 @@ typedef enum {
     TOKEN_OPERATOR_LESS_EQUAL,  // <=
     TOKEN_OPERATOR_ALSO,        // &&
     TOKEN_OPERATOR_EITHER,      // ||
-};
-typedef char Token_Types;
 
+    TOKEN_IF,
+	TOKEN_WHILE,
+	TOKEN_RETURN,
+	TOKEN_FOR,
+	TOKEN_ELSE,
+	TOKEN_INT,
+    TOKEN_STRING,
+	TOKEN_CHAR,
+	TOKEN_FLOAT,
+	TOKEN_DOUBLE,
+	TOKEN_VOID,
+	TOKEN_BOOL,
+	TOKEN_TRUE,
+	TOKEN_FALSE,
+    TOKEN_EOF,
+}Token_Types;
 
 typedef struct Tokens{
     char* lexeme;

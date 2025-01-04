@@ -30,10 +30,10 @@ StringIn* stringin_init() {
     }
 
     s->paths = NULL;
-    s->is_end = false;
+    s->is_end = TOKEN_UNKNOWN;
     return s;
 }
-void stringin_insert_string(StringIn* s, const char* str) {
+void stringin_insert_string(StringIn* s, const char* str, Token_Types token_type) {
     if (!s || !str) return;
 
     char* pos = s->to_clear;
@@ -47,7 +47,7 @@ void stringin_insert_string(StringIn* s, const char* str) {
 
     if (*spos == '\0' && *pos == '\0') {
         // Exact match
-        s->is_end = true;
+        s->is_end = token_type;
     }
     else if (*spos == '\0') {
         // New string is a prefix of the existing string
@@ -61,7 +61,7 @@ void stringin_insert_string(StringIn* s, const char* str) {
         new_child->is_end = s->is_end;
         new_child->paths = s->paths;
 
-        s->is_end = true;
+        s->is_end = token_type;
         char* temp = s->to_clear;
         s->to_clear = strdup(str);
 
@@ -75,7 +75,7 @@ void stringin_insert_string(StringIn* s, const char* str) {
         if (*s->to_clear == '\0' && !s->paths) {
             free(s->to_clear);
 			s->to_clear = strdup(str);
-            s->is_end = true;
+            s->is_end = token_type;
 			return;
         }
         if (!s->paths) {
@@ -95,11 +95,11 @@ void stringin_insert_string(StringIn* s, const char* str) {
             }
 
             next->to_clear = strdup(spos + 1);
-            next->is_end = true;
+            next->is_end = token_type;
             hashmap_insert(s->paths, CHAR_TO_STRING(*spos), next);
         }
         else {
-            stringin_insert_string(next, spos + 1);
+            stringin_insert_string(next, spos + 1, token_type);
         }
     }
     else {
@@ -114,7 +114,7 @@ void stringin_insert_string(StringIn* s, const char* str) {
         new_child->is_end = s->is_end;
         new_child->paths = s->paths;
 
-        s->is_end = false;
+        s->is_end = TOKEN_UNKNOWN;
 
 		char* buffer = (char*)malloc(spos - str + 1);
         for (int i = 0; i < spos - str; i++)
@@ -139,13 +139,13 @@ void stringin_insert_string(StringIn* s, const char* str) {
         }
 
         next->to_clear = strdup(spos + 1);
-        next->is_end = true;
+        next->is_end = token_type;
         hashmap_insert(s->paths, CHAR_TO_STRING(*spos), next);
     }
 }
 
-bool stringin_search_string(StringIn* root, const char* str) {
-    if (!root || !str) return false;
+Token_Types stringin_search_string(StringIn* root, const char* str) {
+    if (!root || !str) return TOKEN_UNKNOWN;
 
     const char* pos = root->to_clear;
     while (*pos && *str && *pos == *str) {
@@ -156,18 +156,19 @@ bool stringin_search_string(StringIn* root, const char* str) {
         return root->is_end;
     }
     else if (*pos == '\0' && *str != '\0') {
-        if (!root->paths) return false;
+        if (!root->paths) return TOKEN_UNKNOWN;
 
         StringIn* child = hashmap_get(root->paths, CHAR_TO_STRING(*str));
-        return child ? stringin_search_string(child, str + 1) : false;
+        return child ? stringin_search_string(child, str + 1) : TOKEN_UNKNOWN;
     }
-    return false;
+    return TOKEN_UNKNOWN;
 }
 int stringin_next(StringIn** pos, char** remaining_clearance, char next_letter) {
     // Case 1: If we've reached the end of both the node and the string
     if (**remaining_clearance == '\0' && next_letter == '\0') {
-        return (*pos)->is_end ? FOUND : NOT_FOUND;
+        return (*pos)->is_end != TOKEN_UNKNOWN ? FOUND : NOT_FOUND;
     }
+
 
     // Case 2: If we're still in the string, but we've reached the end of the node
     if (**remaining_clearance != '\0' && next_letter == '\0') {
