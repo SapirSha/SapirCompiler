@@ -22,9 +22,10 @@ typedef enum {
     KEYWORD,
     ERROR,
     NUM_STATES,
-} State;
+};
+typedef char State;
 
-static const State STATE_TO_TOKEN_CONVERTER[NUM_STATES] = {
+static const Token_Types STATE_TO_TOKEN_CONVERTER[NUM_STATES] = {
     [IDENTIFIER] = TOKEN_IDENTIFIER,
     [NUMBER] = TOKEN_NUMBER,
     [OPERATOR] = TOKEN_OPERATOR,
@@ -44,7 +45,8 @@ typedef enum {
 	CHAR_COMMENT, // For handling comments
     CHAR_SEPARATOR,
     NUM_CHAR_CLASSES
-} CharClass;
+};
+typedef char CharClass;
 
 // Lookup table for state transitions
 static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
@@ -129,6 +131,7 @@ void init_keywords() {
 void handle_error(char ch, int line, int col) {
     printf("Error at line %d, col %d: Unrecognized character '%c'\n", line, col, ch);
 }
+
 void handle_identifier(const char* input, int* index, ArrayList* token, State* next_state){
     StringIn* pos = keywords_finder;
     char* clearance = pos->to_clear;
@@ -155,6 +158,77 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* n
     (*index)--;
 }
 
+typedef enum {
+    OPERATOR_START = 0,
+    OPERATOR_PLUS,        // +
+    OPERATOR_MINUS,       // -
+    OPERATOR_MULTIPLY,    // *
+    OPERATOR_DIVIDE,      // /
+    OPERATOR_ASSIGN,      // =
+    OPERATOR_GREATER,     // >
+    OPERATOR_LESS,        // <
+    OPERATOR_MODULO,      // %
+    OPERATOR_AND,         // &
+    OPERATOR_OR,          // |
+    OPERATOR_XOR,         // ^
+    OPERATOR_NOT,         // !
+    NUM_OPERATOR_STATES,  // NUM OF OPERATOR STATES
+    OPERATOR_ERROR,       // ERROR STATE
+
+    OPERATOR_INCREMENT,   // ++
+    OPERATOR_DECREMENT,   // --
+    OPERATOR_ADD_ASSIGN,  // +=
+    OPERATOR_SUB_ASSIGN,  // -=
+    OPERATOR_MUL_ASSIGN,  // *=
+    OPERATOR_DIV_ASSIGN,  // /=
+    OPERATOR_MOD_ASSIGN,  // %=
+    OPERATOR_AND_ASSIGN,  // &=
+    OPERATOR_OR_ASSIGN,   // |=
+    OPERATOR_XOR_ASSIGN,  // ^=
+    OPERATOR_LEFT_SHIFT,  // <<
+    OPERATOR_RIGHT_SHIFT, // >>
+    OPERATOR_EQUAL,       // ==
+    OPERATOR_NOT_EQUAL,   // !=
+    OPERATOR_GREATER_EQUAL, // >=
+    OPERATOR_LESS_EQUAL,  // <=
+    OPERATOR_ALSO,        // &&
+    OPERATOR_EITHER,      // ||
+};
+typedef char OperatorState;
+
+static const OperatorState operator_lookup[] = {
+    ['+'] = OPERATOR_PLUS,['-'] = OPERATOR_MINUS,['*'] = OPERATOR_MULTIPLY,['/'] = OPERATOR_DIVIDE,
+    ['='] = OPERATOR_EQUAL,['>'] = OPERATOR_GREATER,['<'] = OPERATOR_LESS,['%'] = OPERATOR_MODULO,
+    ['&'] = OPERATOR_AND,['|'] = OPERATOR_OR,['^'] = OPERATOR_XOR,['!'] = OPERATOR_NOT,
+}; int max_oper_ascii_index = sizeof(operator_lookup) / sizeof(char);
+
+
+static const OperatorState operator_transition_state[NUM_OPERATOR_STATES][NUM_OPERATOR_STATES] = {
+    // State: / Got:       +  PLUS               - MINUS               * MULTIPLY           / DIVIDE               = EQUAL                > GREATER              < LESS               % MODULO           & AND               | OR                ^ XOR           ! NOT       
+    /* Start */         {0, OPERATOR_PLUS,       OPERATOR_MINUS,       OPERATOR_MULTIPLY,   OPERATOR_DIVIDE,       OPERATOR_ASSIGN,         OPERATOR_GREATER,     OPERATOR_LESS,      OPERATOR_MODULO,   OPERATOR_AND,      OPERATOR_OR,        OPERATOR_XOR,     OPERATOR_NOT},  // Start state
+    /* PLUS */          {0, OPERATOR_INCREMENT,  OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_ADD_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // PLUS state
+    /* MINUS */         {0, OPERATOR_ERROR,      OPERATOR_DECREMENT,   OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_SUB_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MINUS state
+    /* MULTIPLY */      {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_MUL_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MULTIPLY state
+    /* DIVIDE */        {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_DIV_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // DIVIDE state
+    /* ASSIGN */        {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_EQUAL,          OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // ASSIGN state
+    /* GREATER */       {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_GREATER_EQUAL,  OPERATOR_RIGHT_SHIFT, OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // GREATER state
+    /* LESS */          {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_LESS_EQUAL,     OPERATOR_ERROR,       OPERATOR_LEFT_SHIFT,OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // LESS state
+    /* MODULO */        {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_MOD_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MODULO state
+    /* AND */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_AND_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ALSO,     OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // AND state
+    /* OR */            {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_OR_ASSIGN,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_EITHER,    OPERATOR_ERROR,   OPERATOR_ERROR},  // OR state
+    /* XOR */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_XOR_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // XOR state
+    /* NOT */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_NOT_EQUAL,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},    // NOT state
+};
+
+
+
+
+
+
+
+void handle_operator(const char* input, int* index, ArrayList* token, State* next_state) {
+    return;
+}
 // FSM for tokenization
 Tokens* tokenize(const char* input) {
     int line = 1;
@@ -210,6 +284,9 @@ Tokens* tokenize(const char* input) {
             arraylist_add(token, ch);
 		} else if (next_state == KEYWORD) {
             handle_identifier(input, &i, token, &next_state);
+        }
+        else if (next_state == OPERATOR) {
+            handle_operator(input, &i, token, &next_state);
         }
 
         state = next_state;

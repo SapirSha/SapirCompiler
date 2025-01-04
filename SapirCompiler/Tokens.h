@@ -8,7 +8,8 @@ typedef enum {
     TOKEN_KEYWORD,
     TOKEN_STRING,
     TOKEN_SEPARATOR,
-} Token_Types;
+};
+typedef char Token_Types;
 
 
 typedef struct Tokens{
