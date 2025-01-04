@@ -10,6 +10,7 @@
 
 #define DEFAULT_TOKEN_SIZE 32
 
+
 // Define states
 typedef enum {
     START = 0,
@@ -17,22 +18,51 @@ typedef enum {
     NUMBER,
     OPERATOR,
     STRING_LITERAL,
-	COMMENT,
+    COMMENT,
     SEPARATOR,
     KEYWORD,
     ERROR,
     NUM_STATES,
-    OPERATOR_END,
 };
 typedef char State;
 
-static const Token_Types STATE_TO_TOKEN_CONVERTER[NUM_STATES] = {
+void handle_start(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_number(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_keyword(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_operator(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_string_literal(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_comment(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_separator(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_error(const char* input, int* index, ArrayList* token, State* next_state);
+void handle_identifier(const char* input, int* index, ArrayList* token, State* next_state);
+
+
+void(*states_functions[])(const char*, int*, ArrayList*, State*) = {
+    [START] = handle_start,
+    [NUMBER] = handle_number,
+    [OPERATOR] = handle_operator,
+    [STRING_LITERAL] = handle_string_literal,
+    [COMMENT] = handle_comment,
+    [SEPARATOR] = handle_separator,
+    [KEYWORD] = handle_keyword,
+    [ERROR] = handle_error,
+    [IDENTIFIER] = handle_identifier,
+};
+void call_state_function(const char* input, int* index, ArrayList* token, State* next_state) {
+    states_functions[*next_state](input, index, token, next_state);
+}
+
+
+
+
+static const Token_Types STATE_TO_TOKEN_CONVERTER[] = {
     [IDENTIFIER] = TOKEN_IDENTIFIER,
     [NUMBER] = TOKEN_NUMBER,
     [OPERATOR] = TOKEN_OPERATOR,
-	[SEPARATOR] = TOKEN_SEPARATOR,
+    [SEPARATOR] = TOKEN_SEPARATOR,
     [STRING_LITERAL] = TOKEN_STRING, // New state mapping
     [KEYWORD] = TOKEN_KEYWORD,
+    [STRING_LITERAL] = TOKEN_STRING,
 };
 
 // Define character classes
@@ -43,7 +73,7 @@ typedef enum {
     CHAR_OPERATOR,
     CHAR_WHITESPACE,
     CHAR_QUOTE, // For handling the double quote for string literals
-	CHAR_COMMENT, // For handling comments
+    CHAR_COMMENT, // For handling comments
     CHAR_SEPARATOR,
     NUM_CHAR_CLASSES
 };
@@ -51,15 +81,15 @@ typedef char CharClass;
 
 // Lookup table for state transitions
 static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
-	// State: / Got:        CHAR_INVALID    CHAR_LETTER     CHAR_DIGIT      CHAR_OPERATOR    CHAR_WHITESPACE   CHAR_QUOTE          CHAR_COMMENT     CHAR_SEPARATOR
+    // State: / Got:        CHAR_INVALID    CHAR_LETTER     CHAR_DIGIT      CHAR_OPERATOR    CHAR_WHITESPACE   CHAR_QUOTE          CHAR_COMMENT     CHAR_SEPARATOR
     /* START */           { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
     /* IDENTIFIER */      { ERROR,          IDENTIFIER,     IDENTIFIER,     OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
     /* NUMBER */          { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
     /* OPERATOR */        { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
     /* STRING_LITERAL */  { ERROR,          STRING_LITERAL, STRING_LITERAL, STRING_LITERAL,  STRING_LITERAL,   START,              STRING_LITERAL,   STRING_LITERAL},
-	/* COMMENT */         { ERROR,          COMMENT,        COMMENT,        COMMENT,         COMMENT,          COMMENT,            START,            SEPARATOR},
+    /* COMMENT */         { ERROR,          COMMENT,        COMMENT,        COMMENT,         COMMENT,          COMMENT,            START,            SEPARATOR},
     /* SEPARATOR */       { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
-	/* KeyWord */         { ERROR,          KEYWORD,        KEYWORD,        OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* KeyWord */         { ERROR,          KEYWORD,        KEYWORD,        OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
     /* ERROR */           { ERROR,          ERROR,          ERROR,          ERROR,           ERROR,            ERROR,              ERROR,            ERROR},
 };
 
@@ -95,17 +125,17 @@ static const CharClass classifier_lookup[] = {
     ['+'] = CHAR_OPERATOR,['-'] = CHAR_OPERATOR,['*'] = CHAR_OPERATOR,['/'] = CHAR_OPERATOR,
     ['='] = CHAR_OPERATOR,['>'] = CHAR_OPERATOR,['<'] = CHAR_OPERATOR,['%'] = CHAR_OPERATOR,
     ['&'] = CHAR_OPERATOR,['|'] = CHAR_OPERATOR,['^'] = CHAR_OPERATOR,['!'] = CHAR_OPERATOR,
-    
-	//SEPARATORS
-	['('] = CHAR_SEPARATOR,[')'] = CHAR_SEPARATOR,['{'] = CHAR_SEPARATOR,['}'] = CHAR_SEPARATOR,
-	['['] = CHAR_SEPARATOR,[']'] = CHAR_SEPARATOR,[';'] = CHAR_SEPARATOR,[','] = CHAR_SEPARATOR,
-    
+
+    //SEPARATORS
+    ['('] = CHAR_SEPARATOR,[')'] = CHAR_SEPARATOR,['{'] = CHAR_SEPARATOR,['}'] = CHAR_SEPARATOR,
+    ['['] = CHAR_SEPARATOR,[']'] = CHAR_SEPARATOR,[';'] = CHAR_SEPARATOR,[','] = CHAR_SEPARATOR,
+
 
     //Spaces
     ['\n'] = CHAR_WHITESPACE,[' '] = CHAR_WHITESPACE,['\t'] = CHAR_WHITESPACE,
 
-	//Comments
-	['#'] = CHAR_COMMENT,
+    //Comments
+    ['#'] = CHAR_COMMENT,
 
     //Double quote for string literals
     ['"'] = CHAR_QUOTE,
@@ -122,41 +152,46 @@ StringIn* keywords_finder = NULL;
 void init_keywords() {
     if (keywords_finder != NULL) return;
 
-    keywords_finder = stringin_init(); 
-    
-	for (int i = 0; keywords_list[i] != NULL; i++) {
-		stringin_insert_string(keywords_finder, keywords_list[i]);
-	}
+    keywords_finder = stringin_init();
+
+    for (int i = 0; keywords_list[i] != NULL; i++) {
+        stringin_insert_string(keywords_finder, keywords_list[i]);
+    }
 }
 
-void handle_error(char ch, int line, int col) {
-    printf("Error at line %d, col %d: Unrecognized character '%c'\n", line, col, ch);
+void handle_error(const char* input, int* index, ArrayList* token, State* next_state) {
+    arraylist_add(token, '\0');
+    printf("--- Error: '%c' Cannot come after state: %d. for token: %s\n", input[*index], *next_state, token->array);
+    arraylist_reset(token);
+    *next_state = START;
+    (*index)++;
 }
 
-void handle_identifier(const char* input, int* index, ArrayList* token, State* next_state){
+void handle_keyword(const char* input, int* index, ArrayList* token, State* next_state) {
     StringIn* pos = keywords_finder;
     char* clearance = pos->to_clear;
 
     while (*next_state == KEYWORD) {
-		arraylist_add(token, input[*index]);
+        arraylist_add(token, input[*index]);
         if (stringin_next(&pos, &clearance, input[*index]) == NOT_FOUND) {
             *next_state = IDENTIFIER;
+            (*index)++;
+            handle_identifier(input, index, token, next_state);
             return;
-        } 
-        
-        (*index)++;
-        CharClass char_class = classifier_lookup[input[*index]];
-        *next_state = state_table[KEYWORD][char_class];
-    }
+        }
 
+        (*index)++;
+        *next_state = state_table[KEYWORD][classifier_lookup[input[*index]]];
+    }
 
     if (stringin_next(&pos, &clearance, '\0') == FOUND) {
         *next_state = KEYWORD;
     }
     else {
         *next_state = IDENTIFIER;
+        (*index)++;
+        handle_identifier(input, index, token, next_state);
     }
-    (*index)--;
 }
 
 typedef enum {
@@ -188,6 +223,8 @@ typedef enum {
     OPERATOR_XOR_ASSIGN,  // ^=
     OPERATOR_LEFT_SHIFT,  // <<
     OPERATOR_RIGHT_SHIFT, // >>
+    // OPERATOR_LEFT_SHIFT_ASSIGN,  // <<=
+    // OPERATOR_LEFT_RIGHT_ASSIGN,  // >>=
     OPERATOR_EQUAL,       // ==
     OPERATOR_NOT_EQUAL,   // !=
     OPERATOR_GREATER_EQUAL, // >=
@@ -198,27 +235,27 @@ typedef enum {
 typedef char OperatorState;
 
 static const OperatorState operator_lookup[] = {
-    ['+'] = OPERATOR_PLUS,  ['-'] = OPERATOR_MINUS,  ['*'] = OPERATOR_MULTIPLY,['/'] = OPERATOR_DIVIDE,
-    ['='] = OPERATOR_ASSIGN,['>'] = OPERATOR_GREATER,['<'] = OPERATOR_LESS,    ['%'] = OPERATOR_MODULO,
-    ['&'] = OPERATOR_AND,  ['|'] = OPERATOR_OR,      ['^'] = OPERATOR_XOR,     ['!'] = OPERATOR_NOT,
+    ['+'] = OPERATOR_PLUS,['-'] = OPERATOR_MINUS,['*'] = OPERATOR_MULTIPLY,['/'] = OPERATOR_DIVIDE,
+    ['='] = OPERATOR_ASSIGN,['>'] = OPERATOR_GREATER,['<'] = OPERATOR_LESS,['%'] = OPERATOR_MODULO,
+    ['&'] = OPERATOR_AND,['|'] = OPERATOR_OR,['^'] = OPERATOR_XOR,['!'] = OPERATOR_NOT,
 }; int max_oper_ascii_index = sizeof(operator_lookup) / sizeof(char);
 
 
 static const OperatorState operator_state_table[NUM_OPERATOR_STATES][NUM_OPERATOR_STATES] = {
     // State: / Got:       +  PLUS               - MINUS               * MULTIPLY           / DIVIDE               = EQUAL                > GREATER              < LESS               % MODULO           & AND               | OR                ^ XOR           ! NOT       
-    /* Start */         {0, OPERATOR_PLUS,       OPERATOR_MINUS,       OPERATOR_MULTIPLY,   OPERATOR_DIVIDE,       OPERATOR_ASSIGN,         OPERATOR_GREATER,     OPERATOR_LESS,      OPERATOR_MODULO,   OPERATOR_AND,      OPERATOR_OR,        OPERATOR_XOR,     OPERATOR_NOT  },  // Start state
-    /* PLUS */          {0, OPERATOR_INCREMENT,  OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_ADD_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // PLUS state
-    /* MINUS */         {0, OPERATOR_ERROR,      OPERATOR_DECREMENT,   OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_SUB_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MINUS state
-    /* MULTIPLY */      {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_MUL_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MULTIPLY state
-    /* DIVIDE */        {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_DIV_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // DIVIDE state
-    /* ASSIGN */        {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_EQUAL,          OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // ASSIGN state
-    /* GREATER */       {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_GREATER_EQUAL,  OPERATOR_RIGHT_SHIFT, OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // GREATER state
-    /* LESS */          {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_LESS_EQUAL,     OPERATOR_ERROR,       OPERATOR_LEFT_SHIFT,OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // LESS state
-    /* MODULO */        {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_MOD_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MODULO state
-    /* AND */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_AND_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ALSO,     OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // AND state
-    /* OR */            {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_OR_ASSIGN,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_EITHER,    OPERATOR_ERROR,   OPERATOR_ERROR},  // OR state
-    /* XOR */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_XOR_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // XOR state
-    /* NOT */           {0, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_NOT_EQUAL,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // NOT state
+    /* Start */         {OPERATOR_ERROR, OPERATOR_PLUS,       OPERATOR_MINUS,       OPERATOR_MULTIPLY,   OPERATOR_DIVIDE,       OPERATOR_ASSIGN,         OPERATOR_GREATER,     OPERATOR_LESS,      OPERATOR_MODULO,   OPERATOR_AND,      OPERATOR_OR,        OPERATOR_XOR,     OPERATOR_NOT  },  // Start state
+    /* PLUS */          {OPERATOR_ERROR, OPERATOR_INCREMENT,  OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_ADD_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // PLUS state
+    /* MINUS */         {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_DECREMENT,   OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_SUB_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MINUS state
+    /* MULTIPLY */      {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_MUL_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MULTIPLY state
+    /* DIVIDE */        {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_DIV_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // DIVIDE state
+    /* ASSIGN */        {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_EQUAL,          OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // ASSIGN state
+    /* GREATER */       {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_GREATER_EQUAL,  OPERATOR_RIGHT_SHIFT, OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // GREATER state
+    /* LESS */          {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_LESS_EQUAL,     OPERATOR_ERROR,       OPERATOR_LEFT_SHIFT,OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // LESS state
+    /* MODULO */        {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_MOD_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // MODULO state
+    /* AND */           {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_AND_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ALSO,     OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // AND state
+    /* OR */            {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_OR_ASSIGN,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_EITHER,    OPERATOR_ERROR,   OPERATOR_ERROR},  // OR state
+    /* XOR */           {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_XOR_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // XOR state
+    /* NOT */           {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_NOT_EQUAL,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // NOT state
 };
 
 OperatorState lookup_operator(unsigned char c) {
@@ -227,105 +264,126 @@ OperatorState lookup_operator(unsigned char c) {
 }
 
 void handle_operator(const char* input, int* index, ArrayList* token, State* next_state) {
-    OperatorState state = operator_state_table[START][lookup_operator(input[*index])];
-
-    if (state == OPERATOR_ERROR) {
-        handle_error((input[*index]), 0, 0);
-        *next_state = START;
-        return;
-    }
-
+    OperatorState state = operator_state_table[OPERATOR_START][lookup_operator(input[*index])];
     arraylist_add(token, input[*index]);
 
     (*index)++;
-
-    state = operator_state_table[state][lookup_operator(input[*index])];
+    state = operator_state_table[OPERATOR][lookup_operator(input[*index])];
 
     if (state == OPERATOR_ERROR) {
-        (*index)--;
         return;
     }
 
     arraylist_add(token, input[*index]);
-    return;
+    (*index)++;
 }
+
+void handle_separator(const char* input, int* index, ArrayList* token, State* next_state) {
+    arraylist_add(token, input[*index]);
+    (*index)++;
+}
+
+void handle_number(const char* input, int* index, ArrayList* token, State* next_state) {
+    State current = NUMBER;
+    while (current == NUMBER) {
+        arraylist_add(token, input[*index]);
+        (*index)++;
+        current = state_table[NUMBER][classifier_lookup[input[*index]]];
+    }
+    if (input[*index] == '.') {
+        arraylist_add(token, input[*index]);
+        (*index)++;
+
+        current = state_table[NUMBER][classifier_lookup[input[*index]]];
+
+        if (current != NUMBER)
+        {
+            handle_error(input, index, token, &current);
+            return;
+        }
+
+        while (current == NUMBER) {
+            arraylist_add(token, input[*index]);
+            (*index)++;
+            current = state_table[NUMBER][classifier_lookup[input[*index]]];
+        }
+    }
+}
+
+void handle_string_literal(const char* input, int* index, ArrayList* token, State* next_state) {
+    State current;
+    (*index)++;
+    while ((current = state_table[STRING_LITERAL][classifier_lookup[input[*index]]]) == STRING_LITERAL) {
+        arraylist_add(token, input[*index]);
+        (*index)++;
+    }
+    if (current == ERROR) {
+        handle_error(input, index, token, &current);
+        return;
+    }
+}
+
+void handle_comment(const char* input, int* index, ArrayList* token, State* next_state) {
+    State current = COMMENT;
+    while (current == COMMENT) {
+        (*index)++;
+        current = state_table[COMMENT][classifier_lookup[input[*index]]];
+    }
+    *next_state = START;
+    (*index)++;
+}
+
+void handle_start(const char* input, int* index, ArrayList* token, State* next_state) {
+    State current = START;
+    while (current == START) {
+        (*index)++;
+        current = state_table[START][classifier_lookup[input[*index]]];
+    }
+}
+
+void handle_identifier(const char* input, int* index, ArrayList* token, State* next_state) {
+    State current = IDENTIFIER;
+    while (current == IDENTIFIER) {
+        arraylist_add(token, input[*index]);
+        (*index)++;
+        current = state_table[IDENTIFIER][classifier_lookup[input[*index]]];
+    }
+}
+
 // FSM for tokenization
 Tokens* tokenize(const char* input) {
-    int line = 1;
-    int col = 0;
-
-
     State state = START;
-	ArrayList *token = arraylist_init(DEFAULT_TOKEN_SIZE);
+    ArrayList* token = arraylist_init(DEFAULT_TOKEN_SIZE);
 
     TokensQueue* tokens = tokens_init();
 
     init_keywords();
 
-    for (int i = 0; input[i] != '\0'; i++) {
-        if (input[i] == '\n') {
-            line++;
-			col = -1; // Reset column to -1 because error is only on next stage
-        }
-        col++;
+    for (int i = 0; input[i] != '\0';) {
 
         char ch = input[i];
-        CharClass char_class = classifier_lookup[ch];
+        State next_state = state_table[state][classifier_lookup[ch]];
 
-        // Get the next state from the table
-        State next_state = state_table[state][char_class]; 
-
-        if (next_state == ERROR) {
-            handle_error(input[i], line, col);
-            state = START;
-            arraylist_reset(token);
-            continue;
-        }
-
-        // Handle state transitions
-        if (next_state != state || state == OPERATOR) {
-            arraylist_add(token, '\0'); // Null-terminate the token
+        if (state != START && state != COMMENT) {
+            arraylist_add(token, '\0');
             char* str_token = token->array;
-
-            if (state == IDENTIFIER || state == KEYWORD || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
-                tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
-            }
-            else if (state == STRING_LITERAL) {
-                tokens_enqueue(tokens, str_token + 1, TOKEN_STRING);
-            }
-
-            arraylist_reset(token);// Reset token for new state
+            tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
+            arraylist_reset(token); // Reset token for new state
         }
 
-
-
-        // Add character to token if in a valid state
-        if (next_state == IDENTIFIER || next_state == NUMBER || next_state == STRING_LITERAL || next_state == SEPARATOR) {
-            arraylist_add(token, ch);
-		} else if (next_state == KEYWORD) {
-            handle_identifier(input, &i, token, &next_state);
-        }
-        else if (next_state == OPERATOR) {
-            handle_operator(input, &i, token, &next_state);
-        }
-
+        call_state_function(input, &i, token, &next_state);
         state = next_state;
     }
 
     // Emit the last token if any
     if (!array_list_is_empty(token)) {
-        arraylist_add(token, '\0'); // Null-terminate the token
+        arraylist_add(token, '\0');
         char* str_token = token->array;
-        if (state == IDENTIFIER || state == KEYWORD || state == NUMBER || state == OPERATOR || state == SEPARATOR) {
-            tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
-        }
-        else if (state == STRING_LITERAL) {
-            printf("Error at line %d, col %d: Unclosed string literal. '%c'\n", line, col + 1, '"');
-        }
+        tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
     }
 
-	arraylist_free(token);
-	stringin_free(keywords_finder);
+    arraylist_free(token);
+    stringin_free(keywords_finder);
 
     return tokens;
 }
