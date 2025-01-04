@@ -10,6 +10,14 @@
 
 #define DEFAULT_TOKEN_SIZE 32
 
+TokensQueue* tokens = NULL;
+
+void add_token(ArrayList* token, TokensQueue* tokens, Token_Types type) {
+	arraylist_add(token, '\0');
+	char* str_token = token->array;
+	tokens_enqueue(tokens, str_token, type);
+	arraylist_reset(token);
+}
 
 // Define states
 typedef enum {
@@ -259,24 +267,57 @@ static const OperatorState operator_state_table[NUM_OPERATOR_STATES][NUM_OPERATO
     /* XOR */           {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_XOR_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // XOR state
     /* NOT */           {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_NOT_EQUAL,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // NOT state
 };
-
+static const Token_Types STATE_OPERATOR_TO_TOKEN_CONVERTER[] = {
+    [OPERATOR_PLUS] = TOKEN_OPERATOR_PLUS,        // +
+    [OPERATOR_MINUS] = TOKEN_OPERATOR_MINUS,       // -
+    [OPERATOR_MULTIPLY] = TOKEN_OPERATOR_MULTIPLY,    // *
+    [OPERATOR_DIVIDE] = TOKEN_OPERATOR_DIVIDE,      // /
+    [OPERATOR_ASSIGN] = TOKEN_OPERATOR_ASSIGN,      // =
+    [OPERATOR_GREATER] = TOKEN_OPERATOR_GREATER,     // >
+    [OPERATOR_LESS] = TOKEN_OPERATOR_LESS,        // <
+    [OPERATOR_MODULO] = TOKEN_OPERATOR_MODULO,      // %
+    [OPERATOR_AND] = TOKEN_OPERATOR_AND,         // &
+    [OPERATOR_OR] = TOKEN_OPERATOR_OR,          // |
+    [OPERATOR_XOR] = TOKEN_OPERATOR_XOR,         // ^
+    [OPERATOR_NOT] = TOKEN_OPERATOR_NOT,         // !
+    [OPERATOR_INCREMENT] = TOKEN_OPERATOR_INCREMENT,   // ++
+    [OPERATOR_DECREMENT] = TOKEN_OPERATOR_DECREMENT,   // --
+    [OPERATOR_ADD_ASSIGN] = TOKEN_OPERATOR_ADD_ASSIGN,  // +=
+    [OPERATOR_SUB_ASSIGN] = TOKEN_OPERATOR_SUB_ASSIGN,  // -=
+    [OPERATOR_MUL_ASSIGN] = TOKEN_OPERATOR_MUL_ASSIGN,  // *=
+    [OPERATOR_DIV_ASSIGN] = TOKEN_OPERATOR_DIV_ASSIGN,  // /=
+    [OPERATOR_MOD_ASSIGN] = TOKEN_OPERATOR_MOD_ASSIGN,  // %=
+    [OPERATOR_AND_ASSIGN] = TOKEN_OPERATOR_AND_ASSIGN,  // &=
+    [OPERATOR_OR_ASSIGN] = TOKEN_OPERATOR_OR_ASSIGN,   // |=
+    [OPERATOR_XOR_ASSIGN] = TOKEN_OPERATOR_XOR_ASSIGN,  // ^=
+    [OPERATOR_LEFT_SHIFT] = TOKEN_OPERATOR_LEFT_SHIFT,  // <<
+    [OPERATOR_RIGHT_SHIFT] = TOKEN_OPERATOR_RIGHT_SHIFT, // >>
+    [OPERATOR_EQUAL] = TOKEN_OPERATOR_EQUAL,       // ==
+    [OPERATOR_NOT_EQUAL] = TOKEN_OPERATOR_NOT_EQUAL,   // !=
+    [OPERATOR_GREATER_EQUAL] = TOKEN_OPERATOR_GREATER_EQUAL, // >=
+    [OPERATOR_LESS_EQUAL] = TOKEN_OPERATOR_LESS_EQUAL,  // <=
+    [OPERATOR_ALSO] = TOKEN_OPERATOR_ALSO,        // &&
+    [OPERATOR_EITHER] = TOKEN_OPERATOR_EITHER,      // ||
+};
 OperatorState lookup_operator(unsigned char c) {
     if (c > max_oper_ascii_index) return OPERATOR_ERROR;
     else return operator_lookup[c];
 }
 
 void handle_operator(const char* input, int* index, ArrayList* token, State* next_state) {
-    OperatorState state = operator_state_table[OPERATOR_START][lookup_operator(input[*index])];
+    OperatorState prev_state = operator_state_table[OPERATOR_START][lookup_operator(input[*index])];
     arraylist_add(token, input[*index]);
 
     (*index)++;
-    state = operator_state_table[state][lookup_operator(input[*index])];
+    OperatorState state = operator_state_table[prev_state][lookup_operator(input[*index])];
 
     if (state == OPERATOR_ERROR) {
+        add_token(token, tokens, STATE_OPERATOR_TO_TOKEN_CONVERTER[prev_state]);
         return;
     }
 
     arraylist_add(token, input[*index]);
+    add_token(token, tokens, STATE_OPERATOR_TO_TOKEN_CONVERTER[state]);
     (*index)++;
 }
 
@@ -357,16 +398,16 @@ Tokens* tokenize(const char* input) {
     State state = START;
     ArrayList* token = arraylist_init(DEFAULT_TOKEN_SIZE);
 
-    TokensQueue* tokens = tokens_init();
+    tokens = tokens_init();
 
     init_keywords();
-
-    for (int i = 0; input[i] != '\0';) {
+    int i = 0;
+    while (input[i] != '\0') {
 
         char ch = input[i];
         State next_state = state_table[state][classifier_lookup[ch]];
 
-        if (state != START && state != COMMENT) {
+        if (state != START && state != COMMENT && state != OPERATOR) {
             arraylist_add(token, '\0');
             char* str_token = token->array;
             tokens_enqueue(tokens, str_token, STATE_TO_TOKEN_CONVERTER[state]);
