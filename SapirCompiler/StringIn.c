@@ -116,12 +116,13 @@ void stringin_insert_string(StringIn* s, const char* str) {
 
         s->is_end = false;
 
-        char buffer[256];
-		for (int i = 0; i < spos - str; i++)
-			buffer[i] = str[i];
+		char* buffer = (char*)malloc(spos - str + 1);
+        for (int i = 0; i < spos - str; i++)
+            buffer[i] = str[i];
 		buffer[spos - str] = '\0';
 
         s->to_clear = strdup(buffer);
+        free(buffer);
 
         s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP);
         if (!s->paths) {
