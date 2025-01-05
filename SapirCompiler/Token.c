@@ -57,7 +57,7 @@ void tokens_print(TokensQueue* queue) {
     [TOKEN_FLOAT_NUMBER] = "FLOAT NUMBER",
     [TOKEN_OPERATOR] = "OPERATOR",
     [TOKEN_KEYWORD] = "KEYWORD",
-    [TOKEN_STRING_LITERAL] = "String Literal",
+    [TOKEN_STRING_LITERAL] = "STRING LITERAL",
     [TOKEN_SEPARATOR] = "SEPARATOR",
 
     [TOKEN_OPERATOR_PLUS] = "+",

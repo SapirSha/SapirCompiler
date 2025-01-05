@@ -329,6 +329,7 @@ void handle_operator(const char* input, int* index, ArrayList* token, State* nex
     add_token(token, tokens, STATE_OPERATOR_TO_TOKEN_CONVERTER[state]);
     (*index)++;
 }
+// TO BE CHANGED LATER?
 static const Token_Types SEPARATOR_TO_TOKEN_CONVERTER[] = {
     ['('] = TOKEN_LPAREN,[')'] = TOKEN_RPAREN,
     ['{'] = TOKEN_LBRACES,['}'] = TOKEN_RBRACES,
@@ -429,7 +430,7 @@ Tokens* tokenize(const char* input) {
     init_keywords();
     int i = 0;
     while (input[i] != '\0') {
-        next_state = state_table[state][classifier_lookup[input[i]]];
+        next_state = state_table[START][classifier_lookup[input[i]]];
         call_state_function(input, &i, token, &next_state);
         state = next_state;
     }
