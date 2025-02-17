@@ -1,49 +1,223 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "LinkedList.h"
+#include <stdbool.h>
+#include <ctype.h>
 
-#define strdup _strdup
+#pragma warning(disable:4996)
 
-typedef struct NonTerminalRule {
-	char* nonterminal;
-	char* rule_content;
-} NonTerminalRule;
+#define MAX_ITEMS   100
+#define MAX_STATES  100
+#define MAX_RULES   100
+#define MAX_TOKEN_LEN 32
+
+typedef struct {
+    char nonterminal[MAX_TOKEN_LEN];
+    char ruleContent[256];
+} Rule;
+
+typedef struct {
+    Rule* rule;  
+    int dot;
+} LRItem;
+
+typedef struct {
+    LRItem items[MAX_ITEMS];
+    int numItems;
+} State;
+
+Rule rules[MAX_RULES];
+int numRules = 0;
+
+State* states[MAX_STATES];
+int numStates = 0;
 
 
-int add_rule(LinkedList* lst, char* nonterminal, char* rule_content) {
-	NonTerminalRule* rule = (NonTerminalRule*)malloc(sizeof(NonTerminalRule));
-	rule->nonterminal = strdup(nonterminal);
-	rule->rule_content = strdup(rule_content);
-	linkedlist_add(lst, rule);
+char* get_nth_token(const char* s, int n) {
+    static char buffer[256];
+    strncpy(buffer, s, sizeof(buffer));
+    buffer[sizeof(buffer) - 1] = '\0';
+    char* token = strtok(buffer, " ");
+    int count = 0;
+    while (token != NULL) {
+        if (count == n)
+            return token;
+        count++;
+        token = strtok(NULL, " ");
+    }
+    return NULL;
 }
 
-int compareNonTerminalRule(NonTerminalRule* r1, NonTerminalRule* r2) {
-	if (strcmp(r1->nonterminal, r2->nonterminal) != 0)
-		return strcmp(r1->nonterminal, r2->nonterminal);
-	else {
-		return strcmp(r1->rule_content, r2->rule_content);
-	}
+char* get_next_symbol(LRItem* item) {
+    return get_nth_token(item->rule->ruleContent, item->dot);
 }
 
-LinkedList* initiate_rules(char* nonterminal, char* rule_content) {
-	LinkedList* rules = linkedlist_init(sizeof(NonTerminalRule), compareNonTerminalRule);
-	add_rule(rules, nonterminal, rule_content);
-	return rules;
+bool state_contains_item(State* s, LRItem* item) {
+    for (int i = 0; i < s->numItems; i++) {
+        LRItem* it = &s->items[i];
+        if (it->rule == item->rule && it->dot == item->dot)
+            return true;
+    }
+    return false;
 }
 
-void print_rule(NonTerminalRule* r1) {
-	printf("\n%s -> %s", r1->nonterminal, r1->rule_content);
+void closure(State* s) {
+    bool added;
+    do {
+        added = false;
+        for (int i = 0; i < s->numItems; i++) {
+            LRItem* item = &s->items[i];
+            char* symbol = get_next_symbol(item);
+            if (symbol != NULL && isupper(symbol[0])) {
+                for (int j = 0; j < numRules; j++) {
+                    if (strcmp(rules[j].nonterminal, symbol) == 0) {
+                        LRItem newItem;
+                        newItem.rule = &rules[j];
+                        newItem.dot = 0;
+                        if (!state_contains_item(s, &newItem)) {
+                            s->items[s->numItems++] = newItem;
+                            added = true;
+                        }
+                    }
+                }
+            }
+        }
+    } while (added);
+}
+
+State* goto_state(State* s, const char* symbol) {
+    State* newState = malloc(sizeof(State));
+    newState->numItems = 0;
+    for (int i = 0; i < s->numItems; i++) {
+        LRItem item = s->items[i];
+        char* next = get_next_symbol(&item);
+        if (next != NULL && strcmp(next, symbol) == 0) {
+            LRItem advanced = item;
+            advanced.dot++;
+            if (!state_contains_item(newState, &advanced)) {
+                newState->items[newState->numItems++] = advanced;
+            }
+        }
+    }
+    closure(newState);
+    return newState;
+}
+
+bool state_equals(State* s1, State* s2) {
+    if (s1->numItems != s2->numItems) return false;
+    for (int i = 0; i < s1->numItems; i++) {
+        bool found = false;
+        for (int j = 0; j < s2->numItems; j++) {
+            if (s1->items[i].rule == s2->items[j].rule &&
+                s1->items[i].dot == s2->items[j].dot) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+    }
+    return true;
+}
+
+int find_state(State* s) {
+    for (int i = 0; i < numStates; i++) {
+        if (state_equals(states[i], s))
+            return i;
+    }
+    return -1;
+}
+
+void build_states() {
+    Rule augmented;
+    strcpy(augmented.nonterminal, "S'");
+    strcpy(augmented.ruleContent, "S $"); // S is start terminal
+    rules[numRules++] = augmented;
+
+    State* I0 = malloc(sizeof(State));
+    I0->numItems = 0;
+    LRItem startItem;
+    startItem.rule = &rules[numRules - 1];
+    startItem.dot = 0;
+    I0->items[I0->numItems++] = startItem;
+    closure(I0);
+    states[numStates++] = I0;
+
+    bool addedNew;
+    do {
+        addedNew = false;
+        for (int i = 0; i < numStates; i++) {
+            State* s = states[i];
+            for (int j = 0; j < s->numItems; j++) {
+                LRItem item = s->items[j];
+                char* symbol = get_next_symbol(&item);
+                if (symbol != NULL) {
+                    State* g = goto_state(s, symbol);
+                    if (g->numItems == 0) {
+                        free(g);
+                        continue;
+                    }
+                    int idx = find_state(g);
+                    if (idx == -1) {
+                        states[numStates++] = g;
+                        addedNew = true;
+                    }
+                    else {
+                        free(g);
+                    }
+                }
+            }
+        }
+    } while (addedNew);
+}
+
+void print_state(State* s, int index) {
+    printf("State %d:\n", index);
+    for (int i = 0; i < s->numItems; i++) {
+        LRItem* item = &s->items[i];
+        printf("  %s -> ", item->rule->nonterminal);
+        char buffer[256];
+        strcpy(buffer, item->rule->ruleContent);
+        char* token = strtok(buffer, " ");
+        int pos = 0;
+        while (token != NULL) {
+            if (pos == item->dot)
+                printf(". ");
+            printf("%s ", token);
+            pos++;
+            token = strtok(NULL, " ");
+        }
+        if (item->dot >= pos)
+            printf(". ");
+        printf("\n");
+    }
 }
 
 int main() {
-	LinkedList* rules = initiate_rules("Z", "S$");
-	add_rule(rules, "S", "aB");
-	add_rule(rules, "B", "cB");
-	add_rule(rules, "B", "d");
-	linkedlist_print(rules, print_rule);
+
+    numRules = 0;
+
+    Rule r1;
+    strcpy(r1.nonterminal, "S");
+    strcpy(r1.ruleContent, "a B");
+    rules[numRules++] = r1;
+
+    Rule r2;
+    strcpy(r2.nonterminal, "B");
+    strcpy(r2.ruleContent, "c B");
+    rules[numRules++] = r2;
+
+    Rule r3;
+    strcpy(r3.nonterminal, "B");
+    strcpy(r3.ruleContent, "d");
+    rules[numRules++] = r3;
+
+    build_states();
+
+    for (int i = 0; i < numStates; i++) {
+        print_state(states[i], i);
+        printf("\n");
+    }
 
 
-
-	return 0;
+    return 0;
 }

@@ -86,7 +86,7 @@ bool linkedlist_remove(LinkedList* lst, void* value) {
 	return true;
 }
 void* linkedlist_get(LinkedList* lst, unsigned int index) {
-	if (index > lst->length) return NULL;
+	if (index >= lst->length) return NULL;
 	LinkedListNode* pointer = lst->head;
 	while (index-- > 0) pointer = pointer->next;
 	return pointer->value;

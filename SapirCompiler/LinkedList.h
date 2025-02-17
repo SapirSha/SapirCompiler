@@ -23,7 +23,7 @@ bool linkedlist_contains(LinkedList*, void*);
 // LinkedList
 void linkedlist_add(LinkedList*, void*);
 bool linkedlist_remove(LinkedList*, void*);
-void* linkedlist_get(LinkedList*, void*);
+void* linkedlist_get(LinkedList*, unsigned int);
 // LinkedList
 
 // Stack
