@@ -6,10 +6,10 @@
 
 #pragma warning(disable:4996)
 
-#define MAX_ITEMS   100
-#define MAX_STATES  100
-#define MAX_RULES   100
-#define MAX_TOKEN_LEN 32
+#define MAX_ITEMS       100
+#define MAX_STATES      100
+#define MAX_RULES       100
+#define MAX_TOKEN_LEN   32
 
 typedef struct {
     char nonterminal[MAX_TOKEN_LEN];
@@ -17,7 +17,7 @@ typedef struct {
 } Rule;
 
 typedef struct {
-    Rule* rule;  
+    Rule* rule;
     int dot;
 } LRItem;
 
@@ -32,18 +32,30 @@ int numRules = 0;
 State* states[MAX_STATES];
 int numStates = 0;
 
-
 char* get_nth_token(const char* s, int n) {
-    static char buffer[256];
-    strncpy(buffer, s, sizeof(buffer));
-    buffer[sizeof(buffer) - 1] = '\0';
-    char* token = strtok(buffer, " ");
-    int count = 0;
-    while (token != NULL) {
-        if (count == n)
+    static char token[256];
+    int currentToken = 0;
+    const char* p = s;
+
+    while (*p) {
+        while (*p && isspace((unsigned char)*p))
+            p++;
+        if (!*p) break;
+
+        if (currentToken == n) {
+            int i = 0;
+            while (*p && !isspace((unsigned char)*p)) {
+                token[i++] = *p;
+                p++;
+            }
+            token[i] = '\0';
             return token;
-        count++;
-        token = strtok(NULL, " ");
+        }
+        else {
+            while (*p && !isspace((unsigned char)*p))
+                p++;
+            currentToken++;
+        }
     }
     return NULL;
 }
@@ -127,10 +139,16 @@ int find_state(State* s) {
     return -1;
 }
 
-void build_states() {
+void build_states(char* start_nonterminal) {
     Rule augmented;
     strcpy(augmented.nonterminal, "S'");
-    strcpy(augmented.ruleContent, "S $"); // S is start terminal
+    {
+        int len = strlen(start_nonterminal) + 3;
+        char* buffer = malloc(len);
+        snprintf(buffer, len, "%s $", start_nonterminal);
+        strcpy(augmented.ruleContent, buffer);
+        free(buffer);
+    }
     rules[numRules++] = augmented;
 
     State* I0 = malloc(sizeof(State));
@@ -147,23 +165,37 @@ void build_states() {
         addedNew = false;
         for (int i = 0; i < numStates; i++) {
             State* s = states[i];
+            char symbols[100][MAX_TOKEN_LEN];
+            int symbolCount = 0;
             for (int j = 0; j < s->numItems; j++) {
-                LRItem item = s->items[j];
-                char* symbol = get_next_symbol(&item);
-                if (symbol != NULL) {
-                    State* g = goto_state(s, symbol);
-                    if (g->numItems == 0) {
-                        free(g);
-                        continue;
+                char* sym = get_next_symbol(&s->items[j]);
+                if (sym != NULL) {
+                    bool exists = false;
+                    for (int k = 0; k < symbolCount; k++) {
+                        if (strcmp(sym, symbols[k]) == 0) {
+                            exists = true;
+                            break;
+                        }
                     }
-                    int idx = find_state(g);
-                    if (idx == -1) {
-                        states[numStates++] = g;
-                        addedNew = true;
+                    if (!exists) {
+                        strcpy(symbols[symbolCount], sym);
+                        symbolCount++;
                     }
-                    else {
-                        free(g);
-                    }
+                }
+            }
+            for (int k = 0; k < symbolCount; k++) {
+                State* g = goto_state(s, symbols[k]);
+                if (g->numItems == 0) {
+                    free(g);
+                    continue;
+                }
+                int idx = find_state(g);
+                if (idx == -1) {
+                    states[numStates++] = g;
+                    addedNew = true;
+                }
+                else {
+                    free(g);
                 }
             }
         }
@@ -193,12 +225,22 @@ void print_state(State* s, int index) {
 }
 
 int main() {
-
     numRules = 0;
+
+    // Defined grammar:
+    // S -> a c B
+    // B -> c B
+    // B -> d C
+    // B -> f
+    // C -> e
+
+    // UPPER CASE FOR NONTERMINALS
+    // LOWERCASE FOR TERMINALS
+    // SPACE SEPARATES SYMBOLS
 
     Rule r1;
     strcpy(r1.nonterminal, "S");
-    strcpy(r1.ruleContent, "a B");
+    strcpy(r1.ruleContent, "a c B");
     rules[numRules++] = r1;
 
     Rule r2;
@@ -208,16 +250,25 @@ int main() {
 
     Rule r3;
     strcpy(r3.nonterminal, "B");
-    strcpy(r3.ruleContent, "d");
+    strcpy(r3.ruleContent, "d C");
     rules[numRules++] = r3;
 
-    build_states();
+    Rule r4;
+    strcpy(r4.nonterminal, "B");
+    strcpy(r4.ruleContent, "f");
+    rules[numRules++] = r4;
+
+    Rule r5;
+    strcpy(r5.nonterminal, "C");
+    strcpy(r5.ruleContent, "e");
+    rules[numRules++] = r5;
+
+    build_states("S");
 
     for (int i = 0; i < numStates; i++) {
         print_state(states[i], i);
         printf("\n");
     }
-
 
     return 0;
 }
