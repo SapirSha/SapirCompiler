@@ -259,7 +259,7 @@ static const OperatorState operator_lookup[] = {
     ['&'] = OPERATOR_AND,['|'] = OPERATOR_OR,['^'] = OPERATOR_XOR,['!'] = OPERATOR_NOT,
 }; int max_oper_ascii_index = sizeof(operator_lookup) / sizeof(char);
 
-
+////////////////////////////////////////////////////////////////////// <-------------------- ADD THIS TO KEYWORDS FINDER (COMPACT TRIE
 static const OperatorState operator_state_table[NUM_OPERATOR_STATES][NUM_OPERATOR_STATES] = {
     // State: / Got:       +  PLUS               - MINUS               * MULTIPLY           / DIVIDE               = EQUAL                > GREATER              < LESS               % MODULO           & AND               | OR                ^ XOR           ! NOT       
     /* Start */         {OPERATOR_ERROR, OPERATOR_PLUS,       OPERATOR_MINUS,       OPERATOR_MULTIPLY,   OPERATOR_DIVIDE,       OPERATOR_ASSIGN,         OPERATOR_GREATER,     OPERATOR_LESS,      OPERATOR_MODULO,   OPERATOR_AND,      OPERATOR_OR,        OPERATOR_XOR,     OPERATOR_NOT  },  // Start state
