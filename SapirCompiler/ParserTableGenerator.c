@@ -10,6 +10,7 @@
 #define MAX_STATES      100
 #define MAX_RULES       100
 #define MAX_TOKEN_LEN   32
+#define MAX_SYMBOLS     50
 
 typedef struct {
     char nonterminal[MAX_TOKEN_LEN];
@@ -41,7 +42,6 @@ char* get_nth_token(const char* s, int n) {
         while (*p && isspace((unsigned char)*p))
             p++;
         if (!*p) break;
-
         if (currentToken == n) {
             int i = 0;
             while (*p && !isspace((unsigned char)*p)) {
@@ -139,6 +139,7 @@ int find_state(State* s) {
     return -1;
 }
 
+
 void build_states(char* start_nonterminal) {
     Rule augmented;
     strcpy(augmented.nonterminal, "S'");
@@ -224,50 +225,352 @@ void print_state(State* s, int index) {
     }
 }
 
+char nonterminalsList[MAX_SYMBOLS][MAX_TOKEN_LEN];
+int numNonterminals = 0;
+char terminalsList[MAX_SYMBOLS][MAX_TOKEN_LEN];
+int numTerminals = 0;
+
+bool symbol_exists(char arr[][MAX_TOKEN_LEN], int count, const char* sym) {
+    for (int i = 0; i < count; i++) {
+        if (strcmp(arr[i], sym) == 0)
+            return true;
+    }
+    return false;
+}
+
+void collect_symbols() {
+    for (int i = 0; i < numRules; i++) {
+        if (!symbol_exists(nonterminalsList, numNonterminals, rules[i].nonterminal)) {
+            strcpy(nonterminalsList[numNonterminals++], rules[i].nonterminal);
+        }
+        char buffer[256];
+        strcpy(buffer, rules[i].ruleContent);
+        char* token = strtok(buffer, " ");
+        while (token != NULL) {
+            if (!(isupper(token[0]) || strcmp(token, "$") == 0)) {
+                if (!symbol_exists(terminalsList, numTerminals, token)) {
+                    strcpy(terminalsList[numTerminals++], token);
+                }
+            }
+            else {
+                if (!symbol_exists(nonterminalsList, numNonterminals, token)) {
+                    strcpy(nonterminalsList[numNonterminals++], token);
+                }
+            }
+            token = strtok(NULL, " ");
+        }
+    }
+    if (!symbol_exists(terminalsList, numTerminals, "$")) {
+        strcpy(terminalsList[numTerminals++], "$");
+    }
+}
+
+bool follow[MAX_SYMBOLS][MAX_SYMBOLS] = { false };
+
+void init_follow() {
+    for (int i = 0; i < numNonterminals; i++) {
+        for (int j = 0; j < numTerminals; j++) {
+            follow[i][j] = false;
+        }
+    }
+    int idx = -1;
+    for (int i = 0; i < numNonterminals; i++) {
+        if (strcmp(nonterminalsList[i], "S'") == 0) {
+            idx = i;
+            break;
+        }
+    }
+    if (idx != -1) {
+        for (int j = 0; j < numTerminals; j++) {
+            if (strcmp(terminalsList[j], "$") == 0) {
+                follow[idx][j] = true;
+                break;
+            }
+        }
+    }
+}
+
+void compute_follow() {
+    init_follow();
+    bool changed;
+    do {
+        changed = false;
+        for (int i = 0; i < numRules; i++) {
+            char* A = rules[i].nonterminal;
+            char buffer[256];
+            strcpy(buffer, rules[i].ruleContent);
+            char* tokens[50];
+            int ntokens = 0;
+            char* tok = strtok(buffer, " ");
+            while (tok != NULL) {
+                tokens[ntokens++] = tok;
+                tok = strtok(NULL, " ");
+            }
+            for (int j = 0; j < ntokens; j++) {
+                if (isupper(tokens[j][0]) || strcmp(tokens[j], "S'") == 0) {
+                    if (j + 1 < ntokens) {
+                        if (!(isupper(tokens[j + 1][0]) || strcmp(tokens[j + 1], "S'") == 0)) {
+                            int Aidx = -1;
+                            for (int k = 0; k < numNonterminals; k++) {
+                                if (strcmp(nonterminalsList[k], tokens[j]) == 0)
+                                    Aidx = k;
+                            }
+                            int termIdx = -1;
+                            for (int k = 0; k < numTerminals; k++) {
+                                if (strcmp(terminalsList[k], tokens[j + 1]) == 0)
+                                    termIdx = k;
+                            }
+                            if (Aidx != -1 && termIdx != -1 && !follow[Aidx][termIdx]) {
+                                follow[Aidx][termIdx] = true;
+                                changed = true;
+                            }
+                        }
+                        else {
+                            int Bidx = -1;
+                            for (int k = 0; k < numNonterminals; k++) {
+                                if (strcmp(nonterminalsList[k], tokens[j + 1]) == 0)
+                                    Bidx = k;
+                            }
+                            if (Bidx != -1) {
+                                char sample[256] = "";
+                                for (int r = 0; r < numRules; r++) {
+                                    if (strcmp(rules[r].nonterminal, tokens[j + 1]) == 0) {
+                                        strcpy(sample, rules[r].ruleContent);
+                                        break;
+                                    }
+                                }
+                                char* firstSym = get_nth_token(sample, 0);
+                                if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "S'") == 0)) {
+                                    int termIdx = -1;
+                                    for (int k = 0; k < numTerminals; k++) {
+                                        if (strcmp(terminalsList[k], firstSym) == 0)
+                                            termIdx = k;
+                                    }
+                                    int Aidx = -1;
+                                    for (int k = 0; k < numNonterminals; k++) {
+                                        if (strcmp(nonterminalsList[k], tokens[j]) == 0)
+                                            Aidx = k;
+                                    }
+                                    if (Aidx != -1 && termIdx != -1 && !follow[Aidx][termIdx]) {
+                                        follow[Aidx][termIdx] = true;
+                                        changed = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        int Aidx = -1;
+                        for (int k = 0; k < numNonterminals; k++) {
+                            if (strcmp(nonterminalsList[k], tokens[j]) == 0)
+                                Aidx = k;
+                        }
+                        int LHSidx = -1;
+                        for (int k = 0; k < numNonterminals; k++) {
+                            if (strcmp(nonterminalsList[k], A) == 0)
+                                LHSidx = k;
+                        }
+                        if (Aidx != -1 && LHSidx != -1) {
+                            for (int t = 0; t < numTerminals; t++) {
+                                if (follow[LHSidx][t] && !follow[Aidx][t]) {
+                                    follow[Aidx][t] = true;
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } while (changed);
+}
+
+
+char* actionTable[MAX_STATES][MAX_SYMBOLS];
+int gotoTable[MAX_STATES][MAX_SYMBOLS]; 
+
+int getTerminalIndex(const char* sym) {
+    for (int i = 0; i < numTerminals; i++) {
+        if (strcmp(terminalsList[i], sym) == 0)
+            return i;
+    }
+    return -1;
+}
+
+int getNonterminalIndex(const char* sym) {
+    for (int i = 0; i < numNonterminals; i++) {
+        if (strcmp(nonterminalsList[i], sym) == 0)
+            return i;
+    }
+    return -1;
+}
+
+void build_parsing_tables() {
+    for (int i = 0; i < numStates; i++) {
+        for (int j = 0; j < numTerminals; j++) {
+            actionTable[i][j] = strdup("error");
+        }
+        for (int j = 0; j < numNonterminals; j++) {
+            gotoTable[i][j] = -1;
+        }
+    }
+
+    for (int i = 0; i < numStates; i++) {
+        State* s = states[i];
+        char symbols[100][MAX_TOKEN_LEN];
+        int symbolCount = 0;
+        for (int j = 0; j < s->numItems; j++) {
+            char* sym = get_next_symbol(&s->items[j]);
+            if (sym != NULL) {
+                bool exists = false;
+                for (int k = 0; k < symbolCount; k++) {
+                    if (strcmp(sym, symbols[k]) == 0) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    strcpy(symbols[symbolCount], sym);
+                    symbolCount++;
+                }
+            }
+        }
+        for (int k = 0; k < symbolCount; k++) {
+            State* g = goto_state(s, symbols[k]);
+            if (g->numItems == 0) {
+                free(g);
+                continue;
+            }
+            int j = find_state(g);
+            if (j == -1) {
+                free(g);
+                continue;
+            }
+            if (!(isupper(symbols[k][0]) || strcmp(symbols[k], "S'") == 0)) {
+                int termIdx = getTerminalIndex(symbols[k]);
+                if (termIdx != -1) {
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "s%d", j);
+                    free(actionTable[i][termIdx]);
+                    actionTable[i][termIdx] = strdup(buf);
+                }
+            }
+            else { 
+                int ntIdx = getNonterminalIndex(symbols[k]);
+                if (ntIdx != -1) {
+                    gotoTable[i][ntIdx] = j;
+                }
+            }
+            free(g);
+        }
+    }
+
+    for (int i = 0; i < numStates; i++) {
+        State* s = states[i];
+        for (int j = 0; j < s->numItems; j++) {
+            LRItem* item = &s->items[j];
+            int tokenCount = 0;
+            char buf[256];
+            strcpy(buf, item->rule->ruleContent);
+            char* t = strtok(buf, " ");
+            while (t != NULL) {
+                tokenCount++;
+                t = strtok(NULL, " ");
+            }
+            if (item->dot == tokenCount) {
+                if (strcmp(item->rule->nonterminal, "S'") == 0) {
+                    int dollarIdx = getTerminalIndex("$");
+                    if (dollarIdx != -1) {
+                        free(actionTable[i][dollarIdx]);
+                        actionTable[i][dollarIdx] = strdup("acc");
+                    }
+                }
+                else {
+                    int Aidx = getNonterminalIndex(item->rule->nonterminal);
+                    for (int k = 0; k < numTerminals; k++) {
+                        if (follow[Aidx][k]) {
+                            char buf2[32];
+                            int prodNum = (int)(item->rule - rules);
+                            snprintf(buf2, sizeof(buf2), "r%d", prodNum);
+                            free(actionTable[i][k]);
+                            actionTable[i][k] = strdup(buf2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void print_parsing_tables() {
+    printf("ACTION TABLE:\n");
+    printf("State\t");
+    for (int j = 0; j < numTerminals; j++) {
+        printf("%s\t", terminalsList[j]);
+    }
+    printf("\n");
+    for (int i = 0; i < numStates; i++) {
+        printf("%d\t", i);
+        for (int j = 0; j < numTerminals; j++) {
+            printf("%s\t", actionTable[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\nGOTO TABLE:\n");
+    printf("State\t");
+    for (int j = 0; j < numNonterminals; j++) {
+        printf("%s\t", nonterminalsList[j]);
+    }
+    printf("\n");
+    for (int i = 0; i < numStates; i++) {
+        printf("%d\t", i);
+        for (int j = 0; j < numNonterminals; j++) {
+            if (gotoTable[i][j] == -1)
+                printf("err\t");
+            else
+                printf("%d\t", gotoTable[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void add_rule(char* nonterminal, char* content) {
+    Rule rule;
+    strcpy(rule.nonterminal, nonterminal);
+    strcpy(rule.ruleContent, content);
+    rules[numRules++] = rule;
+}
+
 int main() {
     numRules = 0;
 
-    // Defined grammar:
-    // S -> a c B
-    // B -> c B
-    // B -> d C
-    // B -> f
-    // C -> e
 
-    // UPPER CASE FOR NONTERMINALS
-    // LOWERCASE FOR TERMINALS
-    // SPACE SEPARATES SYMBOLS
+    add_rule("E", "E + T");
+    add_rule("E", "E - T");
+    add_rule("E", "T");
+    add_rule("T", "T * F");
+    add_rule("T", "F");
+    add_rule("F", "id");
+    add_rule("F", "number");
 
-    Rule r1;
-    strcpy(r1.nonterminal, "S");
-    strcpy(r1.ruleContent, "a c B");
-    rules[numRules++] = r1;
-
-    Rule r2;
-    strcpy(r2.nonterminal, "B");
-    strcpy(r2.ruleContent, "c B");
-    rules[numRules++] = r2;
-
-    Rule r3;
-    strcpy(r3.nonterminal, "B");
-    strcpy(r3.ruleContent, "d C");
-    rules[numRules++] = r3;
-
-    Rule r4;
-    strcpy(r4.nonterminal, "B");
-    strcpy(r4.ruleContent, "f");
-    rules[numRules++] = r4;
-
-    Rule r5;
-    strcpy(r5.nonterminal, "C");
-    strcpy(r5.ruleContent, "e");
-    rules[numRules++] = r5;
-
-    build_states("S");
+    build_states("E");
 
     for (int i = 0; i < numStates; i++) {
         print_state(states[i], i);
         printf("\n");
+    }
+
+    collect_symbols();
+    compute_follow();
+
+    build_parsing_tables();
+
+    print_parsing_tables();
+
+    for (int i = 0; i < numStates; i++) {
+        for (int j = 0; j < numTerminals; j++) {
+            free(actionTable[i][j]);
+        }
     }
 
     return 0;
