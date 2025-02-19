@@ -143,6 +143,7 @@
     <ClInclude Include="HashSet.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="ParserTableGenerator.h" />
     <ClInclude Include="StringIn.h" />
     <ClInclude Include="Tokens.h" />
   </ItemGroup>

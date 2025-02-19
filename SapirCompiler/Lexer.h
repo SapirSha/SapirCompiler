@@ -3,6 +3,6 @@
 
 #include "Tokens.h"
 
-Tokens* tokenize(const char* input);
+TokensQueue* tokenize(const char* input);
 
 #endif

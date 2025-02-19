@@ -421,7 +421,7 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* n
 }
 
 // FSM for tokenization
-Tokens* tokenize(const char* input) {
+TokensQueue* tokenize(const char* input) {
     State state = START, next_state;
     ArrayList* token = arraylist_init(DEFAULT_TOKEN_SIZE);
 

@@ -64,6 +64,8 @@ typedef enum {
     TOKEN_COMMA,
 
     TOKEN_EOF,
+
+    NUM_OF_TOKENS
 }Token_Types;
 
 typedef struct Tokens{

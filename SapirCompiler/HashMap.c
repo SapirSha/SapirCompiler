@@ -15,7 +15,6 @@ static unsigned int hash(const char* str, int capacity) {
 
 
 HashMap* createHashMap(int size) {
-    printf("CREATING HASHMAP\n");
     HashMap* hashMap = malloc(sizeof(HashMap));
     if (!hashMap) {
         printf("Memory allocation failed\n");
@@ -36,7 +35,6 @@ HashMap* createHashMap(int size) {
 void hashmap_insert(HashMap* hashMap, char* key, void* value) {
     // Resize if the load factor exceeds the threshold
     if ((float)(hashMap->count + 1) / hashMap->size > MAX_LOAD_FACTOR) {
-        printf("Resizing the hash table...\n");
         // Double the table size
         int newSize = (int)(hashMap->size * GROWTH_FACTOR);
         KeyValuePair** newTable = malloc(sizeof(KeyValuePair*) * newSize);
@@ -73,7 +71,6 @@ void hashmap_insert(HashMap* hashMap, char* key, void* value) {
     KeyValuePair* p = hashMap->table[index];
     bool found = false;
     while (p != NULL) {
-        printf("COLLISION IN HASHMAP!\n");
         if (strcmp(p->key, key) == 0) {
             p->value = value;
             found = true;
@@ -97,7 +94,6 @@ void* hashmap_get(HashMap* hashMap, char* key) {
         if (strcmp(current->key, key) == 0) {
             return current->value;
         }
-        printf("--- HASHMAP_SEARCH_COLLISION ---\n");
         current = current->next;
     }
     return NULL;

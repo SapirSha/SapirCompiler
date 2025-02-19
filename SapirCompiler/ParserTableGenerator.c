@@ -2,30 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "ParserTableGenerator.h"
+#include "Tokens.h"
+#include "HashMap.h"
 #include <ctype.h>
 
 #pragma warning(disable:4996)
-
-#define MAX_ITEMS       100
-#define MAX_STATES      100
-#define MAX_RULES       100
-#define MAX_TOKEN_LEN   32
-#define MAX_SYMBOLS     50
-
-typedef struct {
-    char nonterminal[MAX_TOKEN_LEN];
-    char ruleContent[256];
-} Rule;
-
-typedef struct {
-    Rule* rule;
-    int dot;
-} LRItem;
-
-typedef struct {
-    LRItem items[MAX_ITEMS];
-    int numItems;
-} State;
 
 Rule rules[MAX_RULES];
 int numRules = 0;
@@ -386,9 +368,6 @@ void compute_follow() {
 }
 
 
-char* actionTable[MAX_STATES][MAX_SYMBOLS];
-int gotoTable[MAX_STATES][MAX_SYMBOLS]; 
-
 int getTerminalIndex(const char* sym) {
     for (int i = 0; i < numTerminals; i++) {
         if (strcmp(terminalsList[i], sym) == 0)
@@ -532,6 +511,7 @@ void print_parsing_tables() {
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 void add_rule(char* nonterminal, char* content) {
@@ -541,10 +521,46 @@ void add_rule(char* nonterminal, char* content) {
     rules[numRules++] = rule;
 }
 
-int main() {
+
+
+int find_column_of_terminal_in_table(char* terminal) {
+    int i;
+    for (i = 0; i < numTerminals && strcmp(terminalsList[i], terminal); i++);
+    if (i < numTerminals) return i;
+    else {
+        printf("UNKNOWN TERMINAL %s", terminal);
+        exit(0);
+    }
+}
+
+#define printassosiation(STR) printf("%s = %d\n", #STR, assosiation_array[STR]);
+void create_assosiation_map() {
+    assosiation_array[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("id");
+    printassosiation(TOKEN_IDENTIFIER);
+    assosiation_array[TOKEN_OPERATOR_PLUS] = find_column_of_terminal_in_table("+");
+    printassosiation(TOKEN_OPERATOR_PLUS);
+    assosiation_array[TOKEN_OPERATOR_MINUS] = find_column_of_terminal_in_table("-");
+    printassosiation(TOKEN_OPERATOR_MINUS);
+    assosiation_array[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
+    printassosiation(TOKEN_NUMBER);
+    assosiation_array[TOKEN_FLOAT] = find_column_of_terminal_in_table("number");
+    printassosiation(TOKEN_FLOAT);
+}
+
+
+
+
+
+
+
+int create_parser_tables() {
     numRules = 0;
 
+    // UPERCASE FOR NONTERMINAL
+    // LOWERCASE FOR TERMINAL
+    // SEPARATE TOKENS WITH SPACE
 
+    add_rule("S", "E");
     add_rule("E", "E + T");
     add_rule("E", "E - T");
     add_rule("E", "T");
@@ -553,25 +569,21 @@ int main() {
     add_rule("F", "id");
     add_rule("F", "number");
 
-    build_states("E");
-
+    build_states("S");
+    
     for (int i = 0; i < numStates; i++) {
         print_state(states[i], i);
         printf("\n");
     }
-
+    
     collect_symbols();
     compute_follow();
 
     build_parsing_tables();
 
     print_parsing_tables();
-
-    for (int i = 0; i < numStates; i++) {
-        for (int j = 0; j < numTerminals; j++) {
-            free(actionTable[i][j]);
-        }
-    }
-
+    
+    create_assosiation_map();
+    
     return 0;
 }
