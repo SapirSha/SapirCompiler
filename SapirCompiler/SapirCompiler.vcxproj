@@ -132,6 +132,8 @@
     <ClCompile Include="HashSet.c" />
     <ClCompile Include="Lexer.c" />
     <ClCompile Include="LinkedList.c" />
+    <ClCompile Include="Matrix.c" />
+    <ClCompile Include="Parser.c" />
     <ClCompile Include="ParserTableGenerator.c" />
     <ClCompile Include="Program.c" />
     <ClCompile Include="StringIn.c" />
@@ -143,6 +145,8 @@
     <ClInclude Include="HashSet.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Parser.h" />
     <ClInclude Include="ParserTableGenerator.h" />
     <ClInclude Include="StringIn.h" />
     <ClInclude Include="Tokens.h" />

@@ -7,13 +7,34 @@
 #include "HashMap.h"
 #include <ctype.h>
 
-#pragma warning(disable:4996)
+#define strdup _strdup
 
-Rule rules[MAX_RULES];
-int numRules = 0;
+#pragma warning(disable:4996)
 
 State* states[MAX_STATES];
 int numStates = 0;
+
+int count_terminals(char* rule_content) {
+    int count = 0;
+    bool in_terminal = false;
+
+    while (*rule_content != '\0') {
+        if (*rule_content != ' ' && !in_terminal) count++;
+        in_terminal = *rule_content != ' ' ? true : false;
+        rule_content++;
+    }
+
+    return count;
+}
+
+void add_rule(char* nonterminal, char* content) {
+    Rule rule;
+    strcpy(rule.nonterminal, nonterminal);
+    rule.ruleContent = strdup(content);
+    rule.rule_terminal_count = count_terminals(content);
+    rule.rule_id = rules->size;
+    arraylist_add(rules, &rule);
+}
 
 char* get_nth_token(const char* s, int n) {
     static char token[256];
@@ -63,10 +84,10 @@ void closure(State* s) {
             LRItem* item = &s->items[i];
             char* symbol = get_next_symbol(item);
             if (symbol != NULL && isupper(symbol[0])) {
-                for (int j = 0; j < numRules; j++) {
-                    if (strcmp(rules[j].nonterminal, symbol) == 0) {
+                for (int j = 0; j < rules->size; j++) {
+                    if (strcmp(((Rule*)rules->array[j])->nonterminal, symbol) == 0) {
                         LRItem newItem;
-                        newItem.rule = &rules[j];
+                        newItem.rule = ((Rule*)rules->array[j]);
                         newItem.dot = 0;
                         if (!state_contains_item(s, &newItem)) {
                             s->items[s->numItems++] = newItem;
@@ -123,21 +144,28 @@ int find_state(State* s) {
 
 
 void build_states(char* start_nonterminal) {
+    /*
     Rule augmented;
-    strcpy(augmented.nonterminal, "S'");
-    {
-        int len = strlen(start_nonterminal) + 3;
-        char* buffer = malloc(len);
-        snprintf(buffer, len, "%s $", start_nonterminal);
-        strcpy(augmented.ruleContent, buffer);
-        free(buffer);
-    }
+    strcpy(augmented.nonterminal, "START'");
+    
+    int len = strlen(start_nonterminal) + 3;
+    char* buffer = malloc(len);
+    snprintf(buffer, len, "%s $", start_nonterminal);
+    augmented.ruleContent = strdup(buffer);
+    free(buffer);
+    
     rules[numRules++] = augmented;
+    */
+    int len = strlen(start_nonterminal) + 3;
+    char* buffer = malloc(len);
+    sprintf(buffer, "%s $", start_nonterminal);
+    add_rule("START'", buffer);
+    free(buffer);
 
     State* I0 = malloc(sizeof(State));
     I0->numItems = 0;
     LRItem startItem;
-    startItem.rule = &rules[numRules - 1];
+    startItem.rule = ((Rule*)rules->array[rules->size - 1]);
     startItem.dot = 0;
     I0->items[I0->numItems++] = startItem;
     closure(I0);
@@ -221,12 +249,12 @@ bool symbol_exists(char arr[][MAX_TOKEN_LEN], int count, const char* sym) {
 }
 
 void collect_symbols() {
-    for (int i = 0; i < numRules; i++) {
-        if (!symbol_exists(nonterminalsList, numNonterminals, rules[i].nonterminal)) {
-            strcpy(nonterminalsList[numNonterminals++], rules[i].nonterminal);
+    for (int i = 0; i < rules->size; i++) {
+        if (!symbol_exists(nonterminalsList, numNonterminals, ((Rule*)rules->array[i])->nonterminal)) {
+            strcpy(nonterminalsList[numNonterminals++], ((Rule*)rules->array[i])->nonterminal);
         }
         char buffer[256];
-        strcpy(buffer, rules[i].ruleContent);
+        strcpy(buffer, ((Rule*)rules->array[i])->ruleContent);
         char* token = strtok(buffer, " ");
         while (token != NULL) {
             if (!(isupper(token[0]) || strcmp(token, "$") == 0)) {
@@ -257,7 +285,7 @@ void init_follow() {
     }
     int idx = -1;
     for (int i = 0; i < numNonterminals; i++) {
-        if (strcmp(nonterminalsList[i], "S'") == 0) {
+        if (strcmp(nonterminalsList[i], "START'") == 0) {
             idx = i;
             break;
         }
@@ -277,10 +305,10 @@ void compute_follow() {
     bool changed;
     do {
         changed = false;
-        for (int i = 0; i < numRules; i++) {
-            char* A = rules[i].nonterminal;
+        for (int i = 0; i < rules->size; i++) {
+            char* A = ((Rule*)rules->array[i])->nonterminal;
             char buffer[256];
-            strcpy(buffer, rules[i].ruleContent);
+            strcpy(buffer, ((Rule*)rules->array[i])->ruleContent);
             char* tokens[50];
             int ntokens = 0;
             char* tok = strtok(buffer, " ");
@@ -289,9 +317,9 @@ void compute_follow() {
                 tok = strtok(NULL, " ");
             }
             for (int j = 0; j < ntokens; j++) {
-                if (isupper(tokens[j][0]) || strcmp(tokens[j], "S'") == 0) {
+                if (isupper(tokens[j][0]) || strcmp(tokens[j], "START'") == 0) {
                     if (j + 1 < ntokens) {
-                        if (!(isupper(tokens[j + 1][0]) || strcmp(tokens[j + 1], "S'") == 0)) {
+                        if (!(isupper(tokens[j + 1][0]) || strcmp(tokens[j + 1], "START'") == 0)) {
                             int Aidx = -1;
                             for (int k = 0; k < numNonterminals; k++) {
                                 if (strcmp(nonterminalsList[k], tokens[j]) == 0)
@@ -315,14 +343,14 @@ void compute_follow() {
                             }
                             if (Bidx != -1) {
                                 char sample[256] = "";
-                                for (int r = 0; r < numRules; r++) {
-                                    if (strcmp(rules[r].nonterminal, tokens[j + 1]) == 0) {
-                                        strcpy(sample, rules[r].ruleContent);
+                                for (int r = 0; r < rules->size; r++) {
+                                    if (strcmp(((Rule*)rules->array[r])->nonterminal, tokens[j + 1]) == 0) {
+                                        strcpy(sample, ((Rule*)rules->array[r])->ruleContent);
                                         break;
                                     }
                                 }
                                 char* firstSym = get_nth_token(sample, 0);
-                                if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "S'") == 0)) {
+                                if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) {
                                     int termIdx = -1;
                                     for (int k = 0; k < numTerminals; k++) {
                                         if (strcmp(terminalsList[k], firstSym) == 0)
@@ -425,7 +453,7 @@ void build_parsing_tables() {
                 free(g);
                 continue;
             }
-            if (!(isupper(symbols[k][0]) || strcmp(symbols[k], "S'") == 0)) {
+            if (!(isupper(symbols[k][0]) || strcmp(symbols[k], "START'") == 0)) {
                 int termIdx = getTerminalIndex(symbols[k]);
                 if (termIdx != -1) {
                     char buf[32];
@@ -457,7 +485,7 @@ void build_parsing_tables() {
                 t = strtok(NULL, " ");
             }
             if (item->dot == tokenCount) {
-                if (strcmp(item->rule->nonterminal, "S'") == 0) {
+                if (strcmp(item->rule->nonterminal, "START'") == 0) {
                     int dollarIdx = getTerminalIndex("$");
                     if (dollarIdx != -1) {
                         free(actionTable[i][dollarIdx]);
@@ -468,9 +496,9 @@ void build_parsing_tables() {
                     int Aidx = getNonterminalIndex(item->rule->nonterminal);
                     for (int k = 0; k < numTerminals; k++) {
                         if (follow[Aidx][k]) {
-                            char buf2[32];
-                            int prodNum = (int)(item->rule - rules);
-                            snprintf(buf2, sizeof(buf2), "r%d", prodNum);
+                            char buf2[sizeof(int) + 3];
+                            int prodNum = item->rule->rule_id;
+                            snprintf(buf2, sizeof(buf2), "r%d", item->rule->rule_id);
                             free(actionTable[i][k]);
                             actionTable[i][k] = strdup(buf2);
                         }
@@ -514,12 +542,9 @@ void print_parsing_tables() {
     printf("\n");
 }
 
-void add_rule(char* nonterminal, char* content) {
-    Rule rule;
-    strcpy(rule.nonterminal, nonterminal);
-    strcpy(rule.ruleContent, content);
-    rules[numRules++] = rule;
-}
+
+
+
 
 
 
@@ -548,17 +573,23 @@ void create_assosiation_map() {
 }
 
 
-
+void print_rules() {
+    for (int i = 0; i < rules->size; i++) {
+        printf("Rule %d: %s -> %s (length: %d)\n", ((Rule*)rules->array[i])->rule_id, ((Rule*)rules->array[i])->nonterminal, ((Rule*)rules->array[i])->ruleContent, ((Rule*)rules->array[i])->rule_terminal_count);
+    }
+}
 
 
 
 
 int create_parser_tables() {
-    numRules = 0;
+    rules = arraylist_init(sizeof(Rule), 50);
 
     // UPERCASE FOR NONTERMINAL
     // LOWERCASE FOR TERMINAL
     // SEPARATE TOKENS WITH SPACE
+    
+   
 
     add_rule("S", "E");
     add_rule("E", "E + T");
@@ -568,6 +599,9 @@ int create_parser_tables() {
     add_rule("T", "F");
     add_rule("F", "id");
     add_rule("F", "number");
+
+    printf("\n");
+
 
     build_states("S");
     
@@ -584,6 +618,9 @@ int create_parser_tables() {
     print_parsing_tables();
     
     create_assosiation_map();
+
+    print_rules();
+
     
     return 0;
 }

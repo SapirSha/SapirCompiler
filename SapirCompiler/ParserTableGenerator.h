@@ -2,6 +2,7 @@
 #define PARSERTABLEGENERATOR_H
 
 #include "Tokens.h"
+#include "ArrayList.h"
 
 #define MAX_ITEMS       100
 #define MAX_STATES      100
@@ -12,7 +13,9 @@
 
 typedef struct {
     char nonterminal[MAX_TOKEN_LEN];
-    char ruleContent[256];
+    char* ruleContent;
+    int rule_terminal_count;
+    int rule_id;
 } Rule;
 
 typedef struct {
@@ -31,8 +34,7 @@ int gotoTable[MAX_STATES][MAX_SYMBOLS];
 
 int assosiation_array[NUM_OF_TOKENS];
 
-
-
+ArrayList* rules;
 
 int create_parser_tables();
 

@@ -1,49 +1,69 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "ArrayList.h"
 
-#include <stdlib.h>
 
-// Initialize an empty ArrayList
-ArrayList* arraylist_init(int initial_capacity) {
-	ArrayList* list = malloc(sizeof(ArrayList));
-	list->array = malloc(sizeof(void*) * initial_capacity);
-	list->size = 0;
-	list->capacity = initial_capacity;
-	return list;
+ArrayList* arraylist_init(int object_size, int initial_capacity) {
+    ArrayList* list = malloc(sizeof(ArrayList));
+    if (!list) {
+        fprintf(stderr, "Failed to allocate ArrayList structure\n");
+        return NULL;
+    }
+    list->object_size = object_size;
+    list->capacity = initial_capacity;
+    list->size = 0;
+    list->array = malloc(sizeof(void*) * initial_capacity);
+    if (!list->array) {
+        fprintf(stderr, "Failed to allocate ArrayList internal array\n");
+        free(list);
+        return NULL;
+    }
+    return list;
 }
 
-// Add an element to the end of the ArrayList
-void arraylist_add(ArrayList* list, char element) {
-	if (list->size == list->capacity) {
-		// Resize the array if it is full
-		list->capacity *= GROWTH_FACTOR;
-		list->array = realloc(list->array, sizeof(char) * list->capacity);
-	}
-
-	list->array[list->size++] = element;
+void arraylist_add(ArrayList* list, void* value) {
+    if (list->size == list->capacity) {
+        list->capacity *= GROWTH_FACTOR;
+        void** temp = realloc(list->array, sizeof(void*) * list->capacity);
+        if (!temp) {
+            fprintf(stderr, "Failed to reallocate ArrayList internal array\n");
+            return;
+        }
+        list->array = temp;
+    }
+    list->array[list->size] = malloc(list->object_size);
+    if (!list->array[list->size]) {
+        fprintf(stderr, "Failed to allocate memory for new element\n");
+        return;
+    }
+    memcpy(list->array[list->size], value, list->object_size);
+    list->size++;
 }
 
-// Reset the ArrayList to an empty state
 void arraylist_reset(ArrayList* list) {
-	list->size = 0;
+    for (int i = 0; i < list->size; i++) {
+        free(list->array[i]);
+    }
+    list->size = 0;
 }
 
-// Get the element at the specified index
-char arraylist_get(ArrayList* list, int index) {
-	if (index < 0 || index >= list->size) {
-		return NULL;
-	}
-
-	return list->array[index];
+void* arraylist_get(ArrayList* list, int index) {
+    if (index < 0 || index >= list->size) {
+        return NULL;
+    }
+    return list->array[index];
 }
 
-// Check if the ArrayList is empty
-int array_list_is_empty(ArrayList* list) {
-	return list->size == 0;
+int arraylist_is_empty(ArrayList* list) {
+    return list->size == 0;
 }
 
-// Free the memory allocated for the ArrayList
 void arraylist_free(ArrayList* list) {
-	free(list->array);
-	free(list);
+    for (int i = 0; i < list->size; i++) {
+        free(list->array[i]);
+    }
+    free(list->array);
+    free(list);
 }
 

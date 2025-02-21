@@ -13,10 +13,9 @@ typedef struct LinkedList {
 	LinkedListNode* head;
 	unsigned int object_byte_size;
 	unsigned int length;
-	int (*compare)(void*, void*);
 } LinkedList;
 
-LinkedList* linkedlist_init(unsigned int object_byte_size, int (*compare)(void*, void*));
+LinkedList* linkedlist_init(unsigned int object_byte_size);
 unsigned int linkedlist_count(LinkedList*);
 bool linkedlist_contains(LinkedList*, void*);
 

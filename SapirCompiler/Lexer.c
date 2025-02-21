@@ -1,5 +1,6 @@
 #include "Lexer.h"
 
+
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -12,9 +13,18 @@
 
 TokensQueue* tokens = NULL;
 
+char* token_to_string(ArrayList* token) {
+    static const char ZERO = '\0';
+    arraylist_add(token, &ZERO);
+    char* string = malloc(token->size * sizeof(char));
+    for (int i = 0; i < token->size; i++) {
+        string[i] = *(char*)token->array[i];
+    }
+    return string;
+}
+
 void add_token(ArrayList* token, TokensQueue* tokens, Token_Types type) {
-	arraylist_add(token, '\0');
-	char* str_token = token->array;
+    char* str_token = token_to_string(token);
 	tokens_enqueue(tokens, str_token, type);
 	arraylist_reset(token);
 }
@@ -178,8 +188,8 @@ void init_keywords() {
 }
 
 void handle_error(const char* input, int* index, ArrayList* token, State* next_state) {
-    arraylist_add(token, '\0');
-    printf("--- Error: '%c' Cannot come after state: %d. for token: %s\n", input[*index], *next_state, token->array);
+    char* str_token = token_to_string(token);
+    printf("--- Error: '%c' Cannot come after state: %d. for token: %s\n", input[*index], *next_state, str_token);
     arraylist_reset(token);
     *next_state = START;
     (*index)++;
@@ -190,7 +200,7 @@ void handle_keyword(const char* input, int* index, ArrayList* token, State* next
     char* clearance = pos->to_clear;
 
     while (*next_state == KEYWORD) {
-        arraylist_add(token, input[*index]);
+        arraylist_add(token, &input[*index]);
         if (stringin_next(&pos, &clearance, input[*index]) == NOT_FOUND) {
             *next_state = IDENTIFIER;
             (*index)++;
@@ -315,7 +325,7 @@ OperatorState lookup_operator(unsigned char c) {
 
 void handle_operator(const char* input, int* index, ArrayList* token, State* next_state) {
     OperatorState prev_state = operator_state_table[OPERATOR_START][lookup_operator(input[*index])];
-    arraylist_add(token, input[*index]);
+    arraylist_add(token, &input[*index]);
 
     (*index)++;
     OperatorState state = operator_state_table[prev_state][lookup_operator(input[*index])];
@@ -325,7 +335,7 @@ void handle_operator(const char* input, int* index, ArrayList* token, State* nex
         return;
     }
 
-    arraylist_add(token, input[*index]);
+    arraylist_add(token, &input[*index]);
     add_token(token, tokens, STATE_OPERATOR_TO_TOKEN_CONVERTER[state]);
     (*index)++;
 }
@@ -338,7 +348,7 @@ static const Token_Types SEPARATOR_TO_TOKEN_CONVERTER[] = {
 
 };
 void handle_separator(const char* input, int* index, ArrayList* token, State* next_state) {
-    arraylist_add(token, input[*index]);
+    arraylist_add(token, &input[*index]);
 	add_token(token, tokens, SEPARATOR_TO_TOKEN_CONVERTER[input[*index]]);
     (*index)++;
 }
@@ -346,12 +356,12 @@ void handle_separator(const char* input, int* index, ArrayList* token, State* ne
 void handle_number(const char* input, int* index, ArrayList* token, State* next_state) {
     State current = NUMBER;
     while (current == NUMBER) {
-        arraylist_add(token, input[*index]);
+        arraylist_add(token, &input[*index]);
         (*index)++;
         current = state_table[NUMBER][classifier_lookup[input[*index]]];
     }
     if (input[*index] == '.') {
-        arraylist_add(token, input[*index]);
+        arraylist_add(token, &input[*index]);
         (*index)++;
 
         current = state_table[NUMBER][classifier_lookup[input[*index]]];
@@ -363,7 +373,7 @@ void handle_number(const char* input, int* index, ArrayList* token, State* next_
         }
 
         while (current == NUMBER) {
-            arraylist_add(token, input[*index]);
+            arraylist_add(token, &input[*index]);
             (*index)++;
             current = state_table[NUMBER][classifier_lookup[input[*index]]];
         }
@@ -378,7 +388,7 @@ void handle_string_literal(const char* input, int* index, ArrayList* token, Stat
     State current;
     (*index)++;
     while ((current = state_table[STRING_LITERAL][classifier_lookup[input[*index]]]) == STRING_LITERAL) {
-        arraylist_add(token, input[*index]);
+        arraylist_add(token, &input[*index]);
         (*index)++;
     }
     if (input[*index] == '"') {
@@ -413,7 +423,7 @@ void handle_start(const char* input, int* index, ArrayList* token, State* next_s
 void handle_identifier(const char* input, int* index, ArrayList* token, State* next_state) {
     State current = state_table[IDENTIFIER][classifier_lookup[input[*index]]];
     while (current == IDENTIFIER) {
-        arraylist_add(token, input[*index]);
+        arraylist_add(token, &input[*index]);
         (*index)++;
         current = state_table[IDENTIFIER][classifier_lookup[input[*index]]];
     }
@@ -423,7 +433,7 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* n
 // FSM for tokenization
 TokensQueue* tokenize(const char* input) {
     State state = START, next_state;
-    ArrayList* token = arraylist_init(DEFAULT_TOKEN_SIZE);
+    ArrayList* token = arraylist_init(sizeof(char), DEFAULT_TOKEN_SIZE);
 
     tokens = tokens_init();
 

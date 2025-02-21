@@ -21,9 +21,8 @@ typedef struct LinkedList {
 
 */
 
-LinkedList* linkedlist_init(unsigned int object_byte_size, int (*compare)(void*, void*)) {
+LinkedList* linkedlist_init(unsigned int object_byte_size) {
 	LinkedList* lst = (LinkedList*) malloc(sizeof(LinkedList));
-	lst->compare = compare;
 	lst->object_byte_size = object_byte_size;
 	lst->length = 0;
 	lst->head = NULL;
