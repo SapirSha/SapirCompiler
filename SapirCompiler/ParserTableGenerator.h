@@ -6,13 +6,14 @@
 
 #define MAX_ITEMS       100
 #define MAX_STATES      100
-#define MAX_RULES       100
-#define MAX_TOKEN_LEN   32
 #define MAX_SYMBOLS     50
 
 
+#define DEFAULT_NUMBER_OF_RULES 100
+
+
 typedef struct {
-    char nonterminal[MAX_TOKEN_LEN];
+    char* nonterminal;
     char* ruleContent;
     int rule_terminal_count;
     int rule_id;
