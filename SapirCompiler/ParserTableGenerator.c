@@ -13,8 +13,7 @@
 #pragma warning(disable:4996)
 
 
-State* states[MAX_STATES];
-int numStates = 0;
+ArrayList* states;
 
 int count_terminals(char* rule_content) {
     int count = 0;
@@ -137,8 +136,8 @@ bool state_equals(State* s1, State* s2) {
 }
 
 int find_state(State* s) {
-    for (int i = 0; i < numStates; i++) {
-        if (state_equals(states[i], s))
+    for (int i = 0; i < states->size; i++) {
+        if (state_equals(arraylist_get(states, i), s))
             return i;
     }
     return -1;
@@ -158,11 +157,16 @@ void build_states(char* start_nonterminal) {
     
     rules[numRules++] = augmented;
     */
+    states = arraylist_init(sizeof(State), DEFAULT_NUMBER_OF_STATES);
+
+
+
     int len = strlen(start_nonterminal) + 3;
     char* buffer = malloc(len);
     sprintf(buffer, "%s $", start_nonterminal);
     add_rule("START'", buffer);
     free(buffer);
+
 
     State* I0 = malloc(sizeof(State));
 	I0->items = arraylist_init(sizeof(LRItem), DEFUALT_AMOUNT_OF_LR_ITEMS);
@@ -171,13 +175,13 @@ void build_states(char* start_nonterminal) {
     startItem.dot = 0;
 	arraylist_add(I0->items, &startItem);
     closure(I0);
-    states[numStates++] = I0;
+    arraylist_add(states, I0);
 
     bool addedNew;
     do {
         addedNew = false;
-        for (int i = 0; i < numStates; i++) {
-            State* s = states[i];
+        for (int i = 0; i < states->size; i++) {
+			State* s = arraylist_get(states, i);
             char *symbols[100];
             int symbolCount = 0;
             for (int j = 0; j < s->items->size; j++) {
@@ -205,7 +209,7 @@ void build_states(char* start_nonterminal) {
                 }
                 int idx = find_state(g);
                 if (idx == -1) {
-                    states[numStates++] = g;
+                    arraylist_add(states, g);
                     addedNew = true;
                 }
                 else {
@@ -378,7 +382,7 @@ int getNonterminalIndex(const char* sym) {
 }
 
 void build_parsing_tables() {
-    for (int i = 0; i < numStates; i++) {
+    for (int i = 0; i < states->size; i++) {
         for (int j = 0; j < numTerminals; j++) {
             actionTable[i][j] = strdup("error");
         }
@@ -387,8 +391,8 @@ void build_parsing_tables() {
         }
     }
 
-    for (int i = 0; i < numStates; i++) {
-        State* s = states[i];
+    for (int i = 0; i < states->size; i++) {
+        State* s = arraylist_get(states, i);
         char* symbols[100];
         int symbolCount = 0;
         for (int j = 0; j < s->items->size; j++) {
@@ -437,8 +441,8 @@ void build_parsing_tables() {
         }
     }
 
-    for (int i = 0; i < numStates; i++) {
-        State* s = states[i];
+    for (int i = 0; i < states->size; i++) {
+        State* s = arraylist_get(states, i);
         for (int j = 0; j < s->items->size; j++) {
 			LRItem* item = arraylist_get(s->items, j);  
             int tokenCount = 0;
@@ -484,7 +488,7 @@ void print_parsing_tables() {
         printf("%s\t", terminalsList[j]);
     }
     printf("\n");
-    for (int i = 0; i < numStates; i++) {
+    for (int i = 0; i < states->size; i++) {
         printf("%d\t", i);
         for (int j = 0; j < numTerminals; j++) {
             printf("%s\t", actionTable[i][j]);
@@ -497,7 +501,7 @@ void print_parsing_tables() {
         printf("%s\t", nonterminalsList[j]);
     }
     printf("\n");
-    for (int i = 0; i < numStates; i++) {
+    for (int i = 0; i < states->size; i++) {
         printf("%d\t", i);
         for (int j = 0; j < numNonterminals; j++) {
             if (gotoTable[i][j] == -1)
@@ -573,8 +577,8 @@ int create_parser_tables() {
 
     build_states("S");
     
-    for (int i = 0; i < numStates; i++) {
-        print_state(states[i], i);
+    for (int i = 0; i < states->size; i++) {
+        print_state(arraylist_get(states,i), i);
         printf("\n");
     }
     
