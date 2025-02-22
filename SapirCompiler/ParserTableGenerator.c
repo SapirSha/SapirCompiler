@@ -11,6 +11,7 @@
 
 #pragma warning(disable:4996)
 
+
 State* states[MAX_STATES];
 int numStates = 0;
 
@@ -68,8 +69,8 @@ char* get_next_symbol(LRItem* item) {
 }
 
 bool state_contains_item(State* s, LRItem* item) {
-    for (int i = 0; i < s->numItems; i++) {
-        LRItem* it = &s->items[i];
+    for (int i = 0; i < s->items->size; i++) {
+		LRItem* it = arraylist_get(s->items, i);
         if (it->rule == item->rule && it->dot == item->dot)
             return true;
     }
@@ -80,8 +81,8 @@ void closure(State* s) {
     bool added;
     do {
         added = false;
-        for (int i = 0; i < s->numItems; i++) {
-            LRItem* item = &s->items[i];
+        for (int i = 0; i < s->items->size; i++) {
+            LRItem* item = arraylist_get(s->items, i);
             char* symbol = get_next_symbol(item);
             if (symbol != NULL && isupper(symbol[0])) {
                 for (int j = 0; j < rules->size; j++) {
@@ -90,7 +91,7 @@ void closure(State* s) {
                         newItem.rule = ((Rule*)rules->array[j]);
                         newItem.dot = 0;
                         if (!state_contains_item(s, &newItem)) {
-                            s->items[s->numItems++] = newItem;
+							arraylist_add(s->items, &newItem);
                             added = true;
                         }
                     }
@@ -102,15 +103,15 @@ void closure(State* s) {
 
 State* goto_state(State* s, const char* symbol) {
     State* newState = malloc(sizeof(State));
-    newState->numItems = 0;
-    for (int i = 0; i < s->numItems; i++) {
-        LRItem item = s->items[i];
+    newState->items = arraylist_init(sizeof(LRItem), DEFUALT_AMOUNT_OF_LR_ITEMS);
+    for (int i = 0; i < s->items->size; i++) {
+		LRItem item = *(LRItem*)arraylist_get(s->items, i);
         char* next = get_next_symbol(&item);
         if (next != NULL && strcmp(next, symbol) == 0) {
             LRItem advanced = item;
             advanced.dot++;
             if (!state_contains_item(newState, &advanced)) {
-                newState->items[newState->numItems++] = advanced;
+				arraylist_add(newState->items, &advanced);
             }
         }
     }
@@ -119,12 +120,12 @@ State* goto_state(State* s, const char* symbol) {
 }
 
 bool state_equals(State* s1, State* s2) {
-    if (s1->numItems != s2->numItems) return false;
-    for (int i = 0; i < s1->numItems; i++) {
+    if (s1->items->size != s2->items->size) return false;
+    for (int i = 0; i < s1->items->size; i++) {
         bool found = false;
-        for (int j = 0; j < s2->numItems; j++) {
-            if (s1->items[i].rule == s2->items[j].rule &&
-                s1->items[i].dot == s2->items[j].dot) {
+        for (int j = 0; j < s2->items->size; j++) {
+            if (((LRItem*)arraylist_get(s1->items, i))->rule == ((LRItem*)arraylist_get(s2->items, j))->rule &&
+                ((LRItem*)arraylist_get(s1->items, i))->dot == ((LRItem*)arraylist_get(s2->items, j))->dot) {
                 found = true;
                 break;
             }
@@ -163,11 +164,11 @@ void build_states(char* start_nonterminal) {
     free(buffer);
 
     State* I0 = malloc(sizeof(State));
-    I0->numItems = 0;
+	I0->items = arraylist_init(sizeof(LRItem), DEFUALT_AMOUNT_OF_LR_ITEMS);
     LRItem startItem;
     startItem.rule = ((Rule*)rules->array[rules->size - 1]);
     startItem.dot = 0;
-    I0->items[I0->numItems++] = startItem;
+	arraylist_add(I0->items, &startItem);
     closure(I0);
     states[numStates++] = I0;
 
@@ -178,8 +179,9 @@ void build_states(char* start_nonterminal) {
             State* s = states[i];
             char *symbols[100];
             int symbolCount = 0;
-            for (int j = 0; j < s->numItems; j++) {
-                char* sym = get_next_symbol(&s->items[j]);
+            for (int j = 0; j < s->items->size; j++) {
+                char* sym = get_next_symbol(arraylist_get(s->items, j));
+                
                 if (sym != NULL) {
                     bool exists = false;
                     for (int k = 0; k < symbolCount; k++) {
@@ -196,7 +198,7 @@ void build_states(char* start_nonterminal) {
             }
             for (int k = 0; k < symbolCount; k++) {
                 State* g = goto_state(s, symbols[k]);
-                if (g->numItems == 0) {
+                if (g->items->size == 0) {
                     free(g);
                     continue;
                 }
@@ -215,8 +217,8 @@ void build_states(char* start_nonterminal) {
 
 void print_state(State* s, int index) {
     printf("State %d:\n", index);
-    for (int i = 0; i < s->numItems; i++) {
-        LRItem* item = &s->items[i];
+    for (int i = 0; i < s->items->size; i++) {
+		LRItem* item = arraylist_get(s->items, i);
         printf("  %s -> ", item->rule->nonterminal);
         char buffer[256];
         strcpy(buffer, item->rule->ruleContent);
@@ -241,16 +243,11 @@ char* terminalsList[MAX_SYMBOLS];
 int numTerminals = 0;
 
 bool symbol_exists(char* arr[], int count, const char* sym) {
-    printf("\n\nCOUNT: %d\n", count);
-    printf("CHECKING FOR: %s\n", sym);
 
     for (int i = 0; i < count; i++) {
-        printf("ARR[0] - %s\n", arr[0]);
-        printf("HERE - %s\n", arr[i]);
         if (strcmp(arr[i], sym) == 0)
             return true;
     }
-    printf("RETUURND FALSE");
     return false;
 }
 
@@ -432,8 +429,8 @@ void build_parsing_tables() {
         State* s = states[i];
         char* symbols[100];
         int symbolCount = 0;
-        for (int j = 0; j < s->numItems; j++) {
-            char* sym = get_next_symbol(&s->items[j]);
+        for (int j = 0; j < s->items->size; j++) {
+            char* sym = get_next_symbol(arraylist_get(s->items, j));
             if (sym != NULL) {
                 bool exists = false;
                 for (int k = 0; k < symbolCount; k++) {
@@ -450,7 +447,7 @@ void build_parsing_tables() {
         }
         for (int k = 0; k < symbolCount; k++) {
             State* g = goto_state(s, symbols[k]);
-            if (g->numItems == 0) {
+            if (g->items->size == 0) {
                 free(g);
                 continue;
             }
@@ -480,17 +477,18 @@ void build_parsing_tables() {
 
     for (int i = 0; i < numStates; i++) {
         State* s = states[i];
-        for (int j = 0; j < s->numItems; j++) {
-            LRItem* item = &s->items[j];
+        for (int j = 0; j < s->items->size; j++) {
+			LRItem* item = arraylist_get(s->items, j);  
             int tokenCount = 0;
             char* buf;
             buf = strdup(item->rule->ruleContent);
             char* t = strtok(buf, " ");
-            free(buf);
             while (t != NULL) {
                 tokenCount++;
                 t = strtok(NULL, " ");
             }
+            free(buf);
+
             if (item->dot == tokenCount) {
                 if (strcmp(item->rule->nonterminal, "START'") == 0) {
                     int dollarIdx = getTerminalIndex("$");
@@ -618,6 +616,8 @@ int create_parser_tables() {
     }
     
     collect_symbols();
+
+
     compute_follow();
 
     build_parsing_tables();

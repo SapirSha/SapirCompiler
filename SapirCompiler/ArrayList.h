@@ -29,4 +29,6 @@ int arraylist_is_empty(ArrayList*);
 // Free the memory allocated for the ArrayList
 void arraylist_free(ArrayList*);
 
+void arraylist_print(ArrayList*, void printfunc(void*));
+
 #endif

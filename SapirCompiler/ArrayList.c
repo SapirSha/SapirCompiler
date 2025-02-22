@@ -67,3 +67,8 @@ void arraylist_free(ArrayList* list) {
     free(list);
 }
 
+void arraylist_print(ArrayList* list, void printfunc(void*)) {
+	for (int i = 0; i < list->size; i++) {
+        printfunc(list->array[i]);
+	}
+}

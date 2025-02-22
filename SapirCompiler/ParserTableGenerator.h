@@ -4,12 +4,12 @@
 #include "Tokens.h"
 #include "ArrayList.h"
 
-#define MAX_ITEMS       100
 #define MAX_STATES      100
 #define MAX_SYMBOLS     50
 
 
 #define DEFAULT_NUMBER_OF_RULES 100
+#define DEFUALT_AMOUNT_OF_LR_ITEMS 32
 
 
 typedef struct {
@@ -25,8 +25,7 @@ typedef struct {
 } LRItem;
 
 typedef struct {
-    LRItem items[MAX_ITEMS];
-    int numItems;
+    ArrayList* items;
 } State;
 
 char* actionTable[MAX_STATES][MAX_SYMBOLS];
