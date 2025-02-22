@@ -30,7 +30,7 @@
     <ClCompile Include="ArrayList.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StringIn.c">
+    <ClCompile Include="StringTrie.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HashSet.c">
@@ -62,7 +62,7 @@
     <ClInclude Include="ArrayList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StringIn.h">
+    <ClInclude Include="StringTrie.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HashSet.h">

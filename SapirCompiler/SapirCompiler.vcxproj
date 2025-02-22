@@ -136,7 +136,7 @@
     <ClCompile Include="Parser.c" />
     <ClCompile Include="ParserTableGenerator.c" />
     <ClCompile Include="Program.c" />
-    <ClCompile Include="StringIn.c" />
+    <ClCompile Include="StringTrie.c" />
     <ClCompile Include="Token.c" />
   </ItemGroup>
   <ItemGroup>
@@ -148,7 +148,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="ParserTableGenerator.h" />
-    <ClInclude Include="StringIn.h" />
+    <ClInclude Include="StringTrie.h" />
     <ClInclude Include="Tokens.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

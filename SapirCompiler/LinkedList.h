@@ -2,7 +2,7 @@
 #define LINKEDLIST_H
 
 #include <stdbool.h>
-
+// allocates space
 typedef struct LinkedListNode {
 	struct LinkedListNode* next;
 	void* value;

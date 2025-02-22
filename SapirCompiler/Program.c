@@ -1,7 +1,7 @@
 #include "Lexer.h"
 #include "HashMap.h"
 #include "Tokens.h"
-#include "StringIn.h"
+#include "StringTrie.h"
 #include "ParserTableGenerator.h"
 #include "LinkedList.h"
 #include <stdio.h>

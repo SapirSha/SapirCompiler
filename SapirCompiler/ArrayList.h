@@ -3,8 +3,8 @@
 
 #define GROWTH_FACTOR 2
 
-// Define a structure for the ArrayList
-typedef struct ArrayList {
+// Define a structure for the ArrayList // allocates space
+typedef struct ArrayList { 
 	void** array;
 	unsigned int object_size;
 	int size;
@@ -29,6 +29,7 @@ int arraylist_is_empty(ArrayList*);
 // Free the memory allocated for the ArrayList
 void arraylist_free(ArrayList*);
 
+// Print ArrayList
 void arraylist_print(ArrayList*, void printfunc(void*));
 
 #endif

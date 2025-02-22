@@ -6,7 +6,7 @@
 #define MAX_LOAD_FACTOR 0.7
 #define GROWTH_FACTOR 2
 
-// Define a structure for the key-value pair
+// Define a structure for the key-value pair // doesnt allocates space
 typedef struct KeyValuePair {
     char* key;
     void* value;

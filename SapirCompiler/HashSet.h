@@ -6,8 +6,8 @@
 #define MAX_LOAD_FACTOR 0.7
 #define TOMBSTONE ((void*)-1)
 
-// Tomebstone HashSet
-typedef struct HashSet {
+// Tomebstone HashSet  // doesnt allocates space
+typedef struct HashSet { 
     void** table;
     int capacity;
     int size;

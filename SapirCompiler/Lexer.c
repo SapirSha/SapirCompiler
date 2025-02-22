@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "HashMap.h"
 #include "ArrayList.h"
-#include "StringIn.h"
+#include "StringTrie.h"
 
 #define DEFAULT_TOKEN_SIZE 32
 
@@ -167,7 +167,7 @@ static const char* keywords_list[] = {
 	NULL
 };
 
-StringIn* keywords_finder = NULL;
+StringTrie* keywords_finder = NULL;
 void init_keywords() {
     if (keywords_finder != NULL) return;
 
@@ -196,7 +196,7 @@ void handle_error(const char* input, int* index, ArrayList* token, State* next_s
 }
 
 void handle_keyword(const char* input, int* index, ArrayList* token, State* next_state) {
-    StringIn* pos = keywords_finder;
+    StringTrie* pos = keywords_finder;
     char* clearance = pos->to_clear;
 
     while (*next_state == KEYWORD) {
