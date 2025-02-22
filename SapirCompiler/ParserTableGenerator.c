@@ -313,34 +313,33 @@ void compute_follow() {
             char* A = ((Rule*)rules->array[i])->nonterminal;
             char* buffer;
             buffer = strdup( ((Rule*)rules->array[i])->ruleContent);
-            char* tokens[50]; ////////////////////////
-            int ntokens = 0;
+			ArrayList* tokens = arraylist_init(sizeof(char**), 50);
             char* tok = strtok(buffer, " ");
             while (tok != NULL) {
-                tokens[ntokens++] = tok;
+                arraylist_add(tokens, &tok);
                 tok = strtok(NULL, " ");
             }
-            for (int j = 0; j < ntokens; j++) {
-                if (isupper(tokens[j][0]) || strcmp(tokens[j], "START'") == 0) { // if nonterminal
-                    if (j + 1 < ntokens) { // if has another token after
-                        if (!(isupper(tokens[j + 1][0]) || strcmp(tokens[j + 1], "START'") == 0)) { // if not nonterminal
-                            hashset_insert(hashmap_get(follow, tokens[j]), tokens[j + 1]);  // insert as possibility for nonterminal
+            for (int j = 0; j < tokens->size; j++) {
+                if (isupper((*(char**)arraylist_get(tokens, j))[0]) || strcmp(*(char**)arraylist_get(tokens, j), "START'") == 0) { // if nonterminal
+                    if (j + 1 < tokens->size) { // if has another token after
+                        if (!(isupper((*(char**)arraylist_get(tokens, j + 1))[0]) || strcmp(*(char**)arraylist_get(tokens, j), "START'") == 0)) { // if not nonterminal
+                            hashset_insert(hashmap_get(follow, *(char**)arraylist_get(tokens, j)), *(char**)arraylist_get(tokens, j + 1));  // insert as possibility for nonterminal
                         }
                         else {
                             char* sample;
                             
                             for (int r = 0; r < rules->size; r++) { // get rule where the nonterminal is on the left side
-                                if (strcmp(((Rule*)rules->array[r])->nonterminal, tokens[j + 1]) == 0) {
+                                if (strcmp(((Rule*)rules->array[r])->nonterminal, *(char**)arraylist_get(tokens, j + 1)) == 0) {
                                     sample = strdup(((Rule*)rules->array[r])->ruleContent);
                                     char* firstSym = get_nth_token(sample, 0);
                                     free(sample);
                                     if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) { // if first symbol is terminal
-                                        hashset_insert(hashmap_get(follow, tokens[j]), firstSym); // insert as possibility
+                                        hashset_insert(hashmap_get(follow, *(char**)arraylist_get(tokens, j)), firstSym); // insert as possibility
                                         break;
 									}
 									else if (firstSym && isupper(firstSym[0])) { // if first symbol is nonterminal
 										HashSet* firstSymFollow = hashmap_get(follow, firstSym);
-										HashSet* current_follow = hashmap_get(follow, tokens[j]);
+										HashSet* current_follow = hashmap_get(follow, *(char**)arraylist_get(tokens, j));
 										for (int k = 0; k < firstSymFollow->capacity; k++) {
 											if (firstSymFollow->table[k] && firstSymFollow->table[k] != TOMBSTONE) {
 												if (!hashset_contains(current_follow, firstSymFollow->table[k])) {
@@ -356,7 +355,7 @@ void compute_follow() {
                     }
                     else {
 						// put everything in follow(A) in follow(tokens[j])
-                        HashSet* current_set = hashmap_get(follow, tokens[j]);
+                        HashSet* current_set = hashmap_get(follow, *(char**)arraylist_get(tokens, j));
                         HashSet* could_get_set = hashmap_get(follow, A);
                         for (int k = 0; k < could_get_set->capacity; k++) {
                             if (could_get_set->table[k] && could_get_set->table[k] != TOMBSTONE) {
@@ -369,6 +368,7 @@ void compute_follow() {
                     }
                 }
             }
+            arraylist_free(tokens);
             free(buffer);
         }
     } while (changed);
