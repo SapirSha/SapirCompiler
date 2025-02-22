@@ -6,6 +6,7 @@
 #include "Tokens.h"
 #include "HashMap.h"
 #include <ctype.h>
+#include "HashSet.h"
 
 #define strdup _strdup
 
@@ -278,29 +279,17 @@ void collect_symbols() {
     }
 }
 
-bool follow[MAX_SYMBOLS][MAX_SYMBOLS] = { false };
+HashMap* follow = NULL;
 
 void init_follow() {
+    follow = createHashMap(numNonterminals);
+    
+
     for (int i = 0; i < numNonterminals; i++) {
-        for (int j = 0; j < numTerminals; j++) {
-            follow[i][j] = false;
-        }
+        hashmap_insert(follow, nonterminalsList[i], hashset_create(numTerminals));
     }
-    int idx = -1;
-    for (int i = 0; i < numNonterminals; i++) {
-        if (strcmp(nonterminalsList[i], "START'") == 0) {
-            idx = i;
-            break;
-        }
-    }
-    if (idx != -1) {
-        for (int j = 0; j < numTerminals; j++) {
-            if (strcmp(terminalsList[j], "$") == 0) {
-                follow[idx][j] = true;
-                break;
-            }
-        }
-    }
+
+    hashset_insert(hashmap_get(follow, "START'"), "$");
 }
 
 void compute_follow() {
@@ -320,73 +309,39 @@ void compute_follow() {
                 tok = strtok(NULL, " ");
             }
             for (int j = 0; j < ntokens; j++) {
-                if (isupper(tokens[j][0]) || strcmp(tokens[j], "START'") == 0) {
-                    if (j + 1 < ntokens) {
-                        if (!(isupper(tokens[j + 1][0]) || strcmp(tokens[j + 1], "START'") == 0)) {
-                            int Aidx = -1;
-                            for (int k = 0; k < numNonterminals; k++) {
-                                if (strcmp(nonterminalsList[k], tokens[j]) == 0)
-                                    Aidx = k;
-                            }
-                            int termIdx = -1;
-                            for (int k = 0; k < numTerminals; k++) {
-                                if (strcmp(terminalsList[k], tokens[j + 1]) == 0)
-                                    termIdx = k;
-                            }
-                            if (Aidx != -1 && termIdx != -1 && !follow[Aidx][termIdx]) {
-                                follow[Aidx][termIdx] = true;
-                                changed = true;
-                            }
+                if (isupper(tokens[j][0]) || strcmp(tokens[j], "START'") == 0) { // if nonterminal
+                    if (j + 1 < ntokens) { // if has another token after
+                        if (!(isupper(tokens[j + 1][0]) || strcmp(tokens[j + 1], "START'") == 0)) { // if not nonterminal
+                            hashset_insert(hashmap_get(follow, tokens[j]), tokens[j + 1]); 
                         }
                         else {
                             int Bidx = -1;
-                            for (int k = 0; k < numNonterminals; k++) {
+                            for (int k = 0; k < numNonterminals; k++) { // get the nonterminal index for the next token
                                 if (strcmp(nonterminalsList[k], tokens[j + 1]) == 0)
                                     Bidx = k;
                             }
                             if (Bidx != -1) {
                                 char sample[256] = "";
-                                for (int r = 0; r < rules->size; r++) {
+								for (int r = 0; r < rules->size; r++) { // get rule where the nonterminal is on the left side
                                     if (strcmp(((Rule*)rules->array[r])->nonterminal, tokens[j + 1]) == 0) {
                                         strcpy(sample, ((Rule*)rules->array[r])->ruleContent);
-                                        break;
-                                    }
-                                }
-                                char* firstSym = get_nth_token(sample, 0);
-                                if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) {
-                                    int termIdx = -1;
-                                    for (int k = 0; k < numTerminals; k++) {
-                                        if (strcmp(terminalsList[k], firstSym) == 0)
-                                            termIdx = k;
-                                    }
-                                    int Aidx = -1;
-                                    for (int k = 0; k < numNonterminals; k++) {
-                                        if (strcmp(nonterminalsList[k], tokens[j]) == 0)
-                                            Aidx = k;
-                                    }
-                                    if (Aidx != -1 && termIdx != -1 && !follow[Aidx][termIdx]) {
-                                        follow[Aidx][termIdx] = true;
-                                        changed = true;
+                                        char* firstSym = get_nth_token(sample, 0);
+                                        if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) { // if first symbol not nonterminal
+                                            hashset_insert(hashmap_get(follow, tokens[j]), firstSym);
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                     else {
-                        int Aidx = -1;
-                        for (int k = 0; k < numNonterminals; k++) {
-                            if (strcmp(nonterminalsList[k], tokens[j]) == 0)
-                                Aidx = k;
-                        }
-                        int LHSidx = -1;
-                        for (int k = 0; k < numNonterminals; k++) {
-                            if (strcmp(nonterminalsList[k], A) == 0)
-                                LHSidx = k;
-                        }
-                        if (Aidx != -1 && LHSidx != -1) {
-                            for (int t = 0; t < numTerminals; t++) {
-                                if (follow[LHSidx][t] && !follow[Aidx][t]) {
-                                    follow[Aidx][t] = true;
+                        HashSet* current_set = hashmap_get(follow, tokens[j]);
+                        HashSet* could_get_set = hashmap_get(follow, A);
+                        for (int k = 0; k < could_get_set->capacity; k++) {
+                            if (could_get_set->table[k] && could_get_set->table[k] != TOMBSTONE) {
+                                if (!hashset_contains(current_set, could_get_set->table[k])) {
+                                    hashset_insert(current_set, could_get_set->table[k]);
                                     changed = true;
                                 }
                             }
@@ -500,7 +455,8 @@ void build_parsing_tables() {
                 else {
                     int Aidx = getNonterminalIndex(item->rule->nonterminal);
                     for (int k = 0; k < numTerminals; k++) {
-                        if (follow[Aidx][k]) {
+                        
+                        if (/*follow[Aidx][k] */ hashset_contains(hashmap_get(follow, item->rule->nonterminal), terminalsList[k])) {
                             char buf2[sizeof(int) + 3];
                             int prodNum = item->rule->rule_id;
                             snprintf(buf2, sizeof(buf2), "r%d", item->rule->rule_id);
@@ -616,7 +572,6 @@ int create_parser_tables() {
     }
     
     collect_symbols();
-
 
     compute_follow();
 
