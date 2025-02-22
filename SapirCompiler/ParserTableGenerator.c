@@ -182,27 +182,26 @@ void build_states(char* start_nonterminal) {
         addedNew = false;
         for (int i = 0; i < states->size; i++) {
 			State* s = arraylist_get(states, i);
-            char *symbols[100];
-            int symbolCount = 0;
+            ArrayList* symbolList = arraylist_init(sizeof(char**), 100);
             for (int j = 0; j < s->items->size; j++) {
                 char* sym = get_next_symbol(arraylist_get(s->items, j));
                 
                 if (sym != NULL) {
                     bool exists = false;
-                    for (int k = 0; k < symbolCount; k++) {
-                        if (strcmp(sym, symbols[k]) == 0) {
+                    for (int k = 0; k < symbolList->size; k++) {
+                        if (strcmp(sym, *(char**)arraylist_get(symbolList, k)) == 0) {
                             exists = true;
                             break;
                         }
                     }
                     if (!exists) {
-                        symbols[symbolCount] = strdup(sym);
-                        symbolCount++;
+                        char* temp = strdup(sym);
+						arraylist_add(symbolList, &temp);
                     }
                 }
             }
-            for (int k = 0; k < symbolCount; k++) {
-                State* g = goto_state(s, symbols[k]);
+            for (int k = 0; k < symbolList->size; k++) {
+                State* g = goto_state(s, *(char**)arraylist_get(symbolList, k));
                 if (g->items->size == 0) {
                     free(g);
                     continue;
