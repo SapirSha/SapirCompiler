@@ -123,4 +123,11 @@ void linkedlist_print(LinkedList* lst, void (*print)(void*)) {
 }
 
 
-unsigned int linkedlist_free(LinkedList*);
+void linkedlist_free(LinkedList** list) {
+	if (*list == NULL) return;
+	LinkedList* lst = *list;
+	while (lst->length)
+		free(linkedlist_pop(lst));
+	free(lst);
+	lst = NULL;
+}

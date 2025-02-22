@@ -7,6 +7,7 @@
 #include "HashMap.h"
 #include <ctype.h>
 #include "HashSet.h"
+#include "LinkedList.h"
 
 #define strdup _strdup
 
@@ -37,9 +38,19 @@ void add_rule(char* nonterminal, char* content) {
     arraylist_add(rules, &rule);
 }
 
+char* stack_to_string(LinkedList* lst) {
+    
+    char* str = malloc(linkedlist_count(lst) * sizeof(char) + 1);
+    str[linkedlist_count(lst)] = '\0';
+    int i = linkedlist_count(lst) - 1;
+    while (i >= 0)
+        str[i--] = *(char*)linkedlist_pop(lst);
+
+    return str;
+}
 
 char* get_nth_token(const char* s, int n) {
-    static char token[256];
+    LinkedList* token = linkedlist_init(sizeof(char));
     int currentToken = 0;
     const char* p = s;
 
@@ -50,11 +61,12 @@ char* get_nth_token(const char* s, int n) {
         if (currentToken == n) {
             int i = 0;
             while (*p && !isspace((unsigned char)*p)) {
-                token[i++] = *p;
+                linkedlist_push(token, p);
                 p++;
             }
-            token[i] = '\0';
-            return token;
+            char* str = stack_to_string(token);
+            arraylist_free(token);
+            return str;
         }
         else {
             while (*p && !isspace((unsigned char)*p))

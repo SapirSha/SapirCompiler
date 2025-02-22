@@ -32,7 +32,7 @@ void* linkedlist_peek(LinkedList*);
 // Stack
 
 void linkedlist_print(LinkedList*, void (*print)(void*));
-unsigned int linkedlist_free(LinkedList*);
+void linkedlist_free(LinkedList*);
 
 
 #endif
