@@ -577,6 +577,21 @@ void print_rules() {
 
 
 
+void init_tables() {
+
+    char*** action_rows_pointers = malloc(states->size * sizeof(char**));
+    char** action_content = calloc(states->size * terminalsList->size, sizeof(char*));
+    for (unsigned int i = 0; i < states->size; i++)
+        action_rows_pointers[i] = action_content + i *  terminalsList->size;
+    actionTable = action_rows_pointers;
+
+    int** goto_rows_pointers = malloc(states->size * sizeof(int*));
+    int* goto_content = calloc(states->size * nonterminalsList->size, sizeof(int));
+    for (unsigned int i = 0; i < states->size; i++)
+        goto_rows_pointers[i] = goto_content + i * nonterminalsList->size;
+    gotoTable = goto_rows_pointers;
+}
+
 int create_parser_tables() {
     rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
 
@@ -606,7 +621,7 @@ int create_parser_tables() {
     }
     
     collect_symbols();
-
+    init_tables();
     
 
     compute_follow();

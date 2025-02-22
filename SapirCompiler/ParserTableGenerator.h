@@ -30,9 +30,9 @@ typedef struct {
     ArrayList* items;
 } State;
 
-char* actionTable[MAX_STATES][MAX_SYMBOLS];
+char*** actionTable;
 
-int gotoTable[MAX_STATES][MAX_SYMBOLS];
+int** gotoTable;
 
 int assosiation_array[NUM_OF_TOKENS];
 
