@@ -589,6 +589,8 @@ int create_parser_tables() {
     
     collect_symbols();
 
+    
+
     compute_follow();
 
     build_parsing_tables();
