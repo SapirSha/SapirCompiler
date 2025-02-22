@@ -312,30 +312,37 @@ void compute_follow() {
                 if (isupper(tokens[j][0]) || strcmp(tokens[j], "START'") == 0) { // if nonterminal
                     if (j + 1 < ntokens) { // if has another token after
                         if (!(isupper(tokens[j + 1][0]) || strcmp(tokens[j + 1], "START'") == 0)) { // if not nonterminal
-                            hashset_insert(hashmap_get(follow, tokens[j]), tokens[j + 1]); 
+                            hashset_insert(hashmap_get(follow, tokens[j]), tokens[j + 1]);  // insert as possibility for nonterminal
                         }
                         else {
-                            int Bidx = -1;
-                            for (int k = 0; k < numNonterminals; k++) { // get the nonterminal index for the next token
-                                if (strcmp(nonterminalsList[k], tokens[j + 1]) == 0)
-                                    Bidx = k;
-                            }
-                            if (Bidx != -1) {
-                                char sample[256] = "";
-								for (int r = 0; r < rules->size; r++) { // get rule where the nonterminal is on the left side
-                                    if (strcmp(((Rule*)rules->array[r])->nonterminal, tokens[j + 1]) == 0) {
-                                        strcpy(sample, ((Rule*)rules->array[r])->ruleContent);
-                                        char* firstSym = get_nth_token(sample, 0);
-                                        if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) { // if first symbol not nonterminal
-                                            hashset_insert(hashmap_get(follow, tokens[j]), firstSym);
-                                            break;
-                                        }
-                                    }
+                            char sample[256] = "";
+                            
+                            for (int r = 0; r < rules->size; r++) { // get rule where the nonterminal is on the left side
+                                if (strcmp(((Rule*)rules->array[r])->nonterminal, tokens[j + 1]) == 0) {
+                                    strcpy(sample, ((Rule*)rules->array[r])->ruleContent);
+                                    char* firstSym = get_nth_token(sample, 0);
+                                    if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) { // if first symbol is terminal
+                                        hashset_insert(hashmap_get(follow, tokens[j]), firstSym); // insert as possibility
+                                        break;
+									}
+									else if (firstSym && isupper(firstSym[0])) { // if first symbol is nonterminal
+										HashSet* firstSymFollow = hashmap_get(follow, firstSym);
+										HashSet* current_follow = hashmap_get(follow, tokens[j]);
+										for (int k = 0; k < firstSymFollow->capacity; k++) {
+											if (firstSymFollow->table[k] && firstSymFollow->table[k] != TOMBSTONE) {
+												if (!hashset_contains(current_follow, firstSymFollow->table[k])) {
+													hashset_insert(current_follow, firstSymFollow->table[k]);
+													changed = true;
+												}
+											}
+										}
+									}
                                 }
                             }
                         }
                     }
                     else {
+						// put everything in follow(A) in follow(tokens[j])
                         HashSet* current_set = hashmap_get(follow, tokens[j]);
                         HashSet* could_get_set = hashmap_get(follow, A);
                         for (int k = 0; k < could_get_set->capacity; k++) {
