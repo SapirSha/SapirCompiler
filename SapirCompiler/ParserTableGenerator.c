@@ -242,55 +242,60 @@ void print_state(State* s, int index) {
     }
 }
 
-char* nonterminalsList[MAX_SYMBOLS];
-int numNonterminals = 0;
-char* terminalsList[MAX_SYMBOLS];
-int numTerminals = 0;
+ArrayList* nonterminalsList;
+ArrayList* terminalsList;
 
-bool symbol_exists(char* arr[], int count, const char* sym) {
+bool symbol_exists(ArrayList* list, const char* sym) {
 
-    for (int i = 0; i < count; i++) {
-        if (strcmp(arr[i], sym) == 0)
+    for (int i = 0; i < list->size; i++) {
+        if (strcmp(*(char**)arraylist_get(list, i), sym) == 0)
             return true;
     }
     return false;
 }
 
 void collect_symbols() {
+	nonterminalsList = arraylist_init(sizeof(char**), DEFUALT_AMOUNT_OF_NONTERMINALS);
+	terminalsList = arraylist_init(sizeof(char**), DEFUALT_AMOUNT_OF_TERMINALS);
+
     for (int i = 0; i < rules->size; i++) {
-        if (!symbol_exists(nonterminalsList, numNonterminals, ((Rule*)rules->array[i])->nonterminal)) {
-            nonterminalsList[numNonterminals++] = strdup(((Rule*)rules->array[i])->nonterminal);
+        if (!symbol_exists(nonterminalsList, ((Rule*)rules->array[i])->nonterminal)) {
+            char* temp = strdup(((Rule*)rules->array[i])->nonterminal);
+            arraylist_add(nonterminalsList, &temp);
         }
         char buffer[256];
         strcpy(buffer, ((Rule*)rules->array[i])->ruleContent);
         char* token = strtok(buffer, " ");
         while (token != NULL) {
             if (!(isupper(token[0]) || strcmp(token, "$") == 0)) {
-                if (!symbol_exists(terminalsList, numTerminals, token)) {
-                    terminalsList[numTerminals++] = strdup(token);
+                if (!symbol_exists(terminalsList, token)) {
+                    char* temp = strdup(token);
+					arraylist_add(terminalsList, &temp);
                 }
             }
             else {
-                if (!symbol_exists(nonterminalsList, numNonterminals, token)) {
-                    nonterminalsList[numNonterminals++] = strdup(token);
+                if (!symbol_exists(nonterminalsList, token)) {
+                    char* temp = strdup(token);
+					arraylist_add(nonterminalsList, &temp);
                 }
             }
             token = strtok(NULL, " ");
         }
     }
-    if (!symbol_exists(terminalsList, numTerminals, "$")) {
-        terminalsList[numTerminals++] = strdup("$");
+    if (!symbol_exists(terminalsList, "$")) {
+        char* temp = strdup("$");
+        arraylist_add(terminalsList, &temp);
     }
 }
 
 HashMap* follow = NULL;
 
 void init_follow() {
-    follow = createHashMap(numNonterminals);
+    follow = createHashMap(nonterminalsList->size);
     
 
-    for (int i = 0; i < numNonterminals; i++) {
-        hashmap_insert(follow, nonterminalsList[i], hashset_create(numTerminals));
+    for (int i = 0; i < nonterminalsList->size; i++) {
+        hashmap_insert(follow, *(char**)arraylist_get(nonterminalsList, i), hashset_create(terminalsList->size));
     }
 
     hashset_insert(hashmap_get(follow, "START'"), "$");
@@ -366,16 +371,16 @@ void compute_follow() {
 
 
 int getTerminalIndex(const char* sym) {
-    for (int i = 0; i < numTerminals; i++) {
-        if (strcmp(terminalsList[i], sym) == 0)
+    for (int i = 0; i < terminalsList->size; i++) {
+        if (strcmp(*(char**)arraylist_get(terminalsList, i), sym) == 0)
             return i;
     }
     return -1;
 }
 
 int getNonterminalIndex(const char* sym) {
-    for (int i = 0; i < numNonterminals; i++) {
-        if (strcmp(nonterminalsList[i], sym) == 0)
+    for (int i = 0; i < nonterminalsList->size; i++) {
+        if (strcmp(*(char**)arraylist_get(nonterminalsList, i), sym) == 0)
             return i;
     }
     return -1;
@@ -383,10 +388,10 @@ int getNonterminalIndex(const char* sym) {
 
 void build_parsing_tables() {
     for (int i = 0; i < states->size; i++) {
-        for (int j = 0; j < numTerminals; j++) {
+        for (int j = 0; j < terminalsList->size; j++) {
             actionTable[i][j] = strdup("error");
         }
-        for (int j = 0; j < numNonterminals; j++) {
+        for (int j = 0; j < nonterminalsList->size; j++) {
             gotoTable[i][j] = -1;
         }
     }
@@ -465,9 +470,9 @@ void build_parsing_tables() {
                 }
                 else {
                     int Aidx = getNonterminalIndex(item->rule->nonterminal);
-                    for (int k = 0; k < numTerminals; k++) {
+                    for (int k = 0; k < terminalsList->size; k++) {
                         
-                        if (/*follow[Aidx][k] */ hashset_contains(hashmap_get(follow, item->rule->nonterminal), terminalsList[k])) {
+                        if (/*follow[Aidx][k] */ hashset_contains(hashmap_get(follow, item->rule->nonterminal), *(char**)arraylist_get(terminalsList, k))) {
                             char buf2[sizeof(int) + 3];
                             int prodNum = item->rule->rule_id;
                             snprintf(buf2, sizeof(buf2), "r%d", item->rule->rule_id);
@@ -484,26 +489,26 @@ void build_parsing_tables() {
 void print_parsing_tables() {
     printf("ACTION TABLE:\n");
     printf("State\t");
-    for (int j = 0; j < numTerminals; j++) {
-        printf("%s\t", terminalsList[j]);
+    for (int j = 0; j < terminalsList->size; j++) {
+        printf("%s\t", *(char**)arraylist_get(terminalsList, j));
     }
     printf("\n");
     for (int i = 0; i < states->size; i++) {
         printf("%d\t", i);
-        for (int j = 0; j < numTerminals; j++) {
+        for (int j = 0; j < terminalsList->size; j++) {
             printf("%s\t", actionTable[i][j]);
         }
         printf("\n");
     }
     printf("\nGOTO TABLE:\n");
     printf("State\t");
-    for (int j = 0; j < numNonterminals; j++) {
-        printf("%s\t", nonterminalsList[j]);
+    for (int j = 0; j < nonterminalsList->size; j++) {
+        printf("%s\t", *(char**)arraylist_get(nonterminalsList, j));
     }
     printf("\n");
     for (int i = 0; i < states->size; i++) {
         printf("%d\t", i);
-        for (int j = 0; j < numNonterminals; j++) {
+        for (int j = 0; j < nonterminalsList->size; j++) {
             if (gotoTable[i][j] == -1)
                 printf("err\t");
             else
@@ -522,8 +527,8 @@ void print_parsing_tables() {
 
 int find_column_of_terminal_in_table(char* terminal) {
     int i;
-    for (i = 0; i < numTerminals && strcmp(terminalsList[i], terminal); i++);
-    if (i < numTerminals) return i;
+    for (i = 0; i < terminalsList->size && strcmp(*(char**) arraylist_get(terminalsList, i), terminal); i++);
+    if (i < terminalsList->size) return i;
     else {
         printf("UNKNOWN TERMINAL %s", terminal);
         exit(0);
