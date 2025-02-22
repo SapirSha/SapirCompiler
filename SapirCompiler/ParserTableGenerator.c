@@ -37,6 +37,7 @@ void add_rule(char* nonterminal, char* content) {
     arraylist_add(rules, &rule);
 }
 
+
 char* get_nth_token(const char* s, int n) {
     static char token[256];
     int currentToken = 0;
@@ -224,8 +225,8 @@ void print_state(State* s, int index) {
     for (int i = 0; i < s->items->size; i++) {
 		LRItem* item = arraylist_get(s->items, i);
         printf("  %s -> ", item->rule->nonterminal);
-        char buffer[256];
-        strcpy(buffer, item->rule->ruleContent);
+        char* buffer;
+        buffer = strdup( item->rule->ruleContent);
         char* token = strtok(buffer, " ");
         int pos = 0;
         while (token != NULL) {
@@ -238,6 +239,8 @@ void print_state(State* s, int index) {
         if (item->dot >= pos)
             printf(". ");
         printf("\n");
+
+        free(buffer);
     }
 }
 
@@ -262,8 +265,8 @@ void collect_symbols() {
             char* temp = strdup(((Rule*)rules->array[i])->nonterminal);
             arraylist_add(nonterminalsList, &temp);
         }
-        char buffer[256];
-        strcpy(buffer, ((Rule*)rules->array[i])->ruleContent);
+        char* buffer;
+        buffer = strdup(((Rule*)rules->array[i])->ruleContent);
         char* token = strtok(buffer, " ");
         while (token != NULL) {
             if (!(isupper(token[0]) || strcmp(token, "$") == 0)) {
@@ -280,6 +283,7 @@ void collect_symbols() {
             }
             token = strtok(NULL, " ");
         }
+        free(buffer);
     }
     if (!symbol_exists(terminalsList, "$")) {
         char* temp = strdup("$");
@@ -307,9 +311,9 @@ void compute_follow() {
         changed = false;
         for (int i = 0; i < rules->size; i++) {
             char* A = ((Rule*)rules->array[i])->nonterminal;
-            char buffer[256];
-            strcpy(buffer, ((Rule*)rules->array[i])->ruleContent);
-            char* tokens[50];
+            char* buffer;
+            buffer = strdup( ((Rule*)rules->array[i])->ruleContent);
+            char* tokens[50]; ////////////////////////
             int ntokens = 0;
             char* tok = strtok(buffer, " ");
             while (tok != NULL) {
@@ -323,12 +327,13 @@ void compute_follow() {
                             hashset_insert(hashmap_get(follow, tokens[j]), tokens[j + 1]);  // insert as possibility for nonterminal
                         }
                         else {
-                            char sample[256] = "";
+                            char* sample;
                             
                             for (int r = 0; r < rules->size; r++) { // get rule where the nonterminal is on the left side
                                 if (strcmp(((Rule*)rules->array[r])->nonterminal, tokens[j + 1]) == 0) {
-                                    strcpy(sample, ((Rule*)rules->array[r])->ruleContent);
+                                    sample = strdup(((Rule*)rules->array[r])->ruleContent);
                                     char* firstSym = get_nth_token(sample, 0);
+                                    free(sample);
                                     if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) { // if first symbol is terminal
                                         hashset_insert(hashmap_get(follow, tokens[j]), firstSym); // insert as possibility
                                         break;
@@ -364,6 +369,7 @@ void compute_follow() {
                     }
                 }
             }
+            free(buffer);
         }
     } while (changed);
 }
@@ -397,26 +403,26 @@ void build_parsing_tables() {
 
     for (int i = 0; i < states->size; i++) {
         State* s = arraylist_get(states, i);
-        char* symbols[100];
-        int symbolCount = 0;
+		ArrayList* symbols = arraylist_init(sizeof(char**), 100);
+
         for (int j = 0; j < s->items->size; j++) {
             char* sym = get_next_symbol(arraylist_get(s->items, j));
             if (sym != NULL) {
                 bool exists = false;
-                for (int k = 0; k < symbolCount; k++) {
-                    if (strcmp(sym, symbols[k]) == 0) {
+                for (int k = 0; k < symbols->size; k++) {
+                    if (strcmp(sym, *(char**)arraylist_get(symbols, k)) == 0) {
                         exists = true;
                         break;
                     }
                 }
                 if (!exists) {
-                    symbols[symbolCount] = strdup(sym);
-                    symbolCount++;
+                    char* temp = strdup(sym);
+					arraylist_add(symbols, &temp);
                 }
             }
         }
-        for (int k = 0; k < symbolCount; k++) {
-            State* g = goto_state(s, symbols[k]);
+        for (int k = 0; k < symbols->size; k++) {
+            State* g = goto_state(s, *(char**)arraylist_get(symbols, k));
             if (g->items->size == 0) {
                 free(g);
                 continue;
@@ -426,17 +432,18 @@ void build_parsing_tables() {
                 free(g);
                 continue;
             }
-            if (!(isupper(symbols[k][0]) || strcmp(symbols[k], "START'") == 0)) {
-                int termIdx = getTerminalIndex(symbols[k]);
+            if (!(isupper((*(char**)arraylist_get(symbols, k))[0]) || strcmp(*(char**)arraylist_get(symbols, k), "START'") == 0)) {
+                int termIdx = getTerminalIndex(*(char**)arraylist_get(symbols, k));
                 if (termIdx != -1) {
-                    char buf[32];
+                    char* buf = malloc(sizeof(int) + 3);
                     snprintf(buf, sizeof(buf), "s%d", j);
                     free(actionTable[i][termIdx]);
                     actionTable[i][termIdx] = strdup(buf);
+                    free(buf);
                 }
             }
             else { 
-                int ntIdx = getNonterminalIndex(symbols[k]);
+                int ntIdx = getNonterminalIndex(*(char**)arraylist_get(symbols, k));
                 if (ntIdx != -1) {
                     gotoTable[i][ntIdx] = j;
                 }
