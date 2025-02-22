@@ -20,6 +20,8 @@ void arraylist_add(ArrayList*, void*);
 // Get the element at the specified index
 void* arraylist_get(ArrayList*, int);
 
+void arraylist_set(ArrayList*, int, void*);
+
 // Reset the ArrayList to an empty state
 void arraylist_reset(ArrayList*);
 

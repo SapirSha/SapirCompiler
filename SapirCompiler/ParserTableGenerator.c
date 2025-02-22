@@ -565,6 +565,7 @@ void create_assosiation_map() {
     printassosiation(TOKEN_NUMBER);
     assosiation_array[TOKEN_FLOAT] = find_column_of_terminal_in_table("number");
     printassosiation(TOKEN_FLOAT);
+    printf("\n");
 }
 
 
@@ -590,6 +591,10 @@ void init_tables() {
     for (unsigned int i = 0; i < states->size; i++)
         goto_rows_pointers[i] = goto_content + i * nonterminalsList->size;
     gotoTable = goto_rows_pointers;
+}
+
+void print_string_arraylist(char** nonterminal) {
+	printf("%s ", *nonterminal);
 }
 
 int create_parser_tables() {
@@ -621,6 +626,13 @@ int create_parser_tables() {
     }
     
     collect_symbols();
+    printf("\n\nARRAY: ");
+
+    arraylist_print(terminalsList, print_string_arraylist);
+    arraylist_print(nonterminalsList, print_string_arraylist);
+
+
+    printf("\n\n");
     init_tables();
     
 
@@ -630,6 +642,7 @@ int create_parser_tables() {
 
     print_parsing_tables();
     
+
     create_assosiation_map();
 
     print_rules();
