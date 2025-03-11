@@ -1,135 +1,133 @@
-// hashset.c
-#include "hashset.h"
-#include <stdlib.h>
-#include <string.h>
+#include "HashSet.h"
 #include <stdio.h>
 
-static unsigned int hash(const char* str, int capacity) {
-    unsigned int hashValue = 13;
-    while (*str) {
-        hashValue = (hashValue * 33) ^ (unsigned char)(*str);
-        str++;
+static void hashset_expand(HashSet* set) {
+    unsigned int new_capacity = set->capacity * GROWTH_FACTOR;
+    HashSetNode** new_buckets = calloc(new_capacity, sizeof(HashSetNode*));
+
+    for (unsigned int i = 0; i < set->capacity; i++) {
+        HashSetNode* node = set->buckets[i];
+        while (node) {
+            HashSetNode* next = node->next;
+            unsigned int new_index = set->hash(node->key) % new_capacity;
+            node->next = new_buckets[new_index];
+            new_buckets[new_index] = node;
+            node = next;
+        }
     }
-    return hashValue % capacity;
+    free(set->buckets);
+    set->buckets = new_buckets;
+    set->capacity = new_capacity;
 }
 
-// Create a new HashSet
-HashSet* hashset_create(int initial_size) {
-    HashSet* set = (HashSet*)malloc(sizeof(HashSet));
-    set->capacity = initial_size;
+HashSet* hashset_create(unsigned int default_capacity, unsigned int (*hash)(void* key), int (*equals)(void* key1, void* key2)) {
+    HashSet* set = malloc(sizeof(HashSet));
+    if (!set)
+        return NULL;
+
+    set->capacity = (default_capacity < MINIMUM_HASHSET_CAPACITY) ? MINIMUM_HASHSET_CAPACITY : default_capacity;
     set->size = 0;
-    set->tombstones = 0;
-    set->table = (char**)calloc(set->capacity, sizeof(char*));
+    set->hash = hash;
+    set->equals = equals;
+    set->buckets = calloc(set->capacity, sizeof(HashSetNode*));
+    if (!set->buckets) {
+        free(set);
+        return NULL;
+    }
+
     return set;
 }
 
-// Free the HashSet
-void hashset_free(HashSet* set) {
-    for (int i = 0; i < set->capacity; i++) {
-        if (set->table[i] && set->table[i] != TOMBSTONE) {
-            free(set->table[i]);
-        }
+bool hashset_contains(HashSet* set, void* key) {
+    unsigned int index = set->hash(key) % set->capacity;
+    HashSetNode* node = set->buckets[index];
+    while (node) {
+        if (set->equals(node->key, key))
+            return true;
+        node = node->next;
     }
-    free(set->table);
-    free(set);
+    return false;
 }
 
-// Resize the HashSet
-static void hashset_resize(HashSet* set) {
-    int newCapacity = set->capacity * 2;
-    char** newTable = (char**)calloc(newCapacity, sizeof(char*));
+bool hashset_insert(HashSet* set, void* key) {
+    if (hashset_contains(set, key))
+        return false;
 
-    for (int i = 0; i < set->capacity; i++) {
-        if (set->table[i] && set->table[i] != TOMBSTONE) {
-            unsigned int index = hash(set->table[i], newCapacity);
-            while (newTable[index]) {
-                index = (index + 1) % newCapacity;
-            }
-            newTable[index] = set->table[i];
-        }
-    }
+    if ((set->size + 1) > set->capacity * MAX_LOAD_FACTOR)
+        hashset_expand(set);
 
-    free(set->table);
-    set->table = newTable;
-    set->capacity = newCapacity;
-    set->tombstones = 0;
-}
+    unsigned int index = set->hash(key) % set->capacity;
+    HashSetNode* new_node = malloc(sizeof(HashSetNode));
+    if (!new_node)
+        return false;
 
-// Insert a value into the HashSet
-bool hashset_insert(HashSet* set, const char* value) {
-    if (value == NULL) return;
-    if ((float)(set->size + set->tombstones) / set->capacity > MAX_LOAD_FACTOR) {
-        hashset_resize(set);
-    }
-
-    unsigned int index = hash(value, set->capacity);
-    int tombstoneIndex = -1;
-
-    while (set->table[index]) {
-        if (set->table[index] == TOMBSTONE) {
-            if (tombstoneIndex == -1) {
-                tombstoneIndex = index;
-            }
-        }
-        else if (strcmp(set->table[index], value) == 0) {
-            return false; // Value already exists
-        }
-        index = (index + 1) % set->capacity;
-    }
-
-    if (tombstoneIndex != -1) {
-        index = tombstoneIndex;
-        set->tombstones--;
-    }
-
-    set->table[index] = _strdup(value);
+    new_node->key = key;
+    new_node->next = set->buckets[index];
+    set->buckets[index] = new_node;
     set->size++;
     return true;
 }
 
-// Check if the HashSet contains a value
-bool hashset_contains(HashSet* set, const char* value) {
-    unsigned int index = hash(value, set->capacity);
+bool hashset_remove(HashSet* set, void* key) {
+    unsigned int index = set->hash(key) % set->capacity;
+    HashSetNode* node = set->buckets[index];
+    HashSetNode* prev = NULL;
 
-    while (set->table[index]) {
-        if (set->table[index] != TOMBSTONE && strcmp(set->table[index], value) == 0) {
-            return true;
-        }
-        index = (index + 1) % set->capacity;
-    }
-
-    return false;
-}
-
-// Remove a value from the HashSet
-bool hashset_remove(HashSet* set, const char* value) {
-    unsigned int index = hash(value, set->capacity);
-
-    while (set->table[index]) {
-        if (set->table[index] != TOMBSTONE && strcmp(set->table[index], value) == 0) {
-            free(set->table[index]);
-            set->table[index] = TOMBSTONE;
+    while (node) {
+        if (set->equals(node->key, key)) {
+            if (prev)
+                prev->next = node->next;
+            else
+                set->buckets[index] = node->next;
+            free(node);
             set->size--;
-            set->tombstones++;
             return true;
         }
-        index = (index + 1) % set->capacity;
+        prev = node;
+        node = node->next;
     }
-
     return false;
 }
 
-// Print the HashSet (for debugging)
-void hashset_print(HashSet* set) {
-    for (int i = 0; i < set->capacity; i++) {
-        if (set->table[i] && set->table[i] != TOMBSTONE) {
-            printf("Index %d: %s\n", i, set->table[i]);
+void hashset_free(HashSet* set) {
+    if (!set)
+        return;
+
+    for (unsigned int i = 0; i < set->capacity; i++) {
+        HashSetNode* node = set->buckets[i];
+        while (node) {
+            HashSetNode* temp = node;
+            node = node->next;
+            free(temp);
         }
-        else if (set->table[i] == TOMBSTONE) {
-            printf("Index %d: TOMBSTONE\n", i);
+    }
+    free(set->buckets);
+    free(set);
+}
+
+bool hashset_add_hashset(HashSet* set1, HashSet* set2) {
+    bool changed = false;
+    for (unsigned int i = 0; i < set2->capacity; i++) {
+        HashSetNode* node = set2->buckets[i];
+        while (node) {
+            if (!hashset_contains(set1, node->key)) {
+                changed = true;
+                hashset_insert(set1, node->key);
+            }
+            node = node->next;
+
         }
-        else {
-            printf("Index %d: NULL\n", i);
+    }
+    return changed;
+}
+
+
+void hashset_print(HashSet* set, void print(void*)) {
+    for (unsigned int i = 0; i < set->capacity; i++) {
+        HashSetNode* node = set->buckets[i];
+        while (node) {
+            print(node->key);
+            node = node->next;
         }
     }
 }

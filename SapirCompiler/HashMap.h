@@ -2,35 +2,39 @@
 #define HASHMAP_H
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX_LOAD_FACTOR 0.7
+#define MINIMUM_HASHMAP_CAPACITY 5
 #define GROWTH_FACTOR 2
 
-// Define a structure for the key-value pair // doesnt allocates space
-typedef struct KeyValuePair {
-    char* key;
-    void* value;
-    struct KeyValuePair* next;
-} KeyValuePair;
+//DOESNT allocates space
 
-// Define a structure for the hash table
+typedef struct HashMapNode {
+    void* key;
+    void* value;
+    struct HashMapNode* next;
+} HashMapNode;
+
 typedef struct HashMap {
-    KeyValuePair** table;
-    int size;
-    int count;
+    unsigned int capacity;
+    unsigned int size;
+    unsigned int (*hash)(void* key);
+    int (*equals)(void* key1, void* key2);
+    HashMapNode** buckets;
 } HashMap;
 
-// Create a new hash map
-HashMap* createHashMap(int size);
+HashMap* createHashMap(unsigned int default_capacity, unsigned int(*hash)(void* key), int (*equals)(void* key1, void* key2));
 
-// Insert a key-value pair into the hash map
-void hashmap_insert(HashMap* hashMap, char* key, void* value);
+void hashmap_insert(HashMap* map, void* key, void* value);
 
-// Get a value by key from the hash map
-void* hashmap_get(HashMap* hashMap, char* key);
+void* hashmap_get(HashMap* map, void* key);
 
-// Free the hash map
-void freeHashMap(HashMap* hashMap);
+void freeHashMap(HashMap* map);
 
+
+unsigned int string_hash(void* key);
+int string_equals(void* key1, void* key2);
 
 #endif

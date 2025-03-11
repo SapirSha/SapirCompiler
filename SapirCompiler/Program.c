@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "Matrix.h"
 #include "ArrayList.h"
+#include "HashSet.h"
 
 void printINT(int* e) {
     if (e != NULL) printf("%d", *e);
@@ -17,13 +18,15 @@ void printINT(int* e) {
 
 int main() {
     
-    //const char* code = "\nint main() {\nint x = 42.57;\nstring s = \"Hello, world!\"; # This is a comment#\nif (x >= 10) { # Multi_line comment Example # x = x + 1;\n}\n}";
-    const char* code = "5+7.1*2+1";
+    const char* code = "5+7.1* if +2+1 wasd while";
     printf("Tokenizing: %s\n", code);
-    Tokens* tokens = tokenize(code);
+    TokensQueue* tokens = tokenize(code);
     tokens_print(tokens);
+    
     printf("\n\n\n");
     create_parser_tables();
+    
+
 
 
 

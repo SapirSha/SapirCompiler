@@ -1,24 +1,20 @@
-#ifndef PARSERTABLEGENERATOR_H
-#define PARSERTABLEGENERATOR_H
+#ifndef PARSER_TABLE_GENERATOR_H
+#define PARSER_TABLE_GENERATOR_H
 
 #include "Tokens.h"
 #include "ArrayList.h"
 
-#define MAX_STATES      100
-#define MAX_SYMBOLS     50
-
 #define DEFAULT_NUMBER_OF_STATES 100
 #define DEFAULT_NUMBER_OF_RULES 100
-#define DEFUALT_AMOUNT_OF_LR_ITEMS 32
-#define DEFUALT_AMOUNT_OF_NONTERMINALS 100
-#define DEFUALT_AMOUNT_OF_TERMINALS 100
-
+#define DEFAULT_AMOUNT_OF_LR_ITEMS 32
+#define DEFAULT_AMOUNT_OF_NONTERMINALS 100
+#define DEFAULT_AMOUNT_OF_TERMINALS 100
 
 typedef struct {
     char* nonterminal;
     char* ruleContent;
-    int rule_terminal_count;
-    int rule_id;
+    int ruleTerminalCount;
+    int ruleID;
 } Rule;
 
 typedef struct {
@@ -27,15 +23,13 @@ typedef struct {
 } LRItem;
 
 typedef struct {
-    ArrayList* items;
+    ArrayList* items; // CHAGNE TO HASHSET?
 } State;
 
 char*** actionTable;
-
 int** gotoTable;
 
-int assosiation_array[NUM_OF_TOKENS];
-
+int associationArray[NUM_OF_TOKENS];
 ArrayList* rules;
 
 int create_parser_tables();

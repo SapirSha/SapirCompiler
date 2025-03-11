@@ -7,16 +7,6 @@
 #define strdup _strdup
 #endif
 
-/*
-        char buffer[256];
-
-        for(int i = 0; i < spos - str; i++)
-            buffer[i] = str[i];
-        buffer[spos - str] = '\0';
-
-        s->to_clear = strdup(buffer);
-        */
-
 #define CHAR_TO_STRING(c) ((char[]){(c), '\0'})
 
 StringTrie* stringin_init() {
@@ -39,18 +29,15 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
     char* pos = s->to_clear;
     const char* spos = str;
 
-    // Traverse the shared prefix
     while (*pos && *spos && *pos == *spos) {
         pos++;
         spos++;
     }
 
     if (*spos == '\0' && *pos == '\0') {
-        // Exact match
         s->is_end = token_type;
     }
     else if (*spos == '\0') {
-        // New string is a prefix of the existing string
         StringTrie* new_child = stringin_init();
         if (!new_child) {
             fprintf(stderr, "Failed to allocate memory for new child.\n");
@@ -65,13 +52,12 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
         char* temp = s->to_clear;
         s->to_clear = strdup(str);
 
-        s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP);
-        hashmap_insert(s->paths, CHAR_TO_STRING(*pos), new_child);
+        s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP, string_hash, string_equals);
+        hashmap_insert(s->paths, strdup(CHAR_TO_STRING(*pos)), new_child);
         free(temp);
 
     }
     else if (*pos == '\0') {
-        // Existing string is a prefix of the new string
         if (*s->to_clear == '\0' && !s->paths) {
             free(s->to_clear);
 			s->to_clear = strdup(str);
@@ -79,7 +65,7 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
 			return;
         }
         if (!s->paths) {
-            s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP);
+            s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP, string_hash, string_equals);
             if (!s->paths) {
                 fprintf(stderr, "Failed to create hashmap.\n");
                 exit(EXIT_FAILURE);
@@ -96,14 +82,13 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
 
             next->to_clear = strdup(spos + 1);
             next->is_end = token_type;
-            hashmap_insert(s->paths, CHAR_TO_STRING(*spos), next);
+            hashmap_insert(s->paths, strdup(CHAR_TO_STRING(*spos)), next);
         }
         else {
             stringin_insert_string(next, spos + 1, token_type);
         }
     }
     else {
-        // Strings diverge at this point
         StringTrie* new_child = stringin_init();
         if (!new_child) {
             fprintf(stderr, "Failed to allocate memory for new child.\n");
@@ -124,13 +109,13 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
         s->to_clear = strdup(buffer);
         free(buffer);
 
-        s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP);
+        s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP, string_hash, string_equals);
         if (!s->paths) {
             fprintf(stderr, "Failed to create hashmap.\n");
             exit(EXIT_FAILURE);
         }
 
-        hashmap_insert(s->paths, CHAR_TO_STRING(*pos), new_child);
+        hashmap_insert(s->paths, strdup(CHAR_TO_STRING(*pos)), new_child);
 
         StringTrie* next = stringin_init();
         if (!next) {
@@ -140,7 +125,7 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
 
         next->to_clear = strdup(spos + 1);
         next->is_end = token_type;
-        hashmap_insert(s->paths, CHAR_TO_STRING(*spos), next);
+        hashmap_insert(s->paths, strdup(CHAR_TO_STRING(*spos)), next);
     }
 }
 
@@ -164,18 +149,15 @@ Token_Types stringin_search_string(StringTrie* root, const char* str) {
     return TOKEN_UNKNOWN;
 }
 int stringin_next(StringTrie** pos, char** remaining_clearance, char next_letter) {
-    // Case 1: If we've reached the end of both the node and the string
     if (**remaining_clearance == '\0' && next_letter == '\0') {
         return (*pos)->is_end != TOKEN_UNKNOWN ? FOUND : NOT_FOUND;
     }
 
 
-    // Case 2: If we're still in the string, but we've reached the end of the node
     if (**remaining_clearance != '\0' && next_letter == '\0') {
         return NOT_FOUND;
     }
 
-    // Case 3: If we're at the end of the node, but still have characters left in the string
     if (**remaining_clearance == '\0' && next_letter != '\0') {
 		if ((*pos)->paths == NULL) return NOT_FOUND;
         StringTrie* child = hashmap_get((*pos)->paths, CHAR_TO_STRING(next_letter));
@@ -185,12 +167,10 @@ int stringin_next(StringTrie** pos, char** remaining_clearance, char next_letter
         return YET_FOUND;
     }
 
-    // Case 4: If the current character doesn't match the next letter, it's a mismatch
     if (**remaining_clearance != next_letter) {
         return NOT_FOUND;
     }
 
-    // Case 5: If the current character matches the next letter, move forward
     (*remaining_clearance)++;
     return YET_FOUND;
 }
@@ -203,7 +183,7 @@ void stringin_free(StringTrie* root) {
 
     if (root->paths) {
         for (int i = 0; i < root->paths->size; i++) {
-            KeyValuePair* current = root->paths->table[i];
+            HashMapNode* current = root->paths->buckets[i];
             while (current) {
                 StringTrie* child = (StringTrie*)current->value;
                 stringin_free(child);
@@ -228,7 +208,7 @@ void stringin_print(StringTrie* root) {
 
     if (root->paths) {
         for (int i = 0; i < root->paths->size; i++) {
-            KeyValuePair* current = root->paths->table[i];
+            HashMapNode* current = root->paths->buckets[i];
             while (current) {
                 printf("%s\n", current->key);
                 stringin_print((StringTrie*)current->value);

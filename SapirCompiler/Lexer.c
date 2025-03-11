@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
-#include "HashMap.h"
 #include "ArrayList.h"
 #include "StringTrie.h"
 
@@ -269,7 +268,7 @@ static const OperatorState operator_lookup[] = {
     ['&'] = OPERATOR_AND,['|'] = OPERATOR_OR,['^'] = OPERATOR_XOR,['!'] = OPERATOR_NOT,
 }; int max_oper_ascii_index = sizeof(operator_lookup) / sizeof(char);
 
-////////////////////////////////////////////////////////////////////// <-------------------- ADD THIS TO KEYWORDS FINDER (COMPACT TRIE
+////////////////////////////////////////////////////////////////////// <-------------------- ADD THIS TO KEYWORDS FINDER (COMPACT TRIE)
 static const OperatorState operator_state_table[NUM_OPERATOR_STATES][NUM_OPERATOR_STATES] = {
     // State: / Got:       +  PLUS               - MINUS               * MULTIPLY           / DIVIDE               = EQUAL                > GREATER              < LESS               % MODULO           & AND               | OR                ^ XOR           ! NOT       
     /* Start */         {OPERATOR_ERROR, OPERATOR_PLUS,       OPERATOR_MINUS,       OPERATOR_MULTIPLY,   OPERATOR_DIVIDE,       OPERATOR_ASSIGN,         OPERATOR_GREATER,     OPERATOR_LESS,      OPERATOR_MODULO,   OPERATOR_AND,      OPERATOR_OR,        OPERATOR_XOR,     OPERATOR_NOT  },  // Start state
@@ -286,7 +285,7 @@ static const OperatorState operator_state_table[NUM_OPERATOR_STATES][NUM_OPERATO
     /* XOR */           {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_XOR_ASSIGN,     OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // XOR state
     /* NOT */           {OPERATOR_ERROR, OPERATOR_ERROR,      OPERATOR_ERROR,       OPERATOR_ERROR,      OPERATOR_ERROR,        OPERATOR_NOT_EQUAL,      OPERATOR_ERROR,       OPERATOR_ERROR,     OPERATOR_ERROR,    OPERATOR_ERROR,    OPERATOR_ERROR,     OPERATOR_ERROR,   OPERATOR_ERROR},  // NOT state
 };
-static const Token_Types STATE_OPERATOR_TO_TOKEN_CONVERTER[] = {
+static const Token_Types STATE_OPERATOR_TO_TOKEN_CONVERTER[] = { /////// CHANGE LATERRR <--------------
     [OPERATOR_PLUS] = TOKEN_OPERATOR_PLUS,        // +
     [OPERATOR_MINUS] = TOKEN_OPERATOR_MINUS,       // -
     [OPERATOR_MULTIPLY] = TOKEN_OPERATOR_MULTIPLY,    // *

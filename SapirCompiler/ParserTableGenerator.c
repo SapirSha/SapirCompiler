@@ -2,148 +2,193 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
+
 #include "ParserTableGenerator.h"
 #include "Tokens.h"
 #include "HashMap.h"
-#include <ctype.h>
 #include "HashSet.h"
 #include "LinkedList.h"
 
-#define strdup _strdup
-
 #pragma warning(disable:4996)
 
+static ArrayList* states; // Convert states to hashset (make hashset dynamic)
+static ArrayList* nonterminalsList; // HAS TO BE AN ARRAY LIST DONT CHANGE
+static ArrayList* terminalsList; // HAS TO BE AN ARRAY LIST DONT CHANGE
+// can maybe make an appeared symbols hashset?
+static HashMap* follow;
 
-ArrayList* states;
+/* 
+A function that determines if a symbol is nonterminal:
+ *  A symbol is a nonterminal if his first letter is uppercase
+*/
+static bool isNonterminal(const char* symbol) {
+    return (symbol && isupper(symbol[0]));
+}
 
-int count_terminals(char* rule_content) {
+/*
+A function that counts the number of symbols in the rule
+ * symbols are separated by spaces (' ') 
+*/
+static int count_symbols(const char* ruleContent) {
     int count = 0;
-    bool in_terminal = false;
-
-    while (*rule_content != '\0') {
-        if (*rule_content != ' ' && !in_terminal) count++;
-        in_terminal = *rule_content != ' ' ? true : false;
-        rule_content++;
+    bool inToken = false;
+    while (*ruleContent != '\0') {
+        if (!isspace((char)*ruleContent) && !inToken) {
+            count++;
+            inToken = true;
+        }
+        else if (isspace((char)*ruleContent)) {
+            inToken = false;
+        }
+        ruleContent++;
     }
-
     return count;
 }
 
-void add_rule(char* nonterminal, char* content) {
+/*
+A function that adds a rule into the rules array list, that represents the BNF
+ * Nonterminals first letter is uppercase
+*/
+void add_rule(const char* nonterminal, const char* content) {
     Rule rule;
     rule.nonterminal = strdup(nonterminal);
     rule.ruleContent = strdup(content);
-    rule.rule_terminal_count = count_terminals(content);
-    rule.rule_id = rules->size;
+    rule.ruleTerminalCount = count_symbols(content);
+    rule.ruleID = rules->size;
     arraylist_add(rules, &rule);
 }
 
-char* stack_to_string(LinkedList* lst) {
-    
-    char* str = malloc(linkedlist_count(lst) * sizeof(char) + 1);
-    str[linkedlist_count(lst)] = '\0';
-    int i = linkedlist_count(lst) - 1;
-    while (i >= 0)
-        str[i--] = *(char*)linkedlist_pop(lst);
-
-    return str;
-}
-
-char* get_nth_token(const char* s, int n) {
-    LinkedList* token = linkedlist_init(sizeof(char));
+/*
+A function that returns the token in position n in the input
+ * Position is the number of symbols passed, and not character position in the string
+*/
+static char* get_nth_token(const char* s, int n) {
     int currentToken = 0;
-    const char* p = s;
-
+    char* p = s;
     while (*p) {
-        while (*p && isspace((unsigned char)*p))
+        while (*p && isspace((char)*p))
             p++;
-        if (!*p) break;
+        if (*p == '\0') break;
+        
         if (currentToken == n) {
-            int i = 0;
-            while (*p && !isspace((unsigned char)*p)) {
-                linkedlist_push(token, p);
+            char* start = p;
+
+            while (*p != '\0' && !isspace((char)*p))
                 p++;
-            }
-            char* str = stack_to_string(token);
-            arraylist_free(token);
-            return str;
+
+            int len = (p - start) / sizeof(char);
+            char* token = malloc(len + 1);
+            strncpy(token, start, len);
+            token[len] = '\0';
+
+            return token;
         }
         else {
-            while (*p && !isspace((unsigned char)*p))
+            while (*p && !isspace((char)*p))
                 p++;
+            
             currentToken++;
         }
     }
     return NULL;
 }
 
-char* get_next_symbol(LRItem* item) {
+/*
+ A function that returns the symbol after the dot in an LRItem
+*/
+static char* get_next_symbol(LRItem* item) {
     return get_nth_token(item->rule->ruleContent, item->dot);
 }
 
-bool state_contains_item(State* s, LRItem* item) {
+/*
+ A function that checks if a state has a certain LR Item inside it
+ * LRItems items with the same rules can be different if they have different dot position
+*/
+static bool state_contains_item(State* s, LRItem* item) {
     for (int i = 0; i < s->items->size; i++) {
-		LRItem* it = arraylist_get(s->items, i);
-        if (it->rule == item->rule && it->dot == item->dot)
+        LRItem* existing = arraylist_get(s->items, i);
+        if (existing->rule == item->rule && existing->dot == item->dot)
             return true;
     }
     return false;
 }
 
-void closure(State* s) {
+/*
+ A function that commits closure for a certain state:
+ * If a state can get a nonterminal, it can also get the terminals that its made of.
+   In this function, we add to the current state all the rules of the nonterminals that can be got,
+   with dot at zero (start of a new rule)
+*/
+static void closure(State* s) {
     bool added;
-    do {
-        added = false;
-        for (int i = 0; i < s->items->size; i++) {
-            LRItem* item = arraylist_get(s->items, i);
-            char* symbol = get_next_symbol(item);
-            if (symbol != NULL && isupper(symbol[0])) {
-                for (int j = 0; j < rules->size; j++) {
-                    if (strcmp(((Rule*)rules->array[j])->nonterminal, symbol) == 0) {
-                        LRItem newItem;
-                        newItem.rule = ((Rule*)rules->array[j]);
-                        newItem.dot = 0;
-                        if (!state_contains_item(s, &newItem)) {
-							arraylist_add(s->items, &newItem);
-                            added = true;
-                        }
+    added = false;
+    // go through every lr item in the state
+    for (int i = 0; i < s->items->size; i++) {
+        LRItem* item = arraylist_get(s->items, i);
+        char* symbol = get_next_symbol(item);
+
+        // if the lr item indicates that a nonterminal can be gotten
+        if (symbol != NULL && isNonterminal(symbol)) {
+            // search for all the rules where the nonterminal is the left item, and add them to the state
+            for (int j = 0; j < rules->size; j++) {
+                Rule* ruleCandidate = (Rule*)rules->array[j];
+                if (strcmp(ruleCandidate->nonterminal, symbol) == 0) {
+                    LRItem newItem = { .rule = ruleCandidate, .dot = 0 };
+                    if (!state_contains_item(s, &newItem)) { // add only if not already in state
+                        arraylist_add(s->items, &newItem);
+                        added = true;
                     }
                 }
             }
         }
-    } while (added);
+        free(symbol);
+    }
 }
-
-State* goto_state(State* s, const char* symbol) {
+/*
+ This is the function that creates the new states:
+ * This function create a state for an allowed symbol in the state,
+ * It gets all the possibilities in the previous state to the new state and not one
+*/
+static State* goto_state(State* s, const char* symbol) {
     State* newState = malloc(sizeof(State));
-    newState->items = arraylist_init(sizeof(LRItem), DEFUALT_AMOUNT_OF_LR_ITEMS);
+    newState->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
+    
+    // find all the rules in the previous state that have 'symbol' as an allowed possibility, and add them
     for (int i = 0; i < s->items->size; i++) {
-		LRItem item = *(LRItem*)arraylist_get(s->items, i);
+        LRItem item = *(LRItem*)arraylist_get(s->items, i);
         char* next = get_next_symbol(&item);
+        
         if (next != NULL && strcmp(next, symbol) == 0) {
             LRItem advanced = item;
-            advanced.dot++;
+            advanced.dot++; // advance the dot
+
             if (!state_contains_item(newState, &advanced)) {
-				arraylist_add(newState->items, &advanced);
+                arraylist_add(newState->items, &advanced);
             }
         }
+        free(next);
     }
+
     closure(newState);
     return newState;
 }
 
 bool state_equals(State* s1, State* s2) {
-    if (s1->items->size != s2->items->size) return false;
+    if (s1->items->size != s2->items->size)
+        return false;
     for (int i = 0; i < s1->items->size; i++) {
         bool found = false;
+        LRItem* item1 = arraylist_get(s1->items, i);
         for (int j = 0; j < s2->items->size; j++) {
-            if (((LRItem*)arraylist_get(s1->items, i))->rule == ((LRItem*)arraylist_get(s2->items, j))->rule &&
-                ((LRItem*)arraylist_get(s1->items, i))->dot == ((LRItem*)arraylist_get(s2->items, j))->dot) {
+            LRItem* item2 = arraylist_get(s2->items, j);
+            if (item1->rule == item2->rule && item1->dot == item2->dot) {
                 found = true;
                 break;
             }
         }
-        if (!found) return false;
+        if (!found)
+            return false;
     }
     return true;
 }
@@ -156,90 +201,91 @@ int find_state(State* s) {
     return -1;
 }
 
-
-void build_states(char* start_nonterminal) {
-    /*
-    Rule augmented;
-    strcpy(augmented.nonterminal, "START'");
-    
-    int len = strlen(start_nonterminal) + 3;
-    char* buffer = malloc(len);
-    snprintf(buffer, len, "%s $", start_nonterminal);
-    augmented.ruleContent = strdup(buffer);
-    free(buffer);
-    
-    rules[numRules++] = augmented;
-    */
+/*
+ Builds the states
+*/
+void build_states(const char* startNonterminal) {
     states = arraylist_init(sizeof(State), DEFAULT_NUMBER_OF_STATES);
 
-
-
-    int len = strlen(start_nonterminal) + 3;
+    int len = strlen(startNonterminal) + 4;
     char* buffer = malloc(len);
-    sprintf(buffer, "%s $", start_nonterminal);
+    snprintf(buffer, len, "%s $", startNonterminal);
+
+    // add an initial rule for the tables to start at, and add startnonterminal as its content
     add_rule("START'", buffer);
     free(buffer);
 
+    State* State0 = malloc(sizeof(State));
+    State0->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
+    LRItem startItem = { .rule = ((Rule*)rules->array[rules->size - 1]), .dot = 0 };
+    arraylist_add(State0->items, &startItem);
 
-    State* I0 = malloc(sizeof(State));
-	I0->items = arraylist_init(sizeof(LRItem), DEFUALT_AMOUNT_OF_LR_ITEMS);
-    LRItem startItem;
-    startItem.rule = ((Rule*)rules->array[rules->size - 1]);
-    startItem.dot = 0;
-	arraylist_add(I0->items, &startItem);
-    closure(I0);
-    arraylist_add(states, I0);
 
-    bool addedNew;
-    do {
-        addedNew = false;
-        for (int i = 0; i < states->size; i++) {
-			State* s = arraylist_get(states, i);
-            ArrayList* symbolList = arraylist_init(sizeof(char**), 100);
-            for (int j = 0; j < s->items->size; j++) {
-                char* sym = get_next_symbol(arraylist_get(s->items, j));
-                
-                if (sym != NULL) {
-                    bool exists = false;
-                    for (int k = 0; k < symbolList->size; k++) {
-                        if (strcmp(sym, *(char**)arraylist_get(symbolList, k)) == 0) {
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if (!exists) {
-                        char* temp = strdup(sym);
-						arraylist_add(symbolList, &temp);
+    closure(State0);
+
+    arraylist_add(states, State0);
+
+    // go through all the states (states size increases)
+    for (int i = 0; i < states->size; i++) {
+        State* s = arraylist_get(states, i);
+
+        // list of possible symbols to get in the state
+        ArrayList* symbolList = arraylist_init(sizeof(char*), 25);
+        for (int j = 0; j < s->items->size; j++) {
+            char* sym = get_next_symbol(arraylist_get(s->items, j));
+
+            if (sym != NULL) {
+                bool exists = false;
+
+                // check if symbol already exists
+                for (int k = 0; k < symbolList->size; k++) {
+                    if (strcmp(sym, *(char**)arraylist_get(symbolList, k)) == 0) {
+                        exists = true;
+                        break;
                     }
                 }
-            }
-            for (int k = 0; k < symbolList->size; k++) {
-                State* g = goto_state(s, *(char**)arraylist_get(symbolList, k));
-                if (g->items->size == 0) {
-                    free(g);
-                    continue;
+                if (!exists) {
+                    char* temp = strdup(sym);
+                    arraylist_add(symbolList, &temp);
                 }
-                int idx = find_state(g);
-                if (idx == -1) {
-                    arraylist_add(states, g);
-                    addedNew = true;
-                }
-                else {
-                    free(g);
-                }
+                free(sym);
             }
         }
-    } while (addedNew);
+
+        // go through all the possible symbols that can be got in the current state
+        for (int k = 0; k < symbolList->size; k++) {
+            char* symbol = *(char**)arraylist_get(symbolList, k);
+
+            // commit goto
+            State* g = goto_state(s, symbol);
+            if (g->items->size == 0) {
+                free(g);
+                continue;
+            }
+
+
+            int idx = find_state(g);
+            // if states doesnt already exist add to list of states
+            if (idx == -1) {
+                arraylist_add(states, g);
+            }
+            else {
+                free(g);
+            }
+        }
+        arraylist_free(symbolList);
+    }
 }
+
 
 void print_state(State* s, int index) {
     printf("State %d:\n", index);
     for (int i = 0; i < s->items->size; i++) {
-		LRItem* item = arraylist_get(s->items, i);
+        LRItem* item = arraylist_get(s->items, i);
         printf("  %s -> ", item->rule->nonterminal);
-        char* buffer;
-        buffer = strdup( item->rule->ruleContent);
-        char* token = strtok(buffer, " ");
+
+                char* contentCopy = strdup(item->rule->ruleContent);
+        char* token = strtok(contentCopy, " ");
         int pos = 0;
         while (token != NULL) {
             if (pos == item->dot)
@@ -251,16 +297,16 @@ void print_state(State* s, int index) {
         if (item->dot >= pos)
             printf(". ");
         printf("\n");
-
-        free(buffer);
+        free(contentCopy);
     }
 }
 
-ArrayList* nonterminalsList;
-ArrayList* terminalsList;
+void print_string_arraylist(char** sym) {
+    printf("%s ", *sym);
+}
+
 
 bool symbol_exists(ArrayList* list, const char* sym) {
-
     for (int i = 0; i < list->size; i++) {
         if (strcmp(*(char**)arraylist_get(list, i), sym) == 0)
             return true;
@@ -268,122 +314,145 @@ bool symbol_exists(ArrayList* list, const char* sym) {
     return false;
 }
 
+/*
+A function that collects all the possible symbols and splits them into 2 arraylists:
+* a nonterminal arraylist
+* a terminal arraylist
+*/
 void collect_symbols() {
-	nonterminalsList = arraylist_init(sizeof(char**), DEFUALT_AMOUNT_OF_NONTERMINALS);
-	terminalsList = arraylist_init(sizeof(char**), DEFUALT_AMOUNT_OF_TERMINALS);
+    nonterminalsList = arraylist_init(sizeof(char*), DEFAULT_AMOUNT_OF_NONTERMINALS);
+    terminalsList = arraylist_init(sizeof(char*), DEFAULT_AMOUNT_OF_TERMINALS);
 
+    // go through all the rules
     for (int i = 0; i < rules->size; i++) {
-        if (!symbol_exists(nonterminalsList, ((Rule*)rules->array[i])->nonterminal)) {
-            char* temp = strdup(((Rule*)rules->array[i])->nonterminal);
+        Rule* r = (Rule*)rules->array[i];
+        // if the rules nonterminal isnt in the list, add it
+        if (!symbol_exists(nonterminalsList, r->nonterminal)) {
+            char* temp = strdup(r->nonterminal);
             arraylist_add(nonterminalsList, &temp);
         }
-        char* buffer;
-        buffer = strdup(((Rule*)rules->array[i])->ruleContent);
-        char* token = strtok(buffer, " ");
+
+        char* contentCopy = strdup(r->ruleContent);
+        char* token = strtok(contentCopy, " ");
+
         while (token != NULL) {
-            if (!(isupper(token[0]) || strcmp(token, "$") == 0)) {
+            // for every symbol in the content's rule, check if its in the lists, if not add it
+            if (!isNonterminal(token)) {
                 if (!symbol_exists(terminalsList, token)) {
                     char* temp = strdup(token);
-					arraylist_add(terminalsList, &temp);
+                    arraylist_add(terminalsList, &temp);
                 }
             }
             else {
                 if (!symbol_exists(nonterminalsList, token)) {
                     char* temp = strdup(token);
-					arraylist_add(nonterminalsList, &temp);
+                    arraylist_add(nonterminalsList, &temp);
                 }
             }
             token = strtok(NULL, " ");
         }
-        free(buffer);
-    }
-    if (!symbol_exists(terminalsList, "$")) {
-        char* temp = strdup("$");
-        arraylist_add(terminalsList, &temp);
+        free(contentCopy);
     }
 }
 
-HashMap* follow = NULL;
-
+// initialize follow structure
 void init_follow() {
-    follow = createHashMap(nonterminalsList->size);
-    
-
+    follow = createHashMap(nonterminalsList->size, string_hash, string_equals);
+    // for every nonterminal create a hashset that represents the possible terminals that can be after it
     for (int i = 0; i < nonterminalsList->size; i++) {
-        hashmap_insert(follow, *(char**)arraylist_get(nonterminalsList, i), hashset_create(terminalsList->size));
+        hashmap_insert(follow, *(char**)arraylist_get(nonterminalsList, i), hashset_create(terminalsList->size, string_hash, string_equals));
     }
 
     hashset_insert(hashmap_get(follow, "START'"), "$");
 }
 
+/*
+A function that fills the follow structure
+* A hashmap with nonterminals as keys and possible terminals that can appear after the nonterminal as content
+*/
 void compute_follow() {
     init_follow();
-    bool changed;
-    do {
+
+    bool changed = true;
+    while (changed) {
         changed = false;
+
+        // go through all the rules
         for (int i = 0; i < rules->size; i++) {
-            char* A = ((Rule*)rules->array[i])->nonterminal;
-            char* buffer;
-            buffer = strdup( ((Rule*)rules->array[i])->ruleContent);
-			ArrayList* tokens = arraylist_init(sizeof(char**), 50);
-            char* tok = strtok(buffer, " ");
+            Rule* currentRule = (Rule*)rules->array[i];
+
+            char* currentrule_nonterminal = currentRule->nonterminal;
+            char* contentCopy = strdup(currentRule->ruleContent);
+
+            // holds all the tokens that can be gotten in the state
+            ArrayList* tokens = arraylist_init(sizeof(char*), 50);
+
+            char* tok = strtok(contentCopy, " ");
             while (tok != NULL) {
                 arraylist_add(tokens, &tok);
                 tok = strtok(NULL, " ");
             }
+
+            // for every symbol that is in the state
             for (int j = 0; j < tokens->size; j++) {
-                if (isupper((*(char**)arraylist_get(tokens, j))[0]) || strcmp(*(char**)arraylist_get(tokens, j), "START'") == 0) { // if nonterminal
-                    if (j + 1 < tokens->size) { // if has another token after
-                        if (!(isupper((*(char**)arraylist_get(tokens, j + 1))[0]) || strcmp(*(char**)arraylist_get(tokens, j), "START'") == 0)) { // if not nonterminal
-                            hashset_insert(hashmap_get(follow, *(char**)arraylist_get(tokens, j)), *(char**)arraylist_get(tokens, j + 1));  // insert as possibility for nonterminal
-                        }
+                char* current_symbol = *(char**)arraylist_get(tokens, j);
+
+                if (isNonterminal(current_symbol)) {
+                    // if not last symbol
+                    if (j + 1 < tokens->size) {
+                        char* after_symbol = *(char**)arraylist_get(tokens, j + 1);
+                        // if the symbol after the nonterminal is a terminal its a follow
+                        if (!isNonterminal(after_symbol)) {
+                            hashset_insert(hashmap_get(follow, current_symbol), after_symbol);
+                        } 
                         else {
-                            char* sample;
-                            
-                            for (int r = 0; r < rules->size; r++) { // get rule where the nonterminal is on the left side
-                                if (strcmp(((Rule*)rules->array[r])->nonterminal, *(char**)arraylist_get(tokens, j + 1)) == 0) {
-                                    sample = strdup(((Rule*)rules->array[r])->ruleContent);
+                            /* Here the symbol after the nonterminal(A) is another nonterminal(B),
+                            * in other words, nonterminal(A) can be followed by:
+                            * nonterminal(B)'s terminals
+                            * nonterminal(B)'s nonterminals terminals
+                            * nonterminal(B)'s nonterminals nonterminals terminals.......
+                            * this is why the outside while is needed
+                            */
+
+                            // go through all the rules
+                            for (int r = 0; r < rules->size; r++) {
+                                Rule* candidate = (Rule*)rules->array[r];
+
+                                // find the contents of the nonterminal after_symbol
+                                if (strcmp(candidate->nonterminal, after_symbol) == 0) {
+                                    char* sample = strdup(candidate->ruleContent);
                                     char* firstSym = get_nth_token(sample, 0);
                                     free(sample);
-                                    if (firstSym && !(isupper(firstSym[0]) || strcmp(firstSym, "START'") == 0)) { // if first symbol is terminal
-                                        hashset_insert(hashmap_get(follow, *(char**)arraylist_get(tokens, j)), firstSym); // insert as possibility
+                                    // if the first symbol in the content is terminal, add as follow
+                                    if (firstSym && !isNonterminal(firstSym)) {
+                                        hashset_insert(hashmap_get(follow, current_symbol), firstSym);
+                                        free(firstSym);
                                         break;
-									}
-									else if (firstSym && isupper(firstSym[0])) { // if first symbol is nonterminal
-										HashSet* firstSymFollow = hashmap_get(follow, firstSym);
-										HashSet* current_follow = hashmap_get(follow, *(char**)arraylist_get(tokens, j));
-										for (int k = 0; k < firstSymFollow->capacity; k++) {
-											if (firstSymFollow->table[k] && firstSymFollow->table[k] != TOMBSTONE) {
-												if (!hashset_contains(current_follow, firstSymFollow->table[k])) {
-													hashset_insert(current_follow, firstSymFollow->table[k]);
-													changed = true;
-												}
-											}
-										}
-									}
+                                    }
+                                    // if the first symbol is nonterminal, add its follows to current
+                                    else if (firstSym && isNonterminal(firstSym)) {
+                                        HashSet* firstFollow = hashmap_get(follow, firstSym);
+                                        HashSet* currentFollow = hashmap_get(follow, current_symbol);
+
+                                        changed = hashset_add_hashset(currentFollow, firstFollow);
+                                        free(firstSym);
+                                    }
                                 }
                             }
                         }
                     }
-                    else {
-						// put everything in follow(A) in follow(tokens[j])
-                        HashSet* current_set = hashmap_get(follow, *(char**)arraylist_get(tokens, j));
-                        HashSet* could_get_set = hashmap_get(follow, A);
-                        for (int k = 0; k < could_get_set->capacity; k++) {
-                            if (could_get_set->table[k] && could_get_set->table[k] != TOMBSTONE) {
-                                if (!hashset_contains(current_set, could_get_set->table[k])) {
-                                    hashset_insert(current_set, could_get_set->table[k]);
-                                    changed = true;
-                                }
-                            }
-                        }
+                    else { // end of rule's content
+                        // add to currnet symbol's follows, the current rule's follows
+                        HashSet* currentSet = hashmap_get(follow, current_symbol);
+                        HashSet* aFollow = hashmap_get(follow, currentrule_nonterminal);
+                        changed = hashset_add_hashset(currentSet, aFollow);
                     }
                 }
             }
             arraylist_free(tokens);
-            free(buffer);
         }
-    } while (changed);
+    }
+
 }
 
 
@@ -403,7 +472,22 @@ int getNonterminalIndex(const char* sym) {
     return -1;
 }
 
+/* Create the action and goto tables*/
+void init_tables() {
+    actionTable = malloc(states->size * sizeof(char**));
+    char** actionContent = calloc(states->size * terminalsList->size, sizeof(char*));
+    for (unsigned int i = 0; i < states->size; i++)
+        actionTable[i] = actionContent + i * terminalsList->size;
+
+    gotoTable = malloc(states->size * sizeof(int*));
+    int* gotoContent = calloc(states->size * nonterminalsList->size, sizeof(int));
+    for (unsigned int i = 0; i < states->size; i++)
+        gotoTable[i] = gotoContent + i * nonterminalsList->size;
+}
+
+/* fill the tables */
 void build_parsing_tables() {
+    // initialized all the values as -1 and error
     for (int i = 0; i < states->size; i++) {
         for (int j = 0; j < terminalsList->size; j++) {
             actionTable[i][j] = strdup("error");
@@ -412,13 +496,19 @@ void build_parsing_tables() {
             gotoTable[i][j] = -1;
         }
     }
-
+    
+    // go through all the states
     for (int i = 0; i < states->size; i++) {
         State* s = arraylist_get(states, i);
-		ArrayList* symbols = arraylist_init(sizeof(char**), 100);
 
+        // all the symbols a state can get
+        ArrayList* symbols = arraylist_init(sizeof(char*), 50);
+
+        // go through all the states items
         for (int j = 0; j < s->items->size; j++) {
             char* sym = get_next_symbol(arraylist_get(s->items, j));
+
+            // add to symbols list if its not in already
             if (sym != NULL) {
                 bool exists = false;
                 for (int k = 0; k < symbols->size; k++) {
@@ -429,56 +519,83 @@ void build_parsing_tables() {
                 }
                 if (!exists) {
                     char* temp = strdup(sym);
-					arraylist_add(symbols, &temp);
+                    arraylist_add(symbols, &temp);
                 }
+                free(sym);
             }
         }
+
+        // go through all the symbols that can be gotten in the state
         for (int k = 0; k < symbols->size; k++) {
-            State* g = goto_state(s, *(char**)arraylist_get(symbols, k));
+            char* sym = *(char**)arraylist_get(symbols, k);
+
+            // get the full content of the state
+            State* g = goto_state(s, sym);
+
             if (g->items->size == 0) {
                 free(g);
                 continue;
             }
+
             int j = find_state(g);
             if (j == -1) {
                 free(g);
                 continue;
             }
-            if (!(isupper((*(char**)arraylist_get(symbols, k))[0]) || strcmp(*(char**)arraylist_get(symbols, k), "START'") == 0)) {
-                int termIdx = getTerminalIndex(*(char**)arraylist_get(symbols, k));
-                if (termIdx != -1) {
-                    char* buf = malloc(sizeof(int) + 3);
+
+            // if the symbol is a terminal look at action table
+            if (!isNonterminal(sym)) {
+                int col = getTerminalIndex(sym);
+
+                if (col != -1) {
+                   /* i: current state
+                    * col: the index of the terminal
+                    * j: the row where the state appears
+                    */
+                    char buf[20];
                     snprintf(buf, sizeof(buf), "s%d", j);
-                    free(actionTable[i][termIdx]);
-                    actionTable[i][termIdx] = strdup(buf);
-                    free(buf);
+                    free(actionTable[i][col]);
+
+                    actionTable[i][col] = strdup(buf);
                 }
             }
-            else { 
-                int ntIdx = getNonterminalIndex(*(char**)arraylist_get(symbols, k));
-                if (ntIdx != -1) {
-                    gotoTable[i][ntIdx] = j;
+            else {
+                // if symbol is a nonterminal look at goto table
+                int col = getNonterminalIndex(sym);
+                if (col != -1) {
+                   /* i: current state
+                    * col: the index of the nonterminal
+                    * j: the row where the state appears
+                    */
+                    gotoTable[i][col] = j;
                 }
             }
             free(g);
         }
+        arraylist_free(symbols);
     }
 
+    // go through all the states
     for (int i = 0; i < states->size; i++) {
         State* s = arraylist_get(states, i);
+
+        // go through each states items
         for (int j = 0; j < s->items->size; j++) {
-			LRItem* item = arraylist_get(s->items, j);  
+            LRItem* item = arraylist_get(s->items, j);
+
+            // count the amount of symbols in the item
             int tokenCount = 0;
-            char* buf;
-            buf = strdup(item->rule->ruleContent);
-            char* t = strtok(buf, " ");
+            char* copyContent = strdup(item->rule->ruleContent);
+            char* t = strtok(copyContent, " ");
             while (t != NULL) {
                 tokenCount++;
                 t = strtok(NULL, " ");
             }
-            free(buf);
+            free(copyContent);
 
+            // if the dot is at the end (end of the rule) -> its a reduce!
             if (item->dot == tokenCount) {
+                // for the start state add accept if at end
                 if (strcmp(item->rule->nonterminal, "START'") == 0) {
                     int dollarIdx = getTerminalIndex("$");
                     if (dollarIdx != -1) {
@@ -487,13 +604,13 @@ void build_parsing_tables() {
                     }
                 }
                 else {
-                    int Aidx = getNonterminalIndex(item->rule->nonterminal);
+                    // go through all the terminals
                     for (int k = 0; k < terminalsList->size; k++) {
-                        
-                        if (/*follow[Aidx][k] */ hashset_contains(hashmap_get(follow, item->rule->nonterminal), *(char**)arraylist_get(terminalsList, k))) {
-                            char buf2[sizeof(int) + 3];
-                            int prodNum = item->rule->rule_id;
-                            snprintf(buf2, sizeof(buf2), "r%d", item->rule->rule_id);
+                        char* term = *(char**)arraylist_get(terminalsList, k);
+                        // if current item can be followed by the terminal, reduce by the rule
+                        if (hashset_contains(hashmap_get(follow, item->rule->nonterminal), term)) {
+                            char buf2[20];
+                            snprintf(buf2, sizeof(buf2), "r%d", item->rule->ruleID);
                             free(actionTable[i][k]);
                             actionTable[i][k] = strdup(buf2);
                         }
@@ -505,8 +622,7 @@ void build_parsing_tables() {
 }
 
 void print_parsing_tables() {
-    printf("ACTION TABLE:\n");
-    printf("State\t");
+    printf("ACTION TABLE:\nState\t");
     for (int j = 0; j < terminalsList->size; j++) {
         printf("%s\t", *(char**)arraylist_get(terminalsList, j));
     }
@@ -518,8 +634,7 @@ void print_parsing_tables() {
         }
         printf("\n");
     }
-    printf("\nGOTO TABLE:\n");
-    printf("State\t");
+    printf("\nGOTO TABLE:\nState\t");
     for (int j = 0; j < nonterminalsList->size; j++) {
         printf("%s\t", *(char**)arraylist_get(nonterminalsList, j));
     }
@@ -537,76 +652,45 @@ void print_parsing_tables() {
     printf("\n");
 }
 
+/* -------------------------- Token Association Mapping -------------------------- */
 
-
-
-
-
-
-int find_column_of_terminal_in_table(char* terminal) {
+int find_column_of_terminal_in_table(const char* terminal) {
     int i;
-    for (i = 0; i < terminalsList->size && strcmp(*(char**) arraylist_get(terminalsList, i), terminal); i++);
-    if (i < terminalsList->size) return i;
+    for (i = 0; i < terminalsList->size && strcmp(*(char**)arraylist_get(terminalsList, i), terminal) != 0; i++);
+    if (i < terminalsList->size)
+        return i;
     else {
-        printf("UNKNOWN TERMINAL %s", terminal);
-        exit(0);
+        printf("ERROR");
+        exit(1);
     }
 }
 
-#define printassosiation(STR) printf("%s = %d\n", #STR, assosiation_array[STR]);
-void create_assosiation_map() {
-    assosiation_array[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("id");
-    printassosiation(TOKEN_IDENTIFIER);
-    assosiation_array[TOKEN_OPERATOR_PLUS] = find_column_of_terminal_in_table("+");
-    printassosiation(TOKEN_OPERATOR_PLUS);
-    assosiation_array[TOKEN_OPERATOR_MINUS] = find_column_of_terminal_in_table("-");
-    printassosiation(TOKEN_OPERATOR_MINUS);
-    assosiation_array[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
-    printassosiation(TOKEN_NUMBER);
-    assosiation_array[TOKEN_FLOAT] = find_column_of_terminal_in_table("number");
-    printassosiation(TOKEN_FLOAT);
-    printf("\n");
+void createAssociationMap() {
+    associationArray[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("id");
+    printf("TOKEN_IDENTIFIER = %d\n", associationArray[TOKEN_IDENTIFIER]);
+    associationArray[TOKEN_OPERATOR_PLUS] = find_column_of_terminal_in_table("+");
+    printf("TOKEN_OPERATOR_PLUS = %d\n", associationArray[TOKEN_OPERATOR_PLUS]);
+    associationArray[TOKEN_OPERATOR_MINUS] = find_column_of_terminal_in_table("-");
+    printf("TOKEN_OPERATOR_MINUS = %d\n", associationArray[TOKEN_OPERATOR_MINUS]);
+    associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
+    printf("TOKEN_NUMBER = %d\n", associationArray[TOKEN_NUMBER]);
+    associationArray[TOKEN_FLOAT] = find_column_of_terminal_in_table("number");
+    printf("TOKEN_FLOAT = %d\n", associationArray[TOKEN_FLOAT]);
 }
 
 
 void print_rules() {
     for (int i = 0; i < rules->size; i++) {
-        printf("Rule %d: %s -> %s (length: %d)\n", ((Rule*)rules->array[i])->rule_id, ((Rule*)rules->array[i])->nonterminal, ((Rule*)rules->array[i])->ruleContent, ((Rule*)rules->array[i])->rule_terminal_count);
+        Rule* r = (Rule*)rules->array[i];
+        printf("Rule %d: %s -> %s (length: %d)\n", r->ruleID, r->nonterminal, r->ruleContent, r->ruleTerminalCount);
     }
 }
 
 
-
-
-void init_tables() {
-
-    char*** action_rows_pointers = malloc(states->size * sizeof(char**));
-    char** action_content = calloc(states->size * terminalsList->size, sizeof(char*));
-    for (unsigned int i = 0; i < states->size; i++)
-        action_rows_pointers[i] = action_content + i *  terminalsList->size;
-    actionTable = action_rows_pointers;
-
-    int** goto_rows_pointers = malloc(states->size * sizeof(int*));
-    int* goto_content = calloc(states->size * nonterminalsList->size, sizeof(int));
-    for (unsigned int i = 0; i < states->size; i++)
-        goto_rows_pointers[i] = goto_content + i * nonterminalsList->size;
-    gotoTable = goto_rows_pointers;
-}
-
-void print_string_arraylist(char** nonterminal) {
-	printf("%s ", *nonterminal);
-}
-
 int create_parser_tables() {
-    rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
+        rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
 
-    // UPERCASE FOR NONTERMINAL
-    // LOWERCASE FOR TERMINAL
-    // SEPARATE TOKENS WITH SPACE
-    
-   
-
-    add_rule("S", "E");
+     add_rule("S", "E");
     add_rule("E", "E + T");
     add_rule("E", "E - T");
     add_rule("E", "T");
@@ -615,38 +699,34 @@ int create_parser_tables() {
     add_rule("F", "id");
     add_rule("F", "number");
 
-    printf("\n");
-
-
-    build_states("S");
     
+
+        build_states("S");
     for (int i = 0; i < states->size; i++) {
-        print_state(arraylist_get(states,i), i);
+        print_state(arraylist_get(states, i), i);
         printf("\n");
     }
-    
-    collect_symbols();
-    printf("\n\nARRAY: ");
 
+        collect_symbols();
+
+    printf("\nTerminals: ");
     arraylist_print(terminalsList, print_string_arraylist);
+    printf("\nNonterminals: ");
     arraylist_print(nonterminalsList, print_string_arraylist);
-
-
     printf("\n\n");
-    init_tables();
-    
 
-    compute_follow();
 
-    build_parsing_tables();
+        init_tables();
 
+        compute_follow();
+
+
+        build_parsing_tables();
     print_parsing_tables();
-    
 
-    create_assosiation_map();
+        createAssociationMap();
 
-    print_rules();
+        print_rules();
 
-    
     return 0;
 }

@@ -41,30 +41,6 @@ void arraylist_add(ArrayList* list, void* value) {
     list->size++;
 }
 
-void arraylist_set(ArrayList* list, int index, void* value) {
-    if (index >= list->capacity) {
-        list->capacity *= index + 1;
-        void** temp = realloc(list->array, sizeof(void*) * list->capacity);
-        if (!temp) {
-            fprintf(stderr, "Failed to reallocate ArrayList internal array\n");
-            return;
-        }
-        list->array = temp;
-
-        for (int i = list->size; i < list->capacity; i++) {
-			list->array[i] = NULL;
-        }
-    }
-    if (list->array[index] != NULL) free(list->array[index]);
-    list->array[index] = malloc(list->object_size);
-
-    if (!list->array[index]) {
-        fprintf(stderr, "Failed to allocate memory for new element\n");
-        return;
-    }
-    memcpy(list->array[index], value, list->object_size);
-    if (index >= list->size) list->size = index + 1;
-}
 
 
 void arraylist_reset(ArrayList* list) {

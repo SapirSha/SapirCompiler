@@ -3,24 +3,6 @@
 #include "stdlib.h"
 #include <stdio.h>
 
-/*
-
-typedef struct LinkedListNode {
-	struct LinkedListNode* next;
-	void* value;
-} LinkedListNode;
-
-
-typedef struct LinkedList {
-	LinkedListNode* head;
-	unsigned int object_byte_size;
-	unsigned int length;
-	int (*compare)(void*, void*);
-} LinkedList;
-
-
-*/
-
 LinkedList* linkedlist_init(unsigned int object_byte_size) {
 	LinkedList* lst = (LinkedList*) malloc(sizeof(LinkedList));
 	lst->object_byte_size = object_byte_size;
@@ -33,9 +15,9 @@ unsigned int linkedlist_count(LinkedList* lst) {
 	return lst->length;
 }
 
-bool linkedlist_contains(LinkedList* lst, void* value) {
+bool linkedlist_contains(LinkedList* lst, void* value, unsigned int compare_function(void*, void*)) {
 	LinkedListNode* pointer = lst->head;
-	while (pointer != NULL && memcmp(value, pointer->value, lst->object_byte_size) != 0)
+	while (pointer != NULL && compare_function(value, pointer->value) != 0)
 		pointer = pointer->next;
 
 	if (pointer != NULL) return true;
@@ -123,11 +105,12 @@ void linkedlist_print(LinkedList* lst, void (*print)(void*)) {
 }
 
 
-void linkedlist_free(LinkedList** list) {
-	if (*list == NULL) return;
-	LinkedList* lst = *list;
-	while (lst->length)
-		free(linkedlist_pop(lst));
-	free(lst);
-	lst = NULL;
+void linkedlist_free(LinkedList* list, void free_function(void*)){
+	LinkedListNode* temp;
+	while (list->length) {
+		temp = linkedlist_pop(list);
+		free_function(temp->value);
+	}
+	free(list);
+	list = NULL;
 }

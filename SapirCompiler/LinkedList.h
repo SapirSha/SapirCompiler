@@ -17,7 +17,7 @@ typedef struct LinkedList {
 
 LinkedList* linkedlist_init(unsigned int object_byte_size);
 unsigned int linkedlist_count(LinkedList*);
-bool linkedlist_contains(LinkedList*, void*);
+bool linkedlist_contains(LinkedList*, void*, unsigned int compare_function(void*, void*));
 
 // LinkedList
 void linkedlist_add(LinkedList*, void*);
@@ -32,7 +32,7 @@ void* linkedlist_peek(LinkedList*);
 // Stack
 
 void linkedlist_print(LinkedList*, void (*print)(void*));
-void linkedlist_free(LinkedList*);
+void linkedlist_free(LinkedList*, void free_function(void*));
 
 
 #endif

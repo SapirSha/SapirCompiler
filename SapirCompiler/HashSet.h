@@ -2,34 +2,40 @@
 #define HASHSET_H
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX_LOAD_FACTOR 0.7
-#define TOMBSTONE ((void*)-1)
+#define MINIMUM_HASHSET_CAPACITY 5
+#define GROWTH_FACTOR 2
 
-// Tomebstone HashSet  // doesnt allocates space
-typedef struct HashSet { 
-    void** table;
-    int capacity;
-    int size;
-    int tombstones;
+//DOESNT allocates space
+
+typedef struct HashSetNode {
+    void* key;
+    struct HashSetNode* next;
+} HashSetNode;
+
+typedef struct HashSet {
+    unsigned int capacity;
+    unsigned int size;
+    unsigned int (*hash)(void* key);
+    int (*equals)(void* key1, void* key2);
+    HashSetNode** buckets;
 } HashSet;
 
-// Create a new hashset
-HashSet* hashset_create(int initial_size);
+HashSet* hashset_create(unsigned int default_capacity, unsigned int (*hash)(void* key), int (*equals)(void* key1, void* key2));
 
-// Insert an element into the hashset
-bool hashset_insert(HashSet* set, char* element);
+bool hashset_insert(HashSet* set, void* key);
 
-// Remove an element from the hashset
-bool hashset_remove(HashSet* set, char* element);
+bool hashset_remove(HashSet* set, void* key);
 
-// Check if an element exists in the hashset
-bool hashset_contains(HashSet* set, char* element);
+bool hashset_contains(HashSet* set, void* key);
 
-// Print the contents of the hashset (for debugging purposes)
-void hashset_print(HashSet* set);
-
-// Free the hashset
 void hashset_free(HashSet* set);
+
+bool hashset_add_hashset(HashSet* set1, HashSet* set2);
+
+void hashset_print(HashSet*, void print(void*));
 
 #endif
