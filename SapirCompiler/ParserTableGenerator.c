@@ -688,9 +688,9 @@ void print_rules() {
 
 
 int create_parser_tables() {
-        rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
+    rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
 
-     add_rule("S", "E");
+    add_rule("S", "E");
     add_rule("E", "E + T");
     add_rule("E", "E - T");
     add_rule("E", "T");
@@ -699,15 +699,15 @@ int create_parser_tables() {
     add_rule("F", "id");
     add_rule("F", "number");
 
-    
 
-        build_states("S");
+
+    build_states("S");
     for (int i = 0; i < states->size; i++) {
         print_state(arraylist_get(states, i), i);
         printf("\n");
     }
 
-        collect_symbols();
+    collect_symbols();
 
     printf("\nTerminals: ");
     arraylist_print(terminalsList, print_string_arraylist);
@@ -716,17 +716,17 @@ int create_parser_tables() {
     printf("\n\n");
 
 
-        init_tables();
+    init_tables();
 
-        compute_follow();
+    compute_follow();
 
 
-        build_parsing_tables();
+    build_parsing_tables();
     print_parsing_tables();
 
-        createAssociationMap();
+    createAssociationMap();
 
-        print_rules();
+    print_rules();
 
     return 0;
 }

@@ -24,7 +24,7 @@ int main() {
     tokens_print(tokens);
     
     printf("\n\n\n");
-    //create_parser_tables();
+    create_parser_tables();
     
 
 
