@@ -18,13 +18,13 @@ void printINT(int* e) {
 
 int main() {
     
-    const char* code = "5+7.1* if +2+1 wasd while";
+    const char* code = "while(x >5){x++}";
     printf("Tokenizing: %s\n", code);
     TokensQueue* tokens = tokenize(code);
     tokens_print(tokens);
     
     printf("\n\n\n");
-    create_parser_tables();
+    //create_parser_tables();
     
 
 

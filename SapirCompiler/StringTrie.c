@@ -23,6 +23,7 @@ StringTrie* stringin_init() {
     s->is_end = TOKEN_UNKNOWN;
     return s;
 }
+
 void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_type) {
     if (!s || !str) return;
 
@@ -39,10 +40,6 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
     }
     else if (*spos == '\0') {
         StringTrie* new_child = stringin_init();
-        if (!new_child) {
-            fprintf(stderr, "Failed to allocate memory for new child.\n");
-            exit(EXIT_FAILURE);
-        }
 
         new_child->to_clear = strdup(pos + 1);
         new_child->is_end = s->is_end;
@@ -58,7 +55,7 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
 
     }
     else if (*pos == '\0') {
-        if (*s->to_clear == '\0' && !s->paths) {
+        if (*s->to_clear == '\0' && !s->paths && s->is_end == TOKEN_UNKNOWN) {
             free(s->to_clear);
 			s->to_clear = strdup(str);
             s->is_end = token_type;
@@ -66,10 +63,6 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
         }
         if (!s->paths) {
             s->paths = createHashMap(STRINGIN_INITIAL_HASHMAP, string_hash, string_equals);
-            if (!s->paths) {
-                fprintf(stderr, "Failed to create hashmap.\n");
-                exit(EXIT_FAILURE);
-            }
         }
 
         StringTrie* next = hashmap_get(s->paths, CHAR_TO_STRING(*spos));
