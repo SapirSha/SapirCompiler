@@ -123,6 +123,7 @@ bool hashset_add_hashset(HashSet* set1, HashSet* set2) {
 
 
 void hashset_print(HashSet* set, void print(void*)) {
+    printf("HASHSET: ");
     for (unsigned int i = 0; i < set->capacity; i++) {
         HashSetNode* node = set->buckets[i];
         while (node) {
@@ -130,4 +131,5 @@ void hashset_print(HashSet* set, void print(void*)) {
             node = node->next;
         }
     }
+    printf("\n");
 }

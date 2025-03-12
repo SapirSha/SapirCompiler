@@ -131,6 +131,7 @@
     <ClCompile Include="HashMap.c" />
     <ClCompile Include="HashSet.c" />
     <ClCompile Include="Lexer.c" />
+    <ClCompile Include="LexerFSM.c" />
     <ClCompile Include="LinkedList.c" />
     <ClCompile Include="Matrix.c" />
     <ClCompile Include="Parser.c" />

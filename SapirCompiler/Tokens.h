@@ -63,6 +63,9 @@ typedef enum {
     TOKEN_SEMICOLON, 
     TOKEN_COMMA,
 
+    TOKEN_CONTINUE,
+    TOKEN_THEN,
+
     TOKEN_EOF,
 
     NUM_OF_TOKENS

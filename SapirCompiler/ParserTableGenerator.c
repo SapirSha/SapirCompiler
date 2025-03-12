@@ -304,7 +304,9 @@ void print_state(State* s, int index) {
 void print_string_arraylist(char** sym) {
     printf("%s ", *sym);
 }
-
+void print_string(char* sym) {
+    printf("%s ", sym);
+}
 
 bool symbol_exists(ArrayList* list, const char* sym) {
     for (int i = 0; i < list->size; i++) {
@@ -403,7 +405,7 @@ void compute_follow() {
                         char* after_symbol = *(char**)arraylist_get(tokens, j + 1);
                         // if the symbol after the nonterminal is a terminal its a follow
                         if (!isNonterminal(after_symbol)) {
-                            hashset_insert(hashmap_get(follow, current_symbol), after_symbol);
+                            changed = hashset_insert(hashmap_get(follow, current_symbol), after_symbol);
                         } 
                         else {
                             /* Here the symbol after the nonterminal(A) is another nonterminal(B),
@@ -425,7 +427,7 @@ void compute_follow() {
                                     free(sample);
                                     // if the first symbol in the content is terminal, add as follow
                                     if (firstSym && !isNonterminal(firstSym)) {
-                                        hashset_insert(hashmap_get(follow, current_symbol), firstSym);
+                                        changed = hashset_insert(hashmap_get(follow, current_symbol), firstSym);
                                         free(firstSym);
                                         break;
                                     }
@@ -442,6 +444,7 @@ void compute_follow() {
                         }
                     }
                     else { // end of rule's content
+
                         // add to currnet symbol's follows, the current rule's follows
                         HashSet* currentSet = hashmap_get(follow, current_symbol);
                         HashSet* aFollow = hashmap_get(follow, currentrule_nonterminal);
@@ -607,12 +610,16 @@ void build_parsing_tables() {
                     // go through all the terminals
                     for (int k = 0; k < terminalsList->size; k++) {
                         char* term = *(char**)arraylist_get(terminalsList, k);
+
+
                         // if current item can be followed by the terminal, reduce by the rule
                         if (hashset_contains(hashmap_get(follow, item->rule->nonterminal), term)) {
-                            char buf2[20];
-                            snprintf(buf2, sizeof(buf2), "r%d", item->rule->ruleID);
-                            free(actionTable[i][k]);
-                            actionTable[i][k] = strdup(buf2);
+                            if (strcmp(actionTable[i][k], "error") == 0) {
+                                char buf2[20];
+                                snprintf(buf2, sizeof(buf2), "r%d", item->rule->ruleID);
+                                free(actionTable[i][k]);
+                                actionTable[i][k] = strdup(buf2);
+                            }
                         }
                     }
                 }
@@ -622,7 +629,7 @@ void build_parsing_tables() {
 }
 
 void print_parsing_tables() {
-    printf("ACTION TABLE:\nState\t");
+    printf("ACTION TABLE:\n\t");
     for (int j = 0; j < terminalsList->size; j++) {
         printf("%s\t", *(char**)arraylist_get(terminalsList, j));
     }
@@ -634,7 +641,7 @@ void print_parsing_tables() {
         }
         printf("\n");
     }
-    printf("\nGOTO TABLE:\nState\t");
+    printf("\nGOTO TABLE:\n\t");
     for (int j = 0; j < nonterminalsList->size; j++) {
         printf("%s\t", *(char**)arraylist_get(nonterminalsList, j));
     }
@@ -652,7 +659,6 @@ void print_parsing_tables() {
     printf("\n");
 }
 
-/* -------------------------- Token Association Mapping -------------------------- */
 
 int find_column_of_terminal_in_table(const char* terminal) {
     int i;
@@ -665,17 +671,48 @@ int find_column_of_terminal_in_table(const char* terminal) {
     }
 }
 
-void createAssociationMap() {
-    associationArray[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("id");
-    printf("TOKEN_IDENTIFIER = %d\n", associationArray[TOKEN_IDENTIFIER]);
+void createAssociationMap() { // to be changed
+    associationArray[TOKEN_CONTINUE] = find_column_of_terminal_in_table("continue");
+    printf("TOKEN_CONTINUE = %d\n", associationArray[TOKEN_CONTINUE]);
+    associationArray[TOKEN_LBRACES] = find_column_of_terminal_in_table("{");
+    printf("TOKEN_LBRACES = %d\n", associationArray[TOKEN_LBRACES]);
+    associationArray[TOKEN_RBRACES] = find_column_of_terminal_in_table("}");
+    printf("TOKEN_RBRACES = %d\n", associationArray[TOKEN_RBRACES]);
+    associationArray[TOKEN_OPERATOR_ALSO] = find_column_of_terminal_in_table("&&");
+    printf("TOKEN_ALSO = %d\n", associationArray[TOKEN_OPERATOR_ALSO]);
+    associationArray[TOKEN_OPERATOR_EITHER] = find_column_of_terminal_in_table("||");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_EITHER]);
+    associationArray[TOKEN_LPAREN] = find_column_of_terminal_in_table("(");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_LPAREN]);
+    associationArray[TOKEN_RPAREN] = find_column_of_terminal_in_table(")");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_RPAREN]);
+    associationArray[TOKEN_OPERATOR_EQUAL] = find_column_of_terminal_in_table("==");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_EQUAL]);
+    associationArray[TOKEN_OPERATOR_NOT_EQUAL] = find_column_of_terminal_in_table("!=");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_NOT_EQUAL]);
+    associationArray[TOKEN_OPERATOR_GREATER] = find_column_of_terminal_in_table(">");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_GREATER]);
+    associationArray[TOKEN_OPERATOR_GREATER_EQUAL] = find_column_of_terminal_in_table(">=");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_GREATER_EQUAL]);
+    associationArray[TOKEN_OPERATOR_LESS] = find_column_of_terminal_in_table("<");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_LESS]);
+    associationArray[TOKEN_OPERATOR_LESS_EQUAL] = find_column_of_terminal_in_table("<=");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_LESS_EQUAL]);
     associationArray[TOKEN_OPERATOR_PLUS] = find_column_of_terminal_in_table("+");
-    printf("TOKEN_OPERATOR_PLUS = %d\n", associationArray[TOKEN_OPERATOR_PLUS]);
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_PLUS]);
     associationArray[TOKEN_OPERATOR_MINUS] = find_column_of_terminal_in_table("-");
-    printf("TOKEN_OPERATOR_MINUS = %d\n", associationArray[TOKEN_OPERATOR_MINUS]);
-    associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
-    printf("TOKEN_NUMBER = %d\n", associationArray[TOKEN_NUMBER]);
-    associationArray[TOKEN_FLOAT] = find_column_of_terminal_in_table("number");
-    printf("TOKEN_FLOAT = %d\n", associationArray[TOKEN_FLOAT]);
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_MINUS]);
+    associationArray[TOKEN_OPERATOR_MULTIPLY] = find_column_of_terminal_in_table("*");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_MULTIPLY]);
+    associationArray[TOKEN_OPERATOR_DIVIDE] = find_column_of_terminal_in_table("/");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_DIVIDE]);
+    associationArray[TOKEN_IF] = find_column_of_terminal_in_table("if");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_IF]);
+    associationArray[TOKEN_THEN] = find_column_of_terminal_in_table("then");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_THEN]);
+    associationArray[TOKEN_EOF] = find_column_of_terminal_in_table("$");
+    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_EOF]);
+
 }
 
 
@@ -686,22 +723,61 @@ void print_rules() {
     }
 }
 
+void add_rules() {
+    add_rule("PROGRAM", "STATEMENTS");
+    add_rule("STATEMENTS", "STATEMENTS STATEMENT");
+    add_rule("STATEMENTS", "STATEMENT");
+
+    add_rule("STATEMENT", "IF_STATEMENT");
+    add_rule("STATEMENT", "continue");
+
+
+    add_rule("BLOCK", "{ STATEMENTS }");
+
+    add_rule("CONDITION_LIST", "CONDITION");
+    add_rule("CONDITION_LIST", "CONDITION_LIST && CONDITION");
+    add_rule("CONDITION_LIST", "CONDITION_LIST || CONDITION");
+
+    add_rule("CONDITION", "( CONDITION_LIST )");
+    add_rule("CONDITION", "EXPRESSION == EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION != EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION > EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION >= EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION < EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
+
+    add_rule("EXPRESSION", "EXPRESSION + TERM");
+    add_rule("EXPRESSION", "EXPRESSION - TERM");
+    add_rule("EXPRESSION", "TERM");
+
+    add_rule("TERM", "TERM * FACTOR");
+    add_rule("TERM", "TERM / FACTOR");
+    add_rule("TERM", "FACTOR");
+
+    add_rule("FACTOR", "( EXPRESSION )");
+    add_rule("FACTOR", "IDENTIFIER");
+    add_rule("FACTOR", "NUMBER");
+
+
+    add_rule("IF_STATEMENT", "if CONDITION_LIST then BLOCK");
+
+
+
+
+
+}
+
 
 int create_parser_tables() {
     rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
 
-    add_rule("S", "E");
-    add_rule("E", "E + T");
-    add_rule("E", "E - T");
-    add_rule("E", "T");
-    add_rule("T", "T * F");
-    add_rule("T", "F");
-    add_rule("F", "id");
-    add_rule("F", "number");
+    add_rules();
 
 
 
-    build_states("S");
+
+
+    build_states("PROGRAM");
     for (int i = 0; i < states->size; i++) {
         print_state(arraylist_get(states, i), i);
         printf("\n");
@@ -720,8 +796,8 @@ int create_parser_tables() {
 
     compute_follow();
 
-
     build_parsing_tables();
+
     print_parsing_tables();
 
     createAssociationMap();

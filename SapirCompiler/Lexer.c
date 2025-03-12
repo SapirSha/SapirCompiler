@@ -181,6 +181,9 @@ void init_finder() {
     stringin_insert_string(token_finder, "bool", TOKEN_BOOL);
     stringin_insert_string(token_finder, "true", TOKEN_TRUE);
 	stringin_insert_string(token_finder, "false", TOKEN_FALSE);
+    stringin_insert_string(token_finder, "continue", TOKEN_CONTINUE);
+    stringin_insert_string(token_finder, "then", TOKEN_THEN);
+
 
     stringin_insert_string(token_finder, "+", TOKEN_OPERATOR_PLUS);
     stringin_insert_string(token_finder, "-", TOKEN_OPERATOR_MINUS);
@@ -214,8 +217,6 @@ void init_finder() {
     stringin_insert_string(token_finder, "||", TOKEN_OPERATOR_EITHER);
     stringin_insert_string(token_finder, "==", TOKEN_OPERATOR_EQUAL);
 
-    stringin_print(token_finder);
-    printf("\n---%d---\n", stringin_search_string(token_finder, ">"));
 
 
 }
@@ -276,7 +277,7 @@ void handle_operator(const char* input, int* index, ArrayList* token, State* nex
 static const Token_Types SEPARATOR_TO_TOKEN_CONVERTER[] = {
     ['('] = TOKEN_LPAREN,[')'] = TOKEN_RPAREN,
     ['{'] = TOKEN_LBRACES,['}'] = TOKEN_RBRACES,
-    ['['] = TOKEN_LBRACES,[']'] = TOKEN_RBRACES,
+    ['['] = TOKEN_LBRACKETS,[']'] = TOKEN_RBRACKETS,
     [';'] = TOKEN_SEMICOLON,[','] = TOKEN_COMMA,
 
 };

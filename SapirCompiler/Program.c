@@ -8,7 +8,7 @@
 #include "Matrix.h"
 #include "ArrayList.h"
 #include "HashSet.h"
-
+#include "Parser.h"
 void printINT(int* e) {
     if (e != NULL) printf("%d", *e);
     else printf("0");
@@ -23,10 +23,13 @@ int main() {
     TokensQueue* tokens = tokenize(code);
     tokens_print(tokens);
     
+    
     printf("\n\n\n");
     create_parser_tables();
-    
+    printf("\n\n\n");
 
+
+    commit_parser(tokens);
 
 
 
