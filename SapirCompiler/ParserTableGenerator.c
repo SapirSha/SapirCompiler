@@ -713,10 +713,10 @@ int find_column_of_terminal_in_table(const char* terminal) {
 void createAssociationMap() { // to be changed
     associationArray[TOKEN_CONTINUE] = find_column_of_terminal_in_table("continue");
     printf("TOKEN_CONTINUE = %d\n", associationArray[TOKEN_CONTINUE]);
-    //associationArray[TOKEN_LBRACES] = find_column_of_terminal_in_table("{");
-    //printf("TOKEN_LBRACES = %d\n", associationArray[TOKEN_LBRACES]);
-    //associationArray[TOKEN_RBRACES] = find_column_of_terminal_in_table("}");
-    //printf("TOKEN_RBRACES = %d\n", associationArray[TOKEN_RBRACES]);
+    associationArray[TOKEN_LBRACES] = find_column_of_terminal_in_table("{");
+    printf("TOKEN_LBRACES = %d\n", associationArray[TOKEN_LBRACES]);
+    associationArray[TOKEN_RBRACES] = find_column_of_terminal_in_table("}");
+    printf("TOKEN_RBRACES = %d\n", associationArray[TOKEN_RBRACES]);
     associationArray[TOKEN_OPERATOR_ALSO] = find_column_of_terminal_in_table("&&");
     printf("TOKEN_ALSO = %d\n", associationArray[TOKEN_OPERATOR_ALSO]);
     associationArray[TOKEN_OPERATOR_EITHER] = find_column_of_terminal_in_table("||");
@@ -747,8 +747,8 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_SLASH = %d\n", associationArray[TOKEN_OPERATOR_DIVIDE]);
     associationArray[TOKEN_IF] = find_column_of_terminal_in_table("if");
     printf("TOKEN_IF = %d\n", associationArray[TOKEN_IF]);
-    associationArray[TOKEN_THEN] = find_column_of_terminal_in_table("then");
-    printf("TOKEN_THEN = %d\n", associationArray[TOKEN_THEN]);
+    //associationArray[TOKEN_THEN] = find_column_of_terminal_in_table("then");
+    //printf("TOKEN_THEN = %d\n", associationArray[TOKEN_THEN]);
     associationArray[TOKEN_EOF] = find_column_of_terminal_in_table("$");
     printf("TOKEN_EOF = %d\n", associationArray[TOKEN_EOF]);
     associationArray[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("identifier");
@@ -827,9 +827,12 @@ void add_rules() {
     add_rule("VARIABLE_TYPE", "string");
     add_rule("VARIABLE_TYPE", "float");
     
+    add_rule("BLOCK", "{ STATEMENTS }");
 
-    add_rule("IF_STATEMENT", "if CONDITION_LIST then STATEMENTS ;");
-    add_rule("IF_STATEMENT", "if CONDITION_LIST then STATEMENTS else STATEMENTS ;");
+
+    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK else BLOCK ");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK else IF_STATEMENT ");
 
 
     add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier ;");

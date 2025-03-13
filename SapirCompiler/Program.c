@@ -25,8 +25,11 @@ int main() {
     
     const char* code =
         "int x = 5; "
-        "if y < 100 then x = 10;"
-        "else x = 0; ;";
+        "if y < 100 { x = 10; }"
+        "else {"
+        "if y < 50 { x = 20; }"
+        "else {x = 30;}"
+        "}";
 
 
     printf("Tokenizing: %s\n", code);
