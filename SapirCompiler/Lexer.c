@@ -7,10 +7,11 @@
 #include <stdbool.h>
 #include "ArrayList.h"
 #include "StringTrie.h"
+#include "Queue.h"
 
 #define DEFAULT_TOKEN_SIZE 32
 
-TokensQueue* tokens = NULL;
+Queue* tokens = NULL;
 
 char* token_to_string(ArrayList* token) {
     static const char ZERO = '\0';
@@ -22,9 +23,9 @@ char* token_to_string(ArrayList* token) {
     return string;
 }
 
-void add_token(ArrayList* token, TokensQueue* tokens, Token_Types type) {
+void add_token(ArrayList* token, Queue* tokens, Token_Types type) {
     char* str_token = token_to_string(token);
-	tokens_enqueue(tokens, str_token, type);
+    queue_enqueue(tokens, &(Token){.lexeme = str_token, .type = type});
 	arraylist_reset(token);
 }
 
@@ -365,11 +366,11 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* n
 }
 
 // FSM for tokenization
-TokensQueue* tokenize(const char* input) {
+Queue* tokenize(const char* input) {
     State state = START, next_state;
     ArrayList* token = arraylist_init(sizeof(char), DEFAULT_TOKEN_SIZE);
 
-    tokens = tokens_init();
+    tokens = queue_init(sizeof(Token));
 
     init_finder();
     int i = 0;
@@ -378,6 +379,8 @@ TokensQueue* tokenize(const char* input) {
         call_state_function(input, &i, token, &next_state);
         state = next_state;
     }
+
+    queue_enqueue(tokens, &(Token){.type = TOKEN_EOF, .lexeme = "END"});
 
     arraylist_free(token);
     stringin_free(token_finder);

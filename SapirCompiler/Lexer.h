@@ -1,8 +1,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include "Tokens.h"
+#include "Queue.h"
 
-TokensQueue* tokenize(const char* input);
+Queue* tokenize(const char* input);
 
 #endif

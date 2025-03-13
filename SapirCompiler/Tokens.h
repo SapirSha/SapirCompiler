@@ -71,27 +71,9 @@ typedef enum {
     NUM_OF_TOKENS
 }Token_Types;
 
-typedef struct Tokens{
+typedef struct  {
     char* lexeme;
     Token_Types type;
-    struct Tokens* next;
-} Tokens;
-
-typedef struct TokensQueue {
-    Tokens* head;
-    Tokens* tail;
-} TokensQueue;
-
-
-TokensQueue* tokens_init();
-
-void tokens_enqueue(TokensQueue* queue, char* lexeme, int type);
-
-Tokens* tokens_dequeue(TokensQueue* queue);
-
-void tokens_print(TokensQueue* queue);
-
-// Free the memory used by the queue
-void tokens_free(TokensQueue* queue);
+}Token;
 
 #endif

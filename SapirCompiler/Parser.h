@@ -1,8 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "Tokens.h"
+#include "Queue.h"
 
-void commit_parser(TokensQueue* tokens);
+void commit_parser(Queue* tokens);
 
 #endif

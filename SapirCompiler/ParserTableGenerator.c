@@ -444,17 +444,18 @@ void compute_follow() {
                         }
                     }
                     else { // end of rule's content
-
-                        // add to currnet symbol's follows, the current rule's follows
-                        HashSet* currentSet = hashmap_get(follow, current_symbol);
-                        HashSet* aFollow = hashmap_get(follow, currentrule_nonterminal);
-                        changed = hashset_add_hashset(currentSet, aFollow);
+                        // add to last symbol's follows, the current rule's follows
+                        HashSet* LastSymbolSet = hashmap_get(follow, current_symbol);
+                        HashSet* currentFollow = hashmap_get(follow, currentrule_nonterminal);
+                        changed = hashset_add_hashset(LastSymbolSet, currentFollow);
                     }
                 }
             }
             arraylist_free(tokens);
         }
     }
+
+    hashset_print(hashmap_get(follow, "FACTOR"), print_string);
 
 }
 
@@ -477,13 +478,13 @@ int getNonterminalIndex(const char* sym) {
 
 /* Create the action and goto tables*/
 void init_tables() {
-    actionTable = malloc(states->size * sizeof(char**));
-    char** actionContent = calloc(states->size * terminalsList->size, sizeof(char*));
+    actionTable = malloc(states->size * sizeof(ActionCell*));
+    ActionCell* actionContent = malloc(states->size * terminalsList->size * sizeof(ActionCell));
     for (unsigned int i = 0; i < states->size; i++)
         actionTable[i] = actionContent + i * terminalsList->size;
 
     gotoTable = malloc(states->size * sizeof(int*));
-    int* gotoContent = calloc(states->size * nonterminalsList->size, sizeof(int));
+    int* gotoContent = malloc(states->size * nonterminalsList->size * sizeof(int));
     for (unsigned int i = 0; i < states->size; i++)
         gotoTable[i] = gotoContent + i * nonterminalsList->size;
 }
@@ -493,7 +494,7 @@ void build_parsing_tables() {
     // initialized all the values as -1 and error
     for (int i = 0; i < states->size; i++) {
         for (int j = 0; j < terminalsList->size; j++) {
-            actionTable[i][j] = strdup("error");
+            actionTable[i][j] = (ActionCell){ .type = ERROR };
         }
         for (int j = 0; j < nonterminalsList->size; j++) {
             gotoTable[i][j] = -1;
@@ -555,11 +556,7 @@ void build_parsing_tables() {
                     * col: the index of the terminal
                     * j: the row where the state appears
                     */
-                    char buf[20];
-                    snprintf(buf, sizeof(buf), "s%d", j);
-                    free(actionTable[i][col]);
-
-                    actionTable[i][col] = strdup(buf);
+                    actionTable[i][col] = (ActionCell){ .type = SHIFT, .value = j };
                 }
             }
             else {
@@ -602,8 +599,7 @@ void build_parsing_tables() {
                 if (strcmp(item->rule->nonterminal, "START'") == 0) {
                     int dollarIdx = getTerminalIndex("$");
                     if (dollarIdx != -1) {
-                        free(actionTable[i][dollarIdx]);
-                        actionTable[i][dollarIdx] = strdup("acc");
+                        actionTable[i][dollarIdx] = (ActionCell){ .type = ACCEPT };
                     }
                 }
                 else {
@@ -611,15 +607,10 @@ void build_parsing_tables() {
                     for (int k = 0; k < terminalsList->size; k++) {
                         char* term = *(char**)arraylist_get(terminalsList, k);
 
-
                         // if current item can be followed by the terminal, reduce by the rule
                         if (hashset_contains(hashmap_get(follow, item->rule->nonterminal), term)) {
-                            if (strcmp(actionTable[i][k], "error") == 0) {
-                                char buf2[20];
-                                snprintf(buf2, sizeof(buf2), "r%d", item->rule->ruleID);
-                                free(actionTable[i][k]);
-                                actionTable[i][k] = strdup(buf2);
-                            }
+                            if (actionTable[i][k].type == ERROR)
+                                actionTable[i][k] = (ActionCell){ .type = REDUCE, .value = item->rule->ruleID };
                         }
                     }
                 }
@@ -628,22 +619,37 @@ void build_parsing_tables() {
     }
 }
 
+char* actiontypetostring(int action) {
+    switch (action)
+    {
+    case ACCEPT: return "A";
+    case REDUCE: return "R";
+    case SHIFT:  return "S";
+    case ERROR:  return "E";
+
+    default:
+        return NULL;
+    }
+}
+
 void print_parsing_tables() {
     printf("ACTION TABLE:\n\t");
     for (int j = 0; j < terminalsList->size; j++) {
-        printf("%s\t", *(char**)arraylist_get(terminalsList, j));
+        printf("%.5s \t", *(char**)arraylist_get(terminalsList, j));
     }
     printf("\n");
     for (int i = 0; i < states->size; i++) {
         printf("%d\t", i);
         for (int j = 0; j < terminalsList->size; j++) {
-            printf("%s\t", actionTable[i][j]);
+            char buffer[20];
+            sprintf(buffer, "%s%d", actiontypetostring(actionTable[i][j].type), actionTable[i][j].value);
+            printf("%s\t", buffer);
         }
         printf("\n");
     }
     printf("\nGOTO TABLE:\n\t");
     for (int j = 0; j < nonterminalsList->size; j++) {
-        printf("%s\t", *(char**)arraylist_get(nonterminalsList, j));
+        printf("%.5s\t", *(char**)arraylist_get(nonterminalsList, j));
     }
     printf("\n");
     for (int i = 0; i < states->size; i++) {
@@ -659,6 +665,16 @@ void print_parsing_tables() {
     printf("\n");
 }
 
+int find_row_of_nonterminal_in_table(const char* nonterminal) {
+    int i;
+    for (i = 0; i < nonterminalsList->size && strcmp(*(char**)arraylist_get(nonterminalsList, i), nonterminal) != 0; i++);
+    if (i < nonterminalsList->size)
+        return i;
+    else {
+        printf("ERROR");
+        exit(1);
+    }
+}
 
 int find_column_of_terminal_in_table(const char* terminal) {
     int i;
@@ -683,35 +699,39 @@ void createAssociationMap() { // to be changed
     associationArray[TOKEN_OPERATOR_EITHER] = find_column_of_terminal_in_table("||");
     printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_EITHER]);
     associationArray[TOKEN_LPAREN] = find_column_of_terminal_in_table("(");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_LPAREN]);
+    printf("TOKEN_LPAREN = %d\n", associationArray[TOKEN_LPAREN]);
     associationArray[TOKEN_RPAREN] = find_column_of_terminal_in_table(")");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_RPAREN]);
+    printf("TOKEN_RPAREN = %d\n", associationArray[TOKEN_RPAREN]);
     associationArray[TOKEN_OPERATOR_EQUAL] = find_column_of_terminal_in_table("==");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_EQUAL]);
+    printf("TOKEN_EQUAL = %d\n", associationArray[TOKEN_OPERATOR_EQUAL]);
     associationArray[TOKEN_OPERATOR_NOT_EQUAL] = find_column_of_terminal_in_table("!=");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_NOT_EQUAL]);
+    printf("TOKEN_NOT_EQUAL = %d\n", associationArray[TOKEN_OPERATOR_NOT_EQUAL]);
     associationArray[TOKEN_OPERATOR_GREATER] = find_column_of_terminal_in_table(">");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_GREATER]);
+    printf("TOKEN_REATER = %d\n", associationArray[TOKEN_OPERATOR_GREATER]);
     associationArray[TOKEN_OPERATOR_GREATER_EQUAL] = find_column_of_terminal_in_table(">=");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_GREATER_EQUAL]);
+    printf("TOKEN_GREATER_EQUAL = %d\n", associationArray[TOKEN_OPERATOR_GREATER_EQUAL]);
     associationArray[TOKEN_OPERATOR_LESS] = find_column_of_terminal_in_table("<");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_LESS]);
+    printf("TOKEN_LESS = %d\n", associationArray[TOKEN_OPERATOR_LESS]);
     associationArray[TOKEN_OPERATOR_LESS_EQUAL] = find_column_of_terminal_in_table("<=");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_LESS_EQUAL]);
+    printf("TOKEN_LESS_EQUAL= %d\n", associationArray[TOKEN_OPERATOR_LESS_EQUAL]);
     associationArray[TOKEN_OPERATOR_PLUS] = find_column_of_terminal_in_table("+");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_PLUS]);
+    printf("TOKEN_PLUS = %d\n", associationArray[TOKEN_OPERATOR_PLUS]);
     associationArray[TOKEN_OPERATOR_MINUS] = find_column_of_terminal_in_table("-");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_MINUS]);
+    printf("TOKEN_MINUS = %d\n", associationArray[TOKEN_OPERATOR_MINUS]);
     associationArray[TOKEN_OPERATOR_MULTIPLY] = find_column_of_terminal_in_table("*");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_MULTIPLY]);
+    printf("TOKEN_ASTERISK = %d\n", associationArray[TOKEN_OPERATOR_MULTIPLY]);
     associationArray[TOKEN_OPERATOR_DIVIDE] = find_column_of_terminal_in_table("/");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_DIVIDE]);
+    printf("TOKEN_SLASH = %d\n", associationArray[TOKEN_OPERATOR_DIVIDE]);
     associationArray[TOKEN_IF] = find_column_of_terminal_in_table("if");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_IF]);
+    printf("TOKEN_IF = %d\n", associationArray[TOKEN_IF]);
     associationArray[TOKEN_THEN] = find_column_of_terminal_in_table("then");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_THEN]);
+    printf("TOKEN_THEN = %d\n", associationArray[TOKEN_THEN]);
     associationArray[TOKEN_EOF] = find_column_of_terminal_in_table("$");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_EOF]);
+    printf("TOKEN_EOF = %d\n", associationArray[TOKEN_EOF]);
+    associationArray[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("identifier");
+    printf("TOKEN_ID = %d\n", associationArray[TOKEN_IDENTIFIER]);
+    associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
+    printf("TOKEN_NUM = %d\n", associationArray[TOKEN_NUMBER]);
 
 }
 
@@ -719,7 +739,7 @@ void createAssociationMap() { // to be changed
 void print_rules() {
     for (int i = 0; i < rules->size; i++) {
         Rule* r = (Rule*)rules->array[i];
-        printf("Rule %d: %s -> %s (length: %d)\n", r->ruleID, r->nonterminal, r->ruleContent, r->ruleTerminalCount);
+        printf("Rule %d: %s -> %s (length: %d) - pos %d\n", r->ruleID, r->nonterminal, r->ruleContent, r->ruleTerminalCount, r->nonterminal_position);
     }
 }
 
@@ -755,8 +775,8 @@ void add_rules() {
     add_rule("TERM", "FACTOR");
 
     add_rule("FACTOR", "( EXPRESSION )");
-    add_rule("FACTOR", "IDENTIFIER");
-    add_rule("FACTOR", "NUMBER");
+    add_rule("FACTOR", "identifier");
+    add_rule("FACTOR", "number");
 
 
     add_rule("IF_STATEMENT", "if CONDITION_LIST then BLOCK");
@@ -765,6 +785,13 @@ void add_rules() {
 
 
 
+}
+
+void set_nonterminals_position() {
+    for (int i = 0; i < rules->size; i++) {
+        Rule* rule = arraylist_get(rules, i);
+        rule->nonterminal_position = find_row_of_nonterminal_in_table(rule->nonterminal);
+    }
 }
 
 
@@ -784,6 +811,8 @@ int create_parser_tables() {
     }
 
     collect_symbols();
+
+    set_nonterminals_position();
 
     printf("\nTerminals: ");
     arraylist_print(terminalsList, print_string_arraylist);

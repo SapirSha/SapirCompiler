@@ -9,19 +9,24 @@
 #include "ArrayList.h"
 #include "HashSet.h"
 #include "Parser.h"
+#include "Queue.h"
+
 void printINT(int* e) {
     if (e != NULL) printf("%d", *e);
     else printf("0");
 }
 
+void printTOKEN(Token* token) {
+    printf("T%d:L%s", token->type, token->lexeme);
+}
 
 
 int main() {
     
-    const char* code = "while(x >5){x++}";
+    const char* code = "if 5 == 8 then { x }";
     printf("Tokenizing: %s\n", code);
-    TokensQueue* tokens = tokenize(code);
-    tokens_print(tokens);
+    Queue* tokens = tokenize(code);
+    queue_print(tokens, printTOKEN);
     
     
     printf("\n\n\n");

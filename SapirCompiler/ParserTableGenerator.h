@@ -14,6 +14,7 @@ typedef struct {
     char* nonterminal;
     char* ruleContent;
     int ruleTerminalCount;
+    int nonterminal_position;
     int ruleID;
 } Rule;
 
@@ -26,7 +27,19 @@ typedef struct {
     ArrayList* items; // CHAGNE TO HASHSET?
 } State;
 
-char*** actionTable;
+typedef enum {
+    ERROR,
+    SHIFT,
+    REDUCE,
+    ACCEPT
+} ACTION_TYPE;
+
+typedef struct {
+    ACTION_TYPE type;
+    int value;
+} ActionCell;
+
+ActionCell** actionTable;
 int** gotoTable;
 
 int associationArray[NUM_OF_TOKENS];

@@ -89,7 +89,7 @@ void* linkedlist_pop(LinkedList* lst) {
 	return temp->value;
 }
 void* linkedlist_peek(LinkedList* lst) {
-	return lst->head;
+	return lst->head ? lst->head->value : NULL;
 }
 // Stack
 

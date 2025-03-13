@@ -31,6 +31,7 @@ void* linkedlist_pop(LinkedList*);
 void* linkedlist_peek(LinkedList*);
 // Stack
 
+
 void linkedlist_print(LinkedList*, void (*print)(void*));
 void linkedlist_free(LinkedList*, void free_function(void*));
 
