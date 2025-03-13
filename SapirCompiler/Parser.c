@@ -5,6 +5,8 @@
 #include "Queue.h"
 #include "ArrayList.h"
 
+static const int ZERO = 0;
+
 char* actiontypetostring2(int action) {
     switch (action)
     {
@@ -31,8 +33,7 @@ void printINT2(int* in) {
 // might need to change to static stack for faster removal
 void commit_parser(Queue* tokens) {
 	LinkedList* States = linkedlist_init(sizeof(unsigned int));
-    int position = 0;
-    linkedlist_push(States, &position);
+    linkedlist_push(States, &ZERO);
     ActionCell current = NextAction;
     queue_dequeue(tokens);
 
@@ -68,13 +69,10 @@ void commit_parser(Queue* tokens) {
             linkedlist_push(States, &current.value);
             queue_dequeue(tokens);
         }
-        if (queue_peek(tokens) != NULL) {
             printf("NEXT TOKEN: %d-%s\n", ((Token*)queue_peek(tokens))->type, ((Token*)queue_peek(tokens))->lexeme);
             printf("Row: %d Col: %d\n", *(unsigned int*)linkedlist_peek(States), associationArray[((Token*)queue_peek(tokens))->type]);
             current = NextAction;
             print_actioncell(&current);
-        }
-        else break;
 
     }
 

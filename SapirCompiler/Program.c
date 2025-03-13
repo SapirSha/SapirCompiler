@@ -23,7 +23,12 @@ void printTOKEN(Token* token) {
 
 int main() {
     
-    const char* code = "if 5 == 8 then { x }";
+    const char* code =
+        "int x = 5; "
+        "if y < 100 then x = 10;"
+        "else x = 0; ;";
+
+
     printf("Tokenizing: %s\n", code);
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);

@@ -368,6 +368,27 @@ void init_follow() {
     hashset_insert(hashmap_get(follow, "START'"), "$");
 }
 
+bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* rule) {
+    char* next_token = get_nth_token(rule->ruleContent, 0);
+    if (next_token == NULL) return;
+    if (!isNonterminal(next_token)) {
+        printf("ADDING to %s : %s\n", nonterminal, next_token);
+        return hashset_insert(hashmap_get(follow, nonterminal), next_token);
+    }
+    else {
+        bool changed = false;
+        for (int r2 = 0; r2 < rules->size; r2++)
+        {
+            Rule* a_rule = arraylist_get(rules, r2);
+            if (strcmp(a_rule->nonterminal, next_token) == 0) {
+                changed |= add_rules_content_to_nonterminals_follow(nonterminal, a_rule);
+            }
+        }
+        return changed;
+    }
+}
+
+
 /*
 A function that fills the follow structure
 * A hashmap with nonterminals as keys and possible terminals that can appear after the nonterminal as content
@@ -405,7 +426,7 @@ void compute_follow() {
                         char* after_symbol = *(char**)arraylist_get(tokens, j + 1);
                         // if the symbol after the nonterminal is a terminal its a follow
                         if (!isNonterminal(after_symbol)) {
-                            changed = hashset_insert(hashmap_get(follow, current_symbol), after_symbol);
+                            changed |= hashset_insert(hashmap_get(follow, current_symbol), after_symbol);
                         } 
                         else {
                             /* Here the symbol after the nonterminal(A) is another nonterminal(B),
@@ -427,17 +448,18 @@ void compute_follow() {
                                     free(sample);
                                     // if the first symbol in the content is terminal, add as follow
                                     if (firstSym && !isNonterminal(firstSym)) {
-                                        changed = hashset_insert(hashmap_get(follow, current_symbol), firstSym);
-                                        free(firstSym);
+                                        changed |= hashset_insert(hashmap_get(follow, current_symbol), firstSym);
                                         break;
                                     }
                                     // if the first symbol is nonterminal, add its follows to current
                                     else if (firstSym && isNonterminal(firstSym)) {
-                                        HashSet* firstFollow = hashmap_get(follow, firstSym);
-                                        HashSet* currentFollow = hashmap_get(follow, current_symbol);
-
-                                        changed = hashset_add_hashset(currentFollow, firstFollow);
-                                        free(firstSym);
+                                        for (int r2 = 0; r2 < rules->size; r2++)
+                                        {
+                                            Rule* a_rule = arraylist_get(rules, r2);
+                                            if (strcmp(a_rule->nonterminal, firstSym) == 0) {
+                                                changed |= add_rules_content_to_nonterminals_follow(current_symbol, a_rule);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -447,7 +469,7 @@ void compute_follow() {
                         // add to last symbol's follows, the current rule's follows
                         HashSet* LastSymbolSet = hashmap_get(follow, current_symbol);
                         HashSet* currentFollow = hashmap_get(follow, currentrule_nonterminal);
-                        changed = hashset_add_hashset(LastSymbolSet, currentFollow);
+                        changed |= hashset_add_hashset(LastSymbolSet, currentFollow);
                     }
                 }
             }
@@ -455,7 +477,6 @@ void compute_follow() {
         }
     }
 
-    hashset_print(hashmap_get(follow, "FACTOR"), print_string);
 
 }
 
@@ -617,6 +638,7 @@ void build_parsing_tables() {
             }
         }
     }
+
 }
 
 char* actiontypetostring(int action) {
@@ -687,13 +709,14 @@ int find_column_of_terminal_in_table(const char* terminal) {
     }
 }
 
+
 void createAssociationMap() { // to be changed
     associationArray[TOKEN_CONTINUE] = find_column_of_terminal_in_table("continue");
     printf("TOKEN_CONTINUE = %d\n", associationArray[TOKEN_CONTINUE]);
-    associationArray[TOKEN_LBRACES] = find_column_of_terminal_in_table("{");
-    printf("TOKEN_LBRACES = %d\n", associationArray[TOKEN_LBRACES]);
-    associationArray[TOKEN_RBRACES] = find_column_of_terminal_in_table("}");
-    printf("TOKEN_RBRACES = %d\n", associationArray[TOKEN_RBRACES]);
+    //associationArray[TOKEN_LBRACES] = find_column_of_terminal_in_table("{");
+    //printf("TOKEN_LBRACES = %d\n", associationArray[TOKEN_LBRACES]);
+    //associationArray[TOKEN_RBRACES] = find_column_of_terminal_in_table("}");
+    //printf("TOKEN_RBRACES = %d\n", associationArray[TOKEN_RBRACES]);
     associationArray[TOKEN_OPERATOR_ALSO] = find_column_of_terminal_in_table("&&");
     printf("TOKEN_ALSO = %d\n", associationArray[TOKEN_OPERATOR_ALSO]);
     associationArray[TOKEN_OPERATOR_EITHER] = find_column_of_terminal_in_table("||");
@@ -732,9 +755,30 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_ID = %d\n", associationArray[TOKEN_IDENTIFIER]);
     associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
     printf("TOKEN_NUM = %d\n", associationArray[TOKEN_NUMBER]);
+    associationArray[TOKEN_INT] = find_column_of_terminal_in_table("int");
+    printf("TOKEN_INT = %d\n", associationArray[TOKEN_INT]);
+    associationArray[TOKEN_FLOAT] = find_column_of_terminal_in_table("float");
+    printf("TOKEN_FLOAT = %d\n", associationArray[TOKEN_FLOAT]);
+    associationArray[TOKEN_STRING] = find_column_of_terminal_in_table("string");
+    printf("TOKEN_STRING = %d\n", associationArray[TOKEN_STRING]);
+    associationArray[TOKEN_CHAR] = find_column_of_terminal_in_table("char");
+    printf("TOKEN_CHAR = %d\n", associationArray[TOKEN_CHAR]);
+    associationArray[TOKEN_SEMICOLON] = find_column_of_terminal_in_table(";");
+    printf("TOKEN_SEMICOLON = %d\n", associationArray[TOKEN_SEMICOLON]);
+    associationArray[TOKEN_ELSE] = find_column_of_terminal_in_table("else");
+    printf("TOKEN_ELSE = %d\n", associationArray[TOKEN_ELSE]);
+    associationArray[TOKEN_OPERATOR_ASSIGN] = find_column_of_terminal_in_table("=");
+    printf("TOKEN_ASSIGN = %d\n", associationArray[TOKEN_OPERATOR_ASSIGN]);
 
 }
-
+void print_follows() {
+    printf("FOLLOWS:\n");
+    for (int i = 0; i < nonterminalsList->size; i++) {
+        char* str = *(char**)arraylist_get(nonterminalsList, i);
+        printf("%s:\t\t\t", str);
+        hashset_print(hashmap_get(follow, str), print_string);
+    }
+}
 
 void print_rules() {
     for (int i = 0; i < rules->size; i++) {
@@ -747,12 +791,12 @@ void add_rules() {
     add_rule("PROGRAM", "STATEMENTS");
     add_rule("STATEMENTS", "STATEMENTS STATEMENT");
     add_rule("STATEMENTS", "STATEMENT");
-
+    
+    add_rule("STATEMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
+    add_rule("STATEMENT", "VARIABLE_DECLARATION_STATEMENT");
     add_rule("STATEMENT", "IF_STATEMENT");
     add_rule("STATEMENT", "continue");
-
-
-    add_rule("BLOCK", "{ STATEMENTS }");
+    add_rule("STATEMENT", "EMPTY");
 
     add_rule("CONDITION_LIST", "CONDITION");
     add_rule("CONDITION_LIST", "CONDITION_LIST && CONDITION");
@@ -778,8 +822,21 @@ void add_rules() {
     add_rule("FACTOR", "identifier");
     add_rule("FACTOR", "number");
 
+    add_rule("VARIABLE_TYPE", "int");
+    add_rule("VARIABLE_TYPE", "char");
+    add_rule("VARIABLE_TYPE", "string");
+    add_rule("VARIABLE_TYPE", "float");
+    
 
-    add_rule("IF_STATEMENT", "if CONDITION_LIST then BLOCK");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST then STATEMENTS ;");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST then STATEMENTS else STATEMENTS ;");
+
+
+    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier ;");
+    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION ;");
+
+    add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION ;");
+
 
 
 
@@ -824,6 +881,8 @@ int create_parser_tables() {
     init_tables();
 
     compute_follow();
+
+    print_follows();
 
     build_parsing_tables();
 

@@ -350,6 +350,11 @@ void handle_comment(const char* input, int* index, ArrayList* token, State* next
 void handle_start(const char* input, int* index, ArrayList* token, State* next_state) {
     State current = START;
     while (current == START) {
+        if (input[*index] == '\n') {
+            arraylist_add(token, &input[*index]);
+            add_token(token, tokens, SEPARATOR_TO_TOKEN_CONVERTER[';']);
+            (*index)++;
+        }
         (*index)++;
         current = state_table[START][classifier_lookup[input[*index]]];
     }
@@ -380,6 +385,7 @@ Queue* tokenize(const char* input) {
         state = next_state;
     }
 
+    queue_enqueue(tokens, &(Token){.type = TOKEN_EOF, .lexeme = "END"});
     queue_enqueue(tokens, &(Token){.type = TOKEN_EOF, .lexeme = "END"});
 
     arraylist_free(token);
