@@ -284,7 +284,7 @@ void print_state(State* s, int index) {
         LRItem* item = arraylist_get(s->items, i);
         printf("  %s -> ", item->rule->nonterminal);
 
-                char* contentCopy = strdup(item->rule->ruleContent);
+        char* contentCopy = strdup(item->rule->ruleContent);
         char* token = strtok(contentCopy, " ");
         int pos = 0;
         while (token != NULL) {
@@ -397,6 +397,7 @@ void compute_follow() {
     init_follow();
 
     bool changed = true;
+    // if somthing changed you need to check if something new can be added
     while (changed) {
         changed = false;
 
@@ -429,13 +430,6 @@ void compute_follow() {
                             changed |= hashset_insert(hashmap_get(follow, current_symbol), after_symbol);
                         } 
                         else {
-                            /* Here the symbol after the nonterminal(A) is another nonterminal(B),
-                            * in other words, nonterminal(A) can be followed by:
-                            * nonterminal(B)'s terminals
-                            * nonterminal(B)'s nonterminals terminals
-                            * nonterminal(B)'s nonterminals nonterminals terminals.......
-                            * this is why the outside while is needed
-                            */
 
                             // go through all the rules
                             for (int r = 0; r < rules->size; r++) {
@@ -769,7 +763,6 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_ELSE = %d\n", associationArray[TOKEN_ELSE]);
     associationArray[TOKEN_OPERATOR_ASSIGN] = find_column_of_terminal_in_table("=");
     printf("TOKEN_ASSIGN = %d\n", associationArray[TOKEN_OPERATOR_ASSIGN]);
-
 }
 void print_follows() {
     printf("FOLLOWS:\n");

@@ -139,6 +139,7 @@
     <ClCompile Include="Program.c" />
     <ClCompile Include="Queue.c" />
     <ClCompile Include="StringTrie.c" />
+    <ClCompile Include="SyntaxTree.c" />
     <ClCompile Include="Token.c" />
   </ItemGroup>
   <ItemGroup>
@@ -152,6 +153,7 @@
     <ClInclude Include="ParserTableGenerator.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="StringTrie.h" />
+    <ClInclude Include="SyntaxTree.h" />
     <ClInclude Include="Tokens.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

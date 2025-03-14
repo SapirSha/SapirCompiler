@@ -83,6 +83,7 @@ void linkedlist_push(LinkedList* lst, void* value) {
 	lst->length++;
 }
 void* linkedlist_pop(LinkedList* lst) {
+	if (lst->head == NULL) return NULL;
 	LinkedListNode* temp = lst->head;
 	lst->head = lst->head->next;
 	lst->length--;

@@ -5,7 +5,6 @@
 
 Queue* queue_init(unsigned int object_size) {
 	Queue* queue = malloc(sizeof(Queue));
-
 	queue->head = NULL;
 	queue->tail = NULL;
 	queue->object_size = object_size;
@@ -23,7 +22,7 @@ static QueueNode* init_queue_node(void* value, unsigned int object_size) {
 void queue_enqueue(Queue* queue, void* value) {
 	QueueNode* node = init_queue_node(value, queue->object_size);
 
-	if (queue->tail == NULL) {
+	if (queue->tail == NULL || queue->size == 0) {
 		queue->head = queue->tail = node;
 	}
 	else {
