@@ -35,3 +35,17 @@ void print_tree_with_ranks(SyntaxTree* root) {
     }
 
 }
+
+
+void print_tree_postorder(SyntaxTree* tree) {
+    if (tree == NULL) return;
+    if (tree->type == NONTERMINAL_TYPE) {
+        for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++)
+            print_tree_postorder(tree->info.nonterminal_info.children[i]);
+        printf("NONTERMINAL: %s\n", tree->info.nonterminal_info.nonterminal);
+    }
+    else {
+        printf("TERMINAL: %s\n", tree->info.terminal_info.token.lexeme);
+    }
+
+}

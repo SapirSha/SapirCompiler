@@ -70,6 +70,12 @@ typedef enum {
     TOKEN_CHANGE,
     TOKEN_PRINT,
     TOKEN_GET,
+    TOKEN_GETS,
+    TOKEN_FUNCTION,
+    TOKEN_RETURNS,
+    TOKEN_NOTHING,
+    TOKEN_CALL,
+    TOKEN_WITH,
 
     TOKEN_EOF,
 

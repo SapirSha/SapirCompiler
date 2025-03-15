@@ -101,8 +101,8 @@ static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
     /* NUMBER */          { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
     /* OPERATOR */        { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
     /* STRING_LITERAL */  { ERROR,          STRING_LITERAL, STRING_LITERAL, STRING_LITERAL,  STRING_LITERAL,   START,              STRING_LITERAL,   STRING_LITERAL},
-    /* COMMENT */         { ERROR,          COMMENT,        COMMENT,        COMMENT,         COMMENT,          COMMENT,            START,            SEPARATOR},
-    /* SEPARATOR */       { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
+    /* COMMENT */         { ERROR,          COMMENT,        COMMENT,        COMMENT,         COMMENT,          COMMENT,            START,            COMMENT},
+    /* SEPARATOR */       { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          STRING_LITERAL},
     /* KeyWord */         { ERROR,          KEYWORD,        KEYWORD,        OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
     /* ERROR */           { ERROR,          ERROR,          ERROR,          ERROR,           ERROR,            ERROR,              ERROR,            ERROR},
 };
@@ -189,6 +189,17 @@ void init_finder() {
     stringin_insert_string(token_finder, "change", TOKEN_CHANGE);
     stringin_insert_string(token_finder, "print", TOKEN_PRINT);
     stringin_insert_string(token_finder, "get", TOKEN_GET);
+    stringin_insert_string(token_finder, "gets", TOKEN_GETS);
+    stringin_insert_string(token_finder, "function", TOKEN_FUNCTION);
+    stringin_insert_string(token_finder, "returns", TOKEN_RETURNS);
+    stringin_insert_string(token_finder, "return", TOKEN_RETURN);
+    stringin_insert_string(token_finder, "nothing", TOKEN_NOTHING);
+    stringin_insert_string(token_finder, "call", TOKEN_CALL);
+    stringin_insert_string(token_finder, "with", TOKEN_WITH);
+
+
+
+
 
 
     stringin_insert_string(token_finder, "+", TOKEN_OPERATOR_PLUS);
@@ -258,7 +269,6 @@ void handle_keyword(const char* input, int* index, ArrayList* token, State* next
     }
     else {
         *next_state = IDENTIFIER;
-        (*index)++;
         handle_identifier(input, index, token, next_state);
     }
 }
@@ -372,6 +382,7 @@ void handle_identifier(const char* input, int* index, ArrayList* token, State* n
         (*index)++;
         current = state_table[IDENTIFIER][classifier_lookup[input[*index]]];
     }
+
 	add_token(token, tokens, TOKEN_IDENTIFIER);
 }
 

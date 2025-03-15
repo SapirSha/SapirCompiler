@@ -30,6 +30,7 @@ typedef struct SyntaxTree {
 
 
 void print_tree_with_ranks(SyntaxTree* tree);
+void print_tree_postorder(SyntaxTree* tree);
 
 
 #endif

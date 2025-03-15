@@ -705,8 +705,8 @@ int find_column_of_terminal_in_table(const char* terminal) {
 
 
 void createAssociationMap() { // to be changed
-    associationArray[TOKEN_CONTINUE] = find_column_of_terminal_in_table("continue");
-    printf("TOKEN_CONTINUE = %d\n", associationArray[TOKEN_CONTINUE]);
+    //associationArray[TOKEN_CONTINUE] = find_column_of_terminal_in_table("continue");
+    //printf("TOKEN_CONTINUE = %d\n", associationArray[TOKEN_CONTINUE]);
     associationArray[TOKEN_LBRACES] = find_column_of_terminal_in_table("{");
     printf("TOKEN_LBRACES = %d\n", associationArray[TOKEN_LBRACES]);
     associationArray[TOKEN_RBRACES] = find_column_of_terminal_in_table("}");
@@ -775,6 +775,27 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
     associationArray[TOKEN_GET] = find_column_of_terminal_in_table("get");
     printf("TOKEN_GET= %d\n", associationArray[TOKEN_GET]);
+    associationArray[TOKEN_RETURNS] = find_column_of_terminal_in_table("returns");
+    printf("TOKEN_RETURNS= %d\n", associationArray[TOKEN_RETURNS]);
+    associationArray[TOKEN_GETS] = find_column_of_terminal_in_table("gets");
+    printf("TOKEN_GETS= %d\n", associationArray[TOKEN_GETS]);
+    associationArray[TOKEN_FUNCTION] = find_column_of_terminal_in_table("function");
+    printf("TOKEN_FUNCTION= %d\n", associationArray[TOKEN_FUNCTION]);
+    //associationArray[TOKEN_NOTHING] = find_column_of_terminal_in_table("nothing");
+    //printf("TOKEN_NOTHING= %d\n", associationArray[TOKEN_NOTHING]);
+    associationArray[TOKEN_COMMA] = find_column_of_terminal_in_table(",");
+    printf("TOKEN_COMMA= %d\n", associationArray[TOKEN_COMMA]);
+    associationArray[TOKEN_CALL] = find_column_of_terminal_in_table("call");
+    printf("TOKEN_CALL= %d\n", associationArray[TOKEN_CALL]);
+    associationArray[TOKEN_WITH] = find_column_of_terminal_in_table("with");
+    printf("TOKEN_WITH= %d\n", associationArray[TOKEN_WITH]);
+    associationArray[TOKEN_RETURN] = find_column_of_terminal_in_table("return");
+    printf("TOKEN_RETURN= %d\n", associationArray[TOKEN_RETURN]);
+    associationArray[TOKEN_OPERATOR_MODULO] = find_column_of_terminal_in_table("%");
+    printf("TOKEN_RETURN= %d\n", associationArray[TOKEN_OPERATOR_MODULO]);
+    associationArray[TOKEN_BOOL] = find_column_of_terminal_in_table("bool");
+    printf("TOKEN_BOOL= %d\n", associationArray[TOKEN_BOOL]);
+
 }
 void print_follows() {
     printf("FOLLOWS:\n");
@@ -806,8 +827,9 @@ void add_rules() {
     add_rule("STATEMENT", "FOR_STATEMENT");
     add_rule("STATEMENT", "PRINT_STATEMENT");
     add_rule("STATEMENT", "GET_STATEMENT");
-    add_rule("STATEMENT", "continue");
-    add_rule("STATEMENT", "EMPTY");
+    add_rule("STATEMENT", "FUNCTION_DECLARATION_STATEMENT");
+    add_rule("STATEMENT", "FUNCTION_CALL_STATEMENT");
+    add_rule("STATEMENT", "RETURN_STATEMENT");
 
     add_rule("CONDITION_LIST", "CONDITION");
     add_rule("CONDITION_LIST", "CONDITION_LIST && CONDITION");
@@ -826,6 +848,7 @@ void add_rules() {
     add_rule("EXPRESSION", "EXPRESSION - TERM");
     add_rule("EXPRESSION", "TERM");
 
+    add_rule("TERM", "TERM % FACTOR");
     add_rule("TERM", "TERM * FACTOR");
     add_rule("TERM", "TERM / FACTOR");
     add_rule("TERM", "FACTOR");
@@ -833,16 +856,18 @@ void add_rules() {
     add_rule("FACTOR", "( EXPRESSION )");
     add_rule("FACTOR", "identifier");
     add_rule("FACTOR", "number");
+    add_rule("FACTOR", "FUNCTION_CALL_STATEMENT");
+
 
     add_rule("VARIABLE_TYPE", "int");
     add_rule("VARIABLE_TYPE", "char");
     add_rule("VARIABLE_TYPE", "string");
     add_rule("VARIABLE_TYPE", "float");
+    add_rule("VARIABLE_TYPE", "bool");
+
     
     add_rule("BLOCK", "{ STATEMENTS }");
     add_rule("BLOCK", "{ }");
-
-
 
     add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK");
     add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK else ELSE_BLOCK ");
@@ -861,25 +886,44 @@ void add_rules() {
     add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK");
     add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK change CHANGE_BLOCK");
 
-
     add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST");
 
     add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK change CHANGE_BLOCK");
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST change CHANGE_BLOCK FOR_BLOCK");
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK");
 
     add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
     add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
-    add_rule("FOR_ASSIGNMENT", "BLOCK");
 
     add_rule("FOR_BLOCK", "BLOCK");
     add_rule("FOR_BLOCK", "STATEMENT");
 
-    add_rule("CHANGE_BLOCK", "BLOCK");
     add_rule("CHANGE_BLOCK", "VARIABLE_ASSIGNMENT_STATEMENT");
 
     add_rule("PRINT_STATEMENT", "print EXPRESSION");
     add_rule("GET_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
     add_rule("GET_STATEMENT", "get identifier");
 
+    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST returns VARIABLE_TYPE FUNCTION_BLOCK");
+    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST FUNCTION_BLOCK");
+    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier returns VARIABLE_TYPE FUNCTION_BLOCK");
+    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier FUNCTION_BLOCK");
+
+
+    add_rule("PARAMETER_LIST", "PARAMETER_LIST , PARAMETER");
+    add_rule("PARAMETER_LIST", "PARAMETER");
+    add_rule("PARAMETER", "VARIABLE_TYPE identifier");
+
+    add_rule("FUNCTION_BLOCK", "BLOCK");
+    add_rule("FUNCTION_BLOCK", "STATEMENT");
+
+    add_rule("RETURN_STATEMENT", "return EXPRESSION");
+
+    add_rule("FUNCTION_CALL_STATEMENT", "call identifier");
+    add_rule("FUNCTION_CALL_STATEMENT", "call identifier with ARGUMENT_LIST");
+
+    add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
+    add_rule("ARGUMENT_LIST", "EXPRESSION");
 }
 
 void set_nonterminals_position() {

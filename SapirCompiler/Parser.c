@@ -184,8 +184,16 @@ void commit_parser(Queue* tokens) {
     linkedlist_print(prev_tokens, printTOKEN2);
     linkedlist_print(prev_nodes, printAST);
     if (linkedlist_peek(prev_nodes))
-        print_tree_with_ranks(*(SyntaxTree**)linkedlist_pop(prev_nodes));
-
+        print_tree_with_ranks(*(SyntaxTree**)linkedlist_peek(prev_nodes));
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    if (linkedlist_peek(prev_nodes))
+        print_tree_postorder(*(SyntaxTree**)linkedlist_peek(prev_nodes));
+    printf("\n");
+    printf("\n");
+    printf("\n");
     printf("\nENDED IN: ");
     print_actioncell(&current);
     printf("\nEND PARSER");

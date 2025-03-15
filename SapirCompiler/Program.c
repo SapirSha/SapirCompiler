@@ -20,11 +20,19 @@ void printTOKEN(Token* token) {
     printf("T%d:L%s", token->type, token->lexeme);
 }
 
-
 int main() {
-    
     const char* code =
-        "if x < 0 x = 0 else if x > 10 x = 10 print x";
+        "function is_prime gets int number returns int # 1 if prime, else false # "
+        "{ "
+        "  if number < 0 return 0 "
+        "  if number <= 3 return 1 "
+        "  for int i = 3 while i < number/2 "
+        "    if number % i == 0 return 0 "
+        "  change i = i + 2 "
+        "  return 1 "
+        "} "
+        "bool isprime = call is_prime with 7 "
+        "print isprime ";
 
 
     printf("Tokenizing: %s\n", code);
