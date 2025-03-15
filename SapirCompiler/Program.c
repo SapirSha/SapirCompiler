@@ -24,7 +24,7 @@ void printTOKEN(Token* token) {
 int main() {
     
     const char* code =
-        "for x = 10 while x > 0 { print x } change { x = x - 1 }";
+        "if x < 0 x = 0 else if x > 10 x = 10 print x";
 
 
     printf("Tokenizing: %s\n", code);

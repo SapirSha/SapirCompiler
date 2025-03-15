@@ -188,6 +188,7 @@ void init_finder() {
     stringin_insert_string(token_finder, "until", TOKEN_UNTIL);
     stringin_insert_string(token_finder, "change", TOKEN_CHANGE);
     stringin_insert_string(token_finder, "print", TOKEN_PRINT);
+    stringin_insert_string(token_finder, "get", TOKEN_GET);
 
 
     stringin_insert_string(token_finder, "+", TOKEN_OPERATOR_PLUS);

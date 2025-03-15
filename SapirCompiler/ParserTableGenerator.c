@@ -773,6 +773,8 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_CHANGE= %d\n", associationArray[TOKEN_CHANGE]);
     associationArray[TOKEN_PRINT] = find_column_of_terminal_in_table("print");
     printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
+    associationArray[TOKEN_GET] = find_column_of_terminal_in_table("get");
+    printf("TOKEN_GET= %d\n", associationArray[TOKEN_GET]);
 }
 void print_follows() {
     printf("FOLLOWS:\n");
@@ -798,12 +800,12 @@ void add_rules() {
     add_rule("STATEMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
     add_rule("STATEMENT", "VARIABLE_DECLARATION_STATEMENT");
     add_rule("STATEMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
-
     add_rule("STATEMENT", "IF_STATEMENT");
     add_rule("STATEMENT", "WHILE_STATEMENT");
     add_rule("STATEMENT", "DO_WHILE_STATEMENT");
     add_rule("STATEMENT", "FOR_STATEMENT");
     add_rule("STATEMENT", "PRINT_STATEMENT");
+    add_rule("STATEMENT", "GET_STATEMENT");
     add_rule("STATEMENT", "continue");
     add_rule("STATEMENT", "EMPTY");
 
@@ -842,10 +844,14 @@ void add_rules() {
 
 
 
-    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK");
-    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK else BLOCK ");
-    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK else IF_STATEMENT ");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK else ELSE_BLOCK ");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK else IF_STATEMENT ");
 
+    add_rule("IF_BLOCK", "BLOCK");
+    add_rule("IF_BLOCK", "STATEMENT");
+    add_rule("ELSE_BLOCK", "BLOCK");
+    add_rule("ELSE_BLOCK", "STATEMENT");
 
     add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier");
     add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION");
@@ -853,17 +859,26 @@ void add_rules() {
     add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION");
 
     add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK");
+    add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK change CHANGE_BLOCK");
+
 
     add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST");
 
-    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST BLOCK change BLOCK");
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK change CHANGE_BLOCK");
 
     add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
     add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
     add_rule("FOR_ASSIGNMENT", "BLOCK");
 
+    add_rule("FOR_BLOCK", "BLOCK");
+    add_rule("FOR_BLOCK", "STATEMENT");
+
+    add_rule("CHANGE_BLOCK", "BLOCK");
+    add_rule("CHANGE_BLOCK", "VARIABLE_ASSIGNMENT_STATEMENT");
 
     add_rule("PRINT_STATEMENT", "print EXPRESSION");
+    add_rule("GET_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
+    add_rule("GET_STATEMENT", "get identifier");
 
 }
 
