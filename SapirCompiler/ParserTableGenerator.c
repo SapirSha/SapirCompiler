@@ -454,7 +454,7 @@ void compute_follow() {
                                                 changed |= add_rules_content_to_nonterminals_follow(current_symbol, a_rule);
                                             }
                                         }
-                                    }
+                                    } 
                                 }
                             }
                         }
@@ -757,12 +757,22 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_STRING = %d\n", associationArray[TOKEN_STRING]);
     associationArray[TOKEN_CHAR] = find_column_of_terminal_in_table("char");
     printf("TOKEN_CHAR = %d\n", associationArray[TOKEN_CHAR]);
-    associationArray[TOKEN_SEMICOLON] = find_column_of_terminal_in_table(";");
-    printf("TOKEN_SEMICOLON = %d\n", associationArray[TOKEN_SEMICOLON]);
+    //associationArray[TOKEN_SEMICOLON] = find_column_of_terminal_in_table(";");
+    //printf("TOKEN_SEMICOLON = %d\n", associationArray[TOKEN_SEMICOLON]);
     associationArray[TOKEN_ELSE] = find_column_of_terminal_in_table("else");
     printf("TOKEN_ELSE = %d\n", associationArray[TOKEN_ELSE]);
     associationArray[TOKEN_OPERATOR_ASSIGN] = find_column_of_terminal_in_table("=");
     printf("TOKEN_ASSIGN = %d\n", associationArray[TOKEN_OPERATOR_ASSIGN]);
+    associationArray[TOKEN_DO] = find_column_of_terminal_in_table("do");
+    printf("TOKEN_DO = %d\n", associationArray[TOKEN_DO]);
+    associationArray[TOKEN_WHILE] = find_column_of_terminal_in_table("while");
+    printf("TOKEN_WHILE= %d\n", associationArray[TOKEN_WHILE]);
+    associationArray[TOKEN_FOR] = find_column_of_terminal_in_table("for");
+    printf("TOKEN_FOR= %d\n", associationArray[TOKEN_FOR]);
+    associationArray[TOKEN_CHANGE] = find_column_of_terminal_in_table("change");
+    printf("TOKEN_CHANGE= %d\n", associationArray[TOKEN_CHANGE]);
+    associationArray[TOKEN_PRINT] = find_column_of_terminal_in_table("print");
+    printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
 }
 void print_follows() {
     printf("FOLLOWS:\n");
@@ -787,7 +797,13 @@ void add_rules() {
     
     add_rule("STATEMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
     add_rule("STATEMENT", "VARIABLE_DECLARATION_STATEMENT");
+    add_rule("STATEMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
+
     add_rule("STATEMENT", "IF_STATEMENT");
+    add_rule("STATEMENT", "WHILE_STATEMENT");
+    add_rule("STATEMENT", "DO_WHILE_STATEMENT");
+    add_rule("STATEMENT", "FOR_STATEMENT");
+    add_rule("STATEMENT", "PRINT_STATEMENT");
     add_rule("STATEMENT", "continue");
     add_rule("STATEMENT", "EMPTY");
 
@@ -802,6 +818,7 @@ void add_rules() {
     add_rule("CONDITION", "EXPRESSION >= EXPRESSION");
     add_rule("CONDITION", "EXPRESSION < EXPRESSION");
     add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
+
 
     add_rule("EXPRESSION", "EXPRESSION + TERM");
     add_rule("EXPRESSION", "EXPRESSION - TERM");
@@ -821,6 +838,8 @@ void add_rules() {
     add_rule("VARIABLE_TYPE", "float");
     
     add_rule("BLOCK", "{ STATEMENTS }");
+    add_rule("BLOCK", "{ }");
+
 
 
     add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK");
@@ -828,15 +847,23 @@ void add_rules() {
     add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK else IF_STATEMENT ");
 
 
-    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier ;");
-    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION ;");
+    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier");
+    add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION");
 
-    add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION ;");
+    add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION");
+
+    add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK");
+
+    add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST");
+
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST BLOCK change BLOCK");
+
+    add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
+    add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
+    add_rule("FOR_ASSIGNMENT", "BLOCK");
 
 
-
-
-
+    add_rule("PRINT_STATEMENT", "print EXPRESSION");
 
 }
 

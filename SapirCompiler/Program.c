@@ -24,7 +24,7 @@ void printTOKEN(Token* token) {
 int main() {
     
     const char* code =
-        "int x = 5;";
+        "for x = 10 while x > 0 { print x } change { x = x - 1 }";
 
 
     printf("Tokenizing: %s\n", code);
@@ -38,9 +38,6 @@ int main() {
 
 
     commit_parser(tokens);
-
-
-
 
     return 0;
 

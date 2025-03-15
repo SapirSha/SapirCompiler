@@ -184,6 +184,10 @@ void init_finder() {
 	stringin_insert_string(token_finder, "false", TOKEN_FALSE);
     stringin_insert_string(token_finder, "continue", TOKEN_CONTINUE);
     stringin_insert_string(token_finder, "then", TOKEN_THEN);
+    stringin_insert_string(token_finder, "do", TOKEN_DO);
+    stringin_insert_string(token_finder, "until", TOKEN_UNTIL);
+    stringin_insert_string(token_finder, "change", TOKEN_CHANGE);
+    stringin_insert_string(token_finder, "print", TOKEN_PRINT);
 
 
     stringin_insert_string(token_finder, "+", TOKEN_OPERATOR_PLUS);

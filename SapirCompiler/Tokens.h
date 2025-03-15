@@ -65,6 +65,10 @@ typedef enum {
 
     TOKEN_CONTINUE,
     TOKEN_THEN,
+    TOKEN_DO,
+    TOKEN_UNTIL,
+    TOKEN_CHANGE,
+    TOKEN_PRINT,
 
     TOKEN_EOF,
 
