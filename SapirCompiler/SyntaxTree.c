@@ -49,3 +49,18 @@ void print_tree_postorder(SyntaxTree* tree) {
     }
 
 }
+
+
+
+void print_tree_preorder(SyntaxTree* tree) {
+    if (tree == NULL) return;
+    if (tree->type == NONTERMINAL_TYPE) {
+        printf("NONTERMINAL: %s\n", tree->info.nonterminal_info.nonterminal);
+        for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++)
+            print_tree_postorder(tree->info.nonterminal_info.children[i]);
+    }
+    else {
+        printf("TERMINAL: %s\n", tree->info.terminal_info.token.lexeme);
+    }
+
+}

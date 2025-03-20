@@ -27,7 +27,7 @@ void printSTR(char** str) {
 }
 
 int main() {
-    /*
+    
     const char* code =
         "int x = (5+8)*2"
         ;
@@ -44,7 +44,7 @@ int main() {
 
 
     commit_parser(tokens);
-    */
+    
 
 
 

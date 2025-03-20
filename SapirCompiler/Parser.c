@@ -70,7 +70,16 @@ static void reverse_type(SyntaxTree** arr, int n, NodeType type) {
     }
 }
 
-
+void check_for_single_children(SyntaxTree** arr, int n) {
+    for (int i = 0; i < n; i++) {
+        if (arr[i]->type == NONTERMINAL_TYPE 
+            && arr[i]->info.nonterminal_info.num_of_children == 1) {
+            SyntaxTree* temp = arr[i]->info.nonterminal_info.children[0];
+            free(arr[i]);
+            arr[i] = temp;
+        }
+    }
+}
 
 static SyntaxTree* new_nonterminal_node(Rule* reduce_rule) {
     SyntaxTree* node = malloc(sizeof(SyntaxTree));
@@ -162,6 +171,9 @@ void commit_parser(Queue* tokens) {
             reverse_type(new_node->info.nonterminal_info.children,
                 new_node->info.nonterminal_info.num_of_children,
                 TERMINAL_TYPE);
+
+            check_for_single_children(new_node->info.nonterminal_info.children,
+                new_node->info.nonterminal_info.num_of_children);
 
 
             linkedlist_push(prev_nodes, &new_node);
