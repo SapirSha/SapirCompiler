@@ -105,3 +105,10 @@ unsigned int string_hash(void* key) {
 int string_equals(void* key1, void* key2) {
     return strcmp((char*)key1, (char*)key2) == 0;
 }
+
+unsigned int int_hash(int* key) {
+    return (*key) * 317;
+}
+int int_equals(int* key1, int* key2) {
+    return *key1 == *key2;
+}

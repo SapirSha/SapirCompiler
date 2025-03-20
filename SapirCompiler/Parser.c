@@ -50,36 +50,16 @@ static void printAST(SyntaxTree **t) {
     
 }
 
-static void reverse_nonterminals(SyntaxTree** arr, int n) {
+static void reverse_type(SyntaxTree** arr, int n, NodeType type) {
     bool found2 = true;
     for (int i = 0, j = n - 1; i < j; found2 = true) {
         SyntaxTree* low = arr[i];
         SyntaxTree* high = arr[j];
-        if (low->type != NONTERMINAL_TYPE) {
+        if (low->type != type) {
             i++;
             found2 = false;
         }
-        if (high->type != NONTERMINAL_TYPE) {
-            j--;
-            found2 = false;
-        }
-        if (!found2) continue;
-        
-        arr[i++] = high;
-        arr[j--] = low;
-    }
-}
-
-static void reverse_terminals(SyntaxTree** arr, int n) {
-    bool found2 = true;
-    for (int i = 0, j = n - 1; i < j; found2 = true) {
-        SyntaxTree* low = arr[i];
-        SyntaxTree* high = arr[j];
-        if (low->type != TERMINAL_TYPE) {
-            i++;
-            found2 = false;
-        }
-        if (high->type != TERMINAL_TYPE) {
+        if (high->type != type) {
             j--;
             found2 = false;
         }
@@ -90,94 +70,107 @@ static void reverse_terminals(SyntaxTree** arr, int n) {
     }
 }
 
-#define NextAction \
-    actionTable[*(int*)linkedlist_peek(States)][associationArray[((Token*)queue_peek(tokens))->type]]
+
+
+static SyntaxTree* new_nonterminal_node(Rule* reduce_rule) {
+    SyntaxTree* node = malloc(sizeof(SyntaxTree));
+    node->type = NONTERMINAL_TYPE;
+    node->info.nonterminal_info = (struct NonterminalType){
+        .nonterminal = reduce_rule->nonterminal,
+        .num_of_children = reduce_rule->ruleTerminalCount,
+        .children = calloc(reduce_rule->ruleTerminalCount, sizeof(SyntaxTree*)) };
+    return node;
+}
+
+static SyntaxTree* new_terminal_node(Token token) {
+    SyntaxTree* node = malloc(sizeof(SyntaxTree));
+    node->type = TERMINAL_TYPE;
+    node->info.terminal_info.token = token;
+    return node;
+}
+
+#define GET_CURRENT_STATE *(int*)linkedlist_peek(States)
+#define GET_NEXT_ACTION_COL associationArray[((Token*)queue_peek(tokens))->type]
+#define GET_NEXT_GOTO_COL(rule) rule->nonterminal_position
+
+#define GET_NEXT_ACTION \
+    actionTable[GET_CURRENT_STATE][GET_NEXT_ACTION_COL]
+
+#define GET_NEXT_GOTO(rule) \
+    gotoTable[GET_CURRENT_STATE][GET_NEXT_GOTO_COL(rule)]
+
 
 void commit_parser(Queue* tokens) {
 	LinkedList* States = linkedlist_init(sizeof(unsigned int));
     LinkedList* prev_tokens = linkedlist_init(sizeof(Token));
     LinkedList* prev_nodes = linkedlist_init(sizeof(SyntaxTree*));
 
-    queue_print(tokens, printTOKEN2);
-
     linkedlist_push(States, &ZERO);
     
-    ActionCell current = NextAction;
-    linkedlist_push(prev_tokens, queue_dequeue(tokens));
+    ActionCell current_action;
 
-    linkedlist_push(States, &current.value);
-    
-    print_actioncell(&current);
-    printf(" < --- Doing This\n ");
-
-    current = NextAction;
-    while (current.type != ERROR && current.type != ACCEPT) {
+    bool loop = true;
+    while (loop) {
+        current_action = GET_NEXT_ACTION;
         linkedlist_print(States, printINT2);
 
-        
-        printf(" < --- Doing This\n ");
+        switch (current_action.type) {
 
-        if (current.type == REDUCE) {
-            Rule* reduce_rule = arraylist_get(rules, current.value);
-            printf("REDUCE RULE %d\n", current.value);
-            printf("REDUCE COUNT: %d\n", reduce_rule->ruleTerminalCount);
+        case ERROR:
+            printf("ERROR");
+            loop = false;
+            break;
 
-            SyntaxTree* temp = malloc(sizeof(SyntaxTree));
-            temp->type = NONTERMINAL_TYPE;
-            temp->info.nonterminal_info = (struct NonterminalType){ 
-                .nonterminal = reduce_rule->nonterminal, 
-                .num_of_children = reduce_rule->ruleTerminalCount, 
-                .children = calloc( reduce_rule->ruleTerminalCount, sizeof(SyntaxTree*))};
+        case ACCEPT:
+            printf("ACCEPT");
+            loop = false;
+            break;
 
+        case SHIFT:
+            linkedlist_push(States, &current_action.value);
+            linkedlist_push(prev_tokens, queue_dequeue(tokens));
+            break;
 
-            printf("RULE CONTENT: \t\t");
+        case REDUCE:
+            Rule* reduce_rule = arraylist_get(rules, current_action.value);
+            SyntaxTree* new_node = new_nonterminal_node(reduce_rule);
 
             char* content = strdup(reduce_rule->ruleContent);
             char* token = strtok(content, " ");
 
-            
-
             for (int i = 0; i < reduce_rule->ruleTerminalCount; i++) {
-                *(int*)linkedlist_pop(States);
-                printf("(%s->", token);
-                if (!isupper(token[0])) {
-                    Token* t = linkedlist_pop(prev_tokens);
-                    printTOKEN2(t);
-                    temp->info.nonterminal_info.children[i] =
-                        malloc(sizeof(SyntaxTree));
-                    *(temp->info.nonterminal_info.children[i]) = 
-                        (SyntaxTree){.type = TERMINAL_TYPE, .info.terminal_info.token = *t};
+                linkedlist_pop(States);
+
+                if (!isNonterminal(token)) {
+                    Token* temp = linkedlist_pop(prev_tokens);
+                    new_node->info.nonterminal_info.children[i] = new_terminal_node(*temp);
                 }
                 else {
-                    temp->info.nonterminal_info.children[i] = *(SyntaxTree**)linkedlist_pop(prev_nodes);
+                    new_node->info.nonterminal_info.children[i] = *(SyntaxTree**)linkedlist_pop(prev_nodes);
                 }
-                printf(")\t");
-
 
                 token = strtok(NULL, " ");
-
             }
-            printf("\n");
+
+            free(content);
 
 
-            reverse_nonterminals(temp->info.nonterminal_info.children, temp->info.nonterminal_info.num_of_children);
-            reverse_terminals(temp->info.nonterminal_info.children, temp->info.nonterminal_info.num_of_children);
+            reverse_type(new_node->info.nonterminal_info.children,
+                new_node->info.nonterminal_info.num_of_children,
+                NONTERMINAL_TYPE);
+
+            reverse_type(new_node->info.nonterminal_info.children,
+                new_node->info.nonterminal_info.num_of_children,
+                TERMINAL_TYPE);
 
 
-            linkedlist_push(prev_nodes, &temp);
-
-            int pos = *(int*)linkedlist_peek(States);
-            printf("GOTO %d: %d %d\n", gotoTable[pos][reduce_rule->nonterminal_position], pos, reduce_rule->nonterminal_position);
-            linkedlist_push(States, &gotoTable[pos][reduce_rule->nonterminal_position]);
+            linkedlist_push(prev_nodes, &new_node);
+            linkedlist_push(States, &GET_NEXT_GOTO(reduce_rule));
+            break;
+        default:
+            printf("INVALID ACTION!");
+            exit(-1);
         }
-        else {
-            linkedlist_push(States, &current.value);
-            linkedlist_push(prev_tokens, queue_dequeue(tokens));
-        }
-            printf("NEXT TOKEN: %d-%s\n", ((Token*)queue_peek(tokens))->type, ((Token*)queue_peek(tokens))->lexeme);
-            printf("Row: %d Col: %d\n", *(unsigned int*)linkedlist_peek(States), associationArray[((Token*)queue_peek(tokens))->type]);
-            current = NextAction;
-            print_actioncell(&current);
     }
 
     printf("\n");
@@ -195,6 +188,6 @@ void commit_parser(Queue* tokens) {
     printf("\n");
     printf("\n");
     printf("\nENDED IN: ");
-    print_actioncell(&current);
+    print_actioncell(&current_action);
     printf("\nEND PARSER");
 }

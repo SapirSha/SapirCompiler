@@ -136,6 +136,7 @@
     <ClCompile Include="Matrix.c" />
     <ClCompile Include="Parser.c" />
     <ClCompile Include="ParserTableGenerator.c" />
+    <ClCompile Include="ParserTableSymbols.c" />
     <ClCompile Include="Program.c" />
     <ClCompile Include="Queue.c" />
     <ClCompile Include="StringTrie.c" />
@@ -151,6 +152,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="ParserTableGenerator.h" />
+    <ClInclude Include="ParserTableSymbols.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="StringTrie.h" />
     <ClInclude Include="SyntaxTree.h" />

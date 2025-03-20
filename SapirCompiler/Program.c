@@ -10,6 +10,7 @@
 #include "HashSet.h"
 #include "Parser.h"
 #include "Queue.h"
+#include "ParserTableSymbols.h"
 
 void printINT(int* e) {
     if (e != NULL) printf("%d", *e);
@@ -20,19 +21,16 @@ void printTOKEN(Token* token) {
     printf("T%d:L%s", token->type, token->lexeme);
 }
 
+
+void printSTR(char** str) {
+    printf("%s ", *str);
+}
+
 int main() {
+    /*
     const char* code =
-        "function is_prime gets int number returns int # 1 if prime, else false # "
-        "{ "
-        "  if number < 0 return 0 "
-        "  if number <= 3 return 1 "
-        "  for int i = 3 while i < number/2 "
-        "    if number % i == 0 return 0 "
-        "  change i = i + 2 "
-        "  return 1 "
-        "} "
-        "bool isprime = call is_prime with 7 "
-        "print isprime ";
+        "int x = (5+8)*2"
+        ;
 
 
     printf("Tokenizing: %s\n", code);
@@ -46,6 +44,9 @@ int main() {
 
 
     commit_parser(tokens);
+    */
+
+
 
     return 0;
 

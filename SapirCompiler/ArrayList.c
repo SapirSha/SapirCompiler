@@ -6,19 +6,12 @@
 
 ArrayList* arraylist_init(int object_size, int initial_capacity) {
     ArrayList* list = malloc(sizeof(ArrayList));
-    if (!list) {
-        fprintf(stderr, "Failed to allocate ArrayList structure\n");
-        return NULL;
-    }
+
     list->object_size = object_size;
     list->capacity = initial_capacity;
     list->size = 0;
-    list->array = malloc(sizeof(void*) * initial_capacity);
-    if (!list->array) {
-        fprintf(stderr, "Failed to allocate ArrayList internal array\n");
-        free(list);
-        return NULL;
-    }
+    list->array = calloc(initial_capacity, sizeof(void*));
+
     return list;
 }
 
@@ -26,16 +19,16 @@ void arraylist_add(ArrayList* list, void* value) {
     if (list->size == list->capacity) {
         list->capacity *= GROWTH_FACTOR;
         void** temp = realloc(list->array, sizeof(void*) * list->capacity);
-        if (!temp) {
-            fprintf(stderr, "Failed to reallocate ArrayList internal array\n");
-            return;
-        }
+        for (int i = list->size; i < list->capacity; i++)
+            temp[i] = NULL;
+
+
         list->array = temp;
     }
     list->array[list->size] = malloc(list->object_size);
     if (!list->array[list->size]) {
-        fprintf(stderr, "Failed to allocate memory for new element\n");
-        return;
+        printf("Failed to allocate memory for new element\n");
+        exit(6);
     }
     memcpy(list->array[list->size], value, list->object_size);
     list->size++;
@@ -57,6 +50,29 @@ void* arraylist_get(ArrayList* list, int index) {
     return list->array[index];
 }
 
+void* arraylist_set(ArrayList* list, void* value, int index) {
+    if (index >= list->capacity) {
+        list->capacity = index * GROWTH_FACTOR;
+        void** temp = realloc(list->array, sizeof(void*) * list->capacity);
+
+        for (; list->size <= index; list->size++)
+            temp[list->size] = NULL;
+        for (int i = list->size; i < list->capacity; i++)
+            temp[i] = NULL;
+
+        list->array = temp;
+    }
+    void* temp = list->array[index];
+    list->array[index] = malloc(list->object_size);
+    memcpy(list->array[index], value, list->object_size);
+    if (index >= list->size) {
+        list->size = index + 1;
+    }
+    else if (temp == NULL) list->size++;
+    return temp;
+}
+
+
 int arraylist_is_empty(ArrayList* list) {
     return list->size == 0;
 }
@@ -71,8 +87,11 @@ void arraylist_free(ArrayList* list) {
 
 void arraylist_print(ArrayList* list, void printfunc(void*)) {
 	printf("ArrayList(%d items): ", list->size);
-	for (int i = 0; i < list->size; i++) {
-        printfunc(list->array[i]);
+	for (int i = 0; i < list->size; i++) 
+    {
+        if (list->array[i] != NULL)
+            printfunc(list->array[i]);
+        else printf("NULL");
 		if (i < list->size - 1) printf(", ");
 	}
     printf("\n");

@@ -37,4 +37,7 @@ void freeHashMap(HashMap* map);
 unsigned int string_hash(void* key);
 int string_equals(void* key1, void* key2);
 
+unsigned int int_hash(int* key);
+int int_equals(int* key1, int* key2);
+
 #endif

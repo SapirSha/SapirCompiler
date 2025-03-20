@@ -17,6 +17,8 @@ void arraylist_add(ArrayList*, void*);
 
 void* arraylist_get(ArrayList*, int);
 
+void* arraylist_set(ArrayList*, void*, int);
+
 void arraylist_reset(ArrayList*);
 
 int arraylist_is_empty(ArrayList*);

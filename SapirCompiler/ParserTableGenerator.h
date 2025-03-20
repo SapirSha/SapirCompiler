@@ -3,6 +3,7 @@
 
 #include "Tokens.h"
 #include "ArrayList.h"
+#include "stdbool.h"
 
 #define DEFAULT_NUMBER_OF_STATES 100
 #define DEFAULT_NUMBER_OF_RULES 100
@@ -46,5 +47,7 @@ int associationArray[NUM_OF_TOKENS];
 ArrayList* rules;
 
 int create_parser_tables();
+
+bool isNonterminal(const char* symbol);
 
 #endif

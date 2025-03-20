@@ -22,7 +22,7 @@ static HashMap* follow;
 A function that determines if a symbol is nonterminal:
  *  A symbol is a nonterminal if his first letter is uppercase
 */
-static bool isNonterminal(const char* symbol) {
+bool isNonterminal(const char* symbol) {
     return (symbol && isupper(symbol[0]));
 }
 
@@ -308,7 +308,7 @@ void print_string(char* sym) {
     printf("%s ", sym);
 }
 
-bool symbol_exists(ArrayList* list, const char* sym) {
+static bool symbol_exists(ArrayList* list, const char* sym) {
     for (int i = 0; i < list->size; i++) {
         if (strcmp(*(char**)arraylist_get(list, i), sym) == 0)
             return true;
