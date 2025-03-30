@@ -5,6 +5,6 @@
 #include "SyntaxTree.h"
 
 SyntaxTree* syntax_tree;
-void commit_parser(Queue* tokens);
+SyntaxTree* commit_parser(Queue* tokens);
 
 #endif

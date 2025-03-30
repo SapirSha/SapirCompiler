@@ -11,6 +11,8 @@
 #include "Parser.h"
 #include "Queue.h"
 #include "ParserTableSymbols.h"
+#include "Sementic.h"
+#include "SyntaxTree.h"
 
 void printINT(int* e) {
     if (e != NULL) printf("%d", *e);
@@ -29,7 +31,8 @@ void printSTR(char** str) {
 int main() {
     
     const char* code =
-        "int x = (5+8)*2"
+        "bool y = true "
+        "do { bool x = 7 != 0 } while y "
         ;
 
 
@@ -43,9 +46,9 @@ int main() {
     printf("\n\n\n");
 
 
-    commit_parser(tokens);
+    SyntaxTree* syntax_tree = commit_parser(tokens);
     
-
+    sementic_analysis(syntax_tree);
 
 
     return 0;

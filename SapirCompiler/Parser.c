@@ -109,7 +109,7 @@ static SyntaxTree* new_terminal_node(Token token) {
     gotoTable[GET_CURRENT_STATE][GET_NEXT_GOTO_COL(rule)]
 
 
-void commit_parser(Queue* tokens) {
+SyntaxTree* commit_parser(Queue* tokens) {
 	LinkedList* States = linkedlist_init(sizeof(unsigned int));
     LinkedList* prev_tokens = linkedlist_init(sizeof(Token));
     LinkedList* prev_nodes = linkedlist_init(sizeof(SyntaxTree*));
@@ -172,8 +172,7 @@ void commit_parser(Queue* tokens) {
                 new_node->info.nonterminal_info.num_of_children,
                 TERMINAL_TYPE);
 
-            check_for_single_children(new_node->info.nonterminal_info.children,
-                new_node->info.nonterminal_info.num_of_children);
+            check_for_single_children(new_node->info.nonterminal_info.children, new_node->info.nonterminal_info.num_of_children);
 
 
             linkedlist_push(prev_nodes, &new_node);
@@ -184,22 +183,22 @@ void commit_parser(Queue* tokens) {
             exit(-1);
         }
     }
+    SyntaxTree* tree = NULL;
+    if (linkedlist_peek(prev_nodes))
+        tree = *(SyntaxTree**)linkedlist_peek(prev_nodes);
 
     printf("\n");
     linkedlist_print(prev_tokens, printTOKEN2);
     linkedlist_print(prev_nodes, printAST);
-    if (linkedlist_peek(prev_nodes))
-        print_tree_with_ranks(*(SyntaxTree**)linkedlist_peek(prev_nodes));
+    if (tree)
+        print_tree_with_ranks(tree);
     printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    if (linkedlist_peek(prev_nodes))
-        print_tree_postorder(*(SyntaxTree**)linkedlist_peek(prev_nodes));
-    printf("\n");
-    printf("\n");
+    if (tree)
+        print_tree_postorder(tree);
     printf("\n");
     printf("\nENDED IN: ");
     print_actioncell(&current_action);
-    printf("\nEND PARSER");
+    printf("\nEND PARSER\n\n");
+
+    return tree;
 }

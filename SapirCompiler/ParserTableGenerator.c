@@ -749,6 +749,8 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_ID = %d\n", associationArray[TOKEN_IDENTIFIER]);
     associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
     printf("TOKEN_NUM = %d\n", associationArray[TOKEN_NUMBER]);
+    associationArray[TOKEN_FLOAT_NUMBER] = find_column_of_terminal_in_table("float_number");
+    printf("TOKEN_FLOAT_NUMBER = %d\n", associationArray[TOKEN_FLOAT_NUMBER]);
     associationArray[TOKEN_INT] = find_column_of_terminal_in_table("int");
     printf("TOKEN_INT = %d\n", associationArray[TOKEN_INT]);
     associationArray[TOKEN_FLOAT] = find_column_of_terminal_in_table("float");
@@ -771,10 +773,10 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_FOR= %d\n", associationArray[TOKEN_FOR]);
     associationArray[TOKEN_CHANGE] = find_column_of_terminal_in_table("change");
     printf("TOKEN_CHANGE= %d\n", associationArray[TOKEN_CHANGE]);
-    associationArray[TOKEN_PRINT] = find_column_of_terminal_in_table("print");
-    printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
-    associationArray[TOKEN_GET] = find_column_of_terminal_in_table("get");
-    printf("TOKEN_GET= %d\n", associationArray[TOKEN_GET]);
+    //associationArray[TOKEN_PRINT] = find_column_of_terminal_in_table("print");
+    //printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
+    //associationArray[TOKEN_GET] = find_column_of_terminal_in_table("get");
+    //printf("TOKEN_GET= %d\n", associationArray[TOKEN_GET]);
     associationArray[TOKEN_RETURNS] = find_column_of_terminal_in_table("returns");
     printf("TOKEN_RETURNS= %d\n", associationArray[TOKEN_RETURNS]);
     associationArray[TOKEN_GETS] = find_column_of_terminal_in_table("gets");
@@ -795,6 +797,12 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_RETURN= %d\n", associationArray[TOKEN_OPERATOR_MODULO]);
     associationArray[TOKEN_BOOL] = find_column_of_terminal_in_table("bool");
     printf("TOKEN_BOOL= %d\n", associationArray[TOKEN_BOOL]);
+    associationArray[TOKEN_STRING_LITERAL] = find_column_of_terminal_in_table("string_literal");
+    printf("TOKEN_BOOL= %d\n", associationArray[TOKEN_STRING_LITERAL]);
+    associationArray[TOKEN_TRUE] = find_column_of_terminal_in_table("true");
+    printf("TOKEN_TRUE= %d\n", associationArray[TOKEN_TRUE]);
+    associationArray[TOKEN_FALSE] = find_column_of_terminal_in_table("false");
+    printf("TOKEN_FALSE= %d\n", associationArray[TOKEN_FALSE]);
 
 }
 void print_follows() {
@@ -814,21 +822,27 @@ void print_rules() {
 }
 
 void add_rules() {
-    add_rule("PROGRAM", "STATEMENTS");
-    add_rule("STATEMENTS", "STATEMENTS STATEMENT");
-    add_rule("STATEMENTS", "STATEMENT");
+    add_rule("PROGRAM", "STATEMENTS"); //
+    add_rule("STATEMENTS", "STATEMENTS STATEMENT"); //
+    add_rule("STATEMENTS", "STATEMENT"); //
     
-    add_rule("STATEMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
-    add_rule("STATEMENT", "VARIABLE_DECLARATION_STATEMENT");
-    add_rule("STATEMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
-    add_rule("STATEMENT", "IF_STATEMENT");
+    add_rule("STATEMENT", "VARIABLE_DECLARATION_STATEMENT"); //
+    add_rule("STATEMENT", "VARIABLE_ASSIGNMENT_STATEMENT"); //
+    add_rule("STATEMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT"); //
+    add_rule("STATEMENT", "IF_STATEMENT"); //
+    add_rule("STATEMENT", "IF_ELSE_STATEMENT"); //
     add_rule("STATEMENT", "WHILE_STATEMENT");
     add_rule("STATEMENT", "DO_WHILE_STATEMENT");
     add_rule("STATEMENT", "FOR_STATEMENT");
+    add_rule("STATEMENT", "FOR_CHANGE_STATEMENT");
     add_rule("STATEMENT", "PRINT_STATEMENT");
     add_rule("STATEMENT", "GET_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_CALL_STATEMENT");
+    add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_RETURN_STATEMENT");
+    add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT");
+    add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT");
+
     add_rule("STATEMENT", "RETURN_STATEMENT");
 
     add_rule("CONDITION_LIST", "CONDITION");
@@ -842,20 +856,25 @@ void add_rules() {
     add_rule("CONDITION", "EXPRESSION >= EXPRESSION");
     add_rule("CONDITION", "EXPRESSION < EXPRESSION");
     add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION");
+    add_rule("CONDITION", "true");
+    add_rule("CONDITION", "false");
 
-
-    add_rule("EXPRESSION", "EXPRESSION + TERM");
+    add_rule("EXPRESSION", "EXPRESSION + TERM"); //
     add_rule("EXPRESSION", "EXPRESSION - TERM");
     add_rule("EXPRESSION", "TERM");
 
-    add_rule("TERM", "TERM % FACTOR");
+    add_rule("TERM", "TERM % FACTOR"); //
     add_rule("TERM", "TERM * FACTOR");
     add_rule("TERM", "TERM / FACTOR");
     add_rule("TERM", "FACTOR");
 
-    add_rule("FACTOR", "( EXPRESSION )");
+    add_rule("FACTOR", "( EXPRESSION )"); //
     add_rule("FACTOR", "identifier");
     add_rule("FACTOR", "number");
+    add_rule("FACTOR", "float_number");
+    add_rule("FACTOR", "string_literal");
+    add_rule("FACTOR", "CONDITION_LIST");
     add_rule("FACTOR", "FUNCTION_CALL_STATEMENT");
 
 
@@ -866,31 +885,28 @@ void add_rules() {
     add_rule("VARIABLE_TYPE", "bool");
 
     
-    add_rule("BLOCK", "{ STATEMENTS }");
+    add_rule("BLOCK", "{ STATEMENTS }"); //
     add_rule("BLOCK", "{ }");
 
-    add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK");
-    add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK else ELSE_BLOCK ");
-    add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK else IF_STATEMENT ");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK"); //
+    add_rule("IF_ELSE_STATEMENT", "if CONDITION_LIST IF_BLOCK else ELSE_BLOCK "); //
 
     add_rule("IF_BLOCK", "BLOCK");
     add_rule("IF_BLOCK", "STATEMENT");
     add_rule("ELSE_BLOCK", "BLOCK");
     add_rule("ELSE_BLOCK", "STATEMENT");
 
-    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier");
-    add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION");
+    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier"); //
+    add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION"); //
 
-    add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION");
+    add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION"); //
 
     add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK");
-    add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK change CHANGE_BLOCK");
 
     add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST");
 
-    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK change CHANGE_BLOCK");
-    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST change CHANGE_BLOCK FOR_BLOCK");
     add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK");
+    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK change CHANGE_BLOCK");
 
     add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
     add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
@@ -900,15 +916,16 @@ void add_rules() {
 
     add_rule("CHANGE_BLOCK", "VARIABLE_ASSIGNMENT_STATEMENT");
 
-    add_rule("PRINT_STATEMENT", "print EXPRESSION");
-    add_rule("GET_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
-    add_rule("GET_STATEMENT", "get identifier");
+    //add_rule("PRINT_STATEMENT", "print EXPRESSION");
+    //add_rule("GET_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
+    //add_rule("GET_STATEMENT", "get identifier");
 
     add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST returns VARIABLE_TYPE FUNCTION_BLOCK");
-    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST FUNCTION_BLOCK");
-    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier returns VARIABLE_TYPE FUNCTION_BLOCK");
-    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier FUNCTION_BLOCK");
-
+    // maybe dont allow return?
+    add_rule("FUNCTION_DECLARATION_NO_RETURN_STATEMENT", "function identifier gets PARAMETER_LIST FUNCTION_BLOCK");
+    add_rule("FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", "function identifier returns VARIABLE_TYPE FUNCTION_BLOCK");
+    add_rule("FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", "function identifier FUNCTION_BLOCK");
+    
 
     add_rule("PARAMETER_LIST", "PARAMETER_LIST , PARAMETER");
     add_rule("PARAMETER_LIST", "PARAMETER");
