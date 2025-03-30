@@ -31,8 +31,9 @@ void printSTR(char** str) {
 int main() {
     
     const char* code =
-        "bool y = true "
-        "do { bool x = 7 != 0 } while y "
+        "function power gets int x, bool y returns int{ "
+        "} "
+        "int x = call power with 5, true "
         ;
 
 

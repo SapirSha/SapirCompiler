@@ -831,18 +831,21 @@ void add_rules() {
     add_rule("STATEMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT"); //
     add_rule("STATEMENT", "IF_STATEMENT"); //
     add_rule("STATEMENT", "IF_ELSE_STATEMENT"); //
-    add_rule("STATEMENT", "WHILE_STATEMENT");
-    add_rule("STATEMENT", "DO_WHILE_STATEMENT");
-    add_rule("STATEMENT", "FOR_STATEMENT");
-    add_rule("STATEMENT", "FOR_CHANGE_STATEMENT");
-    add_rule("STATEMENT", "PRINT_STATEMENT");
-    add_rule("STATEMENT", "GET_STATEMENT");
+    add_rule("STATEMENT", "WHILE_STATEMENT"); //
+    add_rule("STATEMENT", "DO_WHILE_STATEMENT"); //
+    add_rule("STATEMENT", "FOR_STATEMENT"); // 
+    add_rule("STATEMENT", "FOR_CHANGE_STATEMENT"); //
+    //add_rule("STATEMENT", "PRINT_STATEMENT");
+    //add_rule("STATEMENT", "GET_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_STATEMENT");
-    add_rule("STATEMENT", "FUNCTION_CALL_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_RETURN_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT");
+    add_rule("STATEMENT", "FUNCTION_CALL_STATEMENT");
+    add_rule("STATEMENT", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
+    add_rule("STATEMENT", "BLOCK");
 
+    
     add_rule("STATEMENT", "RETURN_STATEMENT");
 
     add_rule("CONDITION_LIST", "CONDITION");
@@ -886,58 +889,58 @@ void add_rules() {
 
     
     add_rule("BLOCK", "{ STATEMENTS }"); //
-    add_rule("BLOCK", "{ }");
+    add_rule("BLOCK", "{ }"); //
 
     add_rule("IF_STATEMENT", "if CONDITION_LIST IF_BLOCK"); //
     add_rule("IF_ELSE_STATEMENT", "if CONDITION_LIST IF_BLOCK else ELSE_BLOCK "); //
 
-    add_rule("IF_BLOCK", "BLOCK");
-    add_rule("IF_BLOCK", "STATEMENT");
-    add_rule("ELSE_BLOCK", "BLOCK");
-    add_rule("ELSE_BLOCK", "STATEMENT");
+    add_rule("IF_BLOCK", "BLOCK"); //
+    add_rule("IF_BLOCK", "STATEMENT"); //
+    add_rule("ELSE_BLOCK", "BLOCK"); // 
+    add_rule("ELSE_BLOCK", "STATEMENT"); //
 
     add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier"); //
     add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION"); //
 
     add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION"); //
 
-    add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK");
+    add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK"); //
 
-    add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST");
+    add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST"); //
 
-    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK");
-    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK change CHANGE_BLOCK");
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK"); //
+    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK change CHANGE_BLOCK"); //
 
-    add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
-    add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
+    add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT"); //
+    add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT"); //
 
-    add_rule("FOR_BLOCK", "BLOCK");
-    add_rule("FOR_BLOCK", "STATEMENT");
+    add_rule("FOR_BLOCK", "{ STATEMENTS }"); //
+    add_rule("FOR_BLOCK", "STATEMENT"); //
 
-    add_rule("CHANGE_BLOCK", "VARIABLE_ASSIGNMENT_STATEMENT");
+    add_rule("CHANGE_BLOCK", "VARIABLE_ASSIGNMENT_STATEMENT"); //
 
     //add_rule("PRINT_STATEMENT", "print EXPRESSION");
     //add_rule("GET_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
     //add_rule("GET_STATEMENT", "get identifier");
 
-    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST returns VARIABLE_TYPE FUNCTION_BLOCK");
-    // maybe dont allow return?
-    add_rule("FUNCTION_DECLARATION_NO_RETURN_STATEMENT", "function identifier gets PARAMETER_LIST FUNCTION_BLOCK");
+    add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST returns VARIABLE_TYPE FUNCTION_BLOCK"); //
+    add_rule("FUNCTION_DECLARATION_NO_RETURN_STATEMENT", "function identifier gets PARAMETER_LIST FUNCTION_BLOCK"); //
     add_rule("FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", "function identifier returns VARIABLE_TYPE FUNCTION_BLOCK");
-    add_rule("FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", "function identifier FUNCTION_BLOCK");
+    add_rule("FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", "function identifier FUNCTION_BLOCK"); //
     
 
-    add_rule("PARAMETER_LIST", "PARAMETER_LIST , PARAMETER");
+    add_rule("PARAMETER_LIST", "PARAMETER_LIST , PARAMETER"); //
     add_rule("PARAMETER_LIST", "PARAMETER");
     add_rule("PARAMETER", "VARIABLE_TYPE identifier");
 
-    add_rule("FUNCTION_BLOCK", "BLOCK");
+    add_rule("FUNCTION_BLOCK", "{ STATEMENTS }"); //
     add_rule("FUNCTION_BLOCK", "STATEMENT");
 
-    add_rule("RETURN_STATEMENT", "return EXPRESSION");
+    add_rule("RETURN_STATEMENT", "return EXPRESSION"); //
 
-    add_rule("FUNCTION_CALL_STATEMENT", "call identifier");
     add_rule("FUNCTION_CALL_STATEMENT", "call identifier with ARGUMENT_LIST");
+    add_rule("FUNCTION_CALL_WITH_NOTHING_STATEMENT", "call identifier");
+
 
     add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
     add_rule("ARGUMENT_LIST", "EXPRESSION");

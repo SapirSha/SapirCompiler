@@ -31,9 +31,12 @@ void symbol_table_remove_scope(SymbolTable* table) {
 }
 
 // ADD SYMBOL
-void symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
+bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 	Scope* scope = (Scope*)linkedlist_peek(table->scopes);
+	if (hashmap_get(scope->identifiers, info->identifier_name) != NULL)
+		return false;
 	hashmap_insert(scope->identifiers, info->identifier_name, info);
+	return true;
 }
 
 // LOOKUP SYMBOL

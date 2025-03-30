@@ -4,10 +4,11 @@
 #include "SyntaxTree.h"
 
 typedef enum {
+	NONE = 0,
 	INT,
 	STRING,
 	BOOL,
-	FLOAT
+	FLOAT,
 } Data_Type;
 
 

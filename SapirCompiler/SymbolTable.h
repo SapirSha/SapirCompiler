@@ -10,16 +10,17 @@
 
 typedef enum {
 	VARIABLE,
+	FUNCTION
 } IdentifierType;
 
 typedef struct {
-	int idk;
+	char* identifier_name;
+	Data_Type data_type;
 } VariableInfo;
 
 typedef struct {
-	char* return_type;
 	int num_of_params;
-	//...
+	VariableInfo* params;
 } FunctionInfo;
 
 typedef struct {
@@ -40,7 +41,7 @@ typedef struct {
 SymbolTable* symbol_table_init();
 void symbol_table_add_scope(SymbolTable* table);
 void symbol_table_remove_scope(SymbolTable* table);
-void symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info);
+bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info);
 IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, const char* name);
 
 
