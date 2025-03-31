@@ -13,6 +13,7 @@
 #include "ParserTableSymbols.h"
 #include "Sementic.h"
 #include "SyntaxTree.h"
+#include "IR_CFG.h"
 
 void printINT(int* e) {
     if (e != NULL) printf("%d", *e);
@@ -29,13 +30,14 @@ void printSTR(char** str) {
 }
 
 int main() {
-    
     const char* code =
-        "function power gets int x, bool y returns int{ "
-        "} "
-        "int x = call power with 5, true "
+        "int num1 = 2 "
+        "int num2 = 8 "
+        "function pow gets int x, int y returns int{ "
+        "    if true call pow with x, y - 1 "
+        "}"
+        "call pow with num1, num2 "
         ;
-
 
     printf("Tokenizing: %s\n", code);
     Queue* tokens = tokenize(code);
@@ -51,6 +53,7 @@ int main() {
     
     sementic_analysis(syntax_tree);
 
+    //mainCFG(syntax_tree);
 
     return 0;
 

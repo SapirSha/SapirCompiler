@@ -8,6 +8,7 @@
 
 #define NONTERMINAL_COUNT_DEFUALT 100
 
+#define CURRENT_FUNCTION_SYMBOL "function"
 
 #pragma warning(disable:4996)
 SymbolTable* symbol_table = NULL;
@@ -23,7 +24,7 @@ static bool compatible(Data_Type left, Data_Type right) {
 	if (left == right) {
 		return true;
 	}
-	else if (left == FLOAT && right == INT || right == FLOAT && left == INT) {
+	else if ((left == FLOAT && right == INT) || (right == FLOAT && left == INT)) {
 		return true;
 	}
 	else {
@@ -182,40 +183,62 @@ static Data_Type condition_list(SyntaxTree* tree) {
 }
 
 static Data_Type if_statement(SyntaxTree* tree) {
+	symbol_table_add_scope(symbol_table);
 	Data_Type condition = accept(tree->info.nonterminal_info.children[1]);
 	if (condition != BOOL) {
 		handle_error("ASSIGNMENT TYPE MISMATCH");
 	}
 
 	accept(tree->info.nonterminal_info.children[2]);
+
+	symbol_table_remove_scope(symbol_table);
 	return NONE;
 }
 static Data_Type if_else_statement(SyntaxTree* tree) {
+
 	Data_Type condition = accept(tree->info.nonterminal_info.children[1]);
 	if (condition != BOOL) {
 		handle_error("ASSIGNMENT TYPE MISMATCH");
 	}
-
+	symbol_table_add_scope(symbol_table);
 	accept(tree->info.nonterminal_info.children[2]);
+	symbol_table_remove_scope(symbol_table);
+
+	symbol_table_add_scope(symbol_table);
 	accept(tree->info.nonterminal_info.children[4]);
+	symbol_table_remove_scope(symbol_table);
+
 	return NONE;
 }
 static Data_Type while_statement(SyntaxTree* tree) {
+	symbol_table_add_scope(symbol_table);
 	Data_Type condition = accept(tree->info.nonterminal_info.children[1]);
 	if (condition != BOOL) {
 		handle_error("ASSIGNMENT TYPE MISMATCH");
 	}
 	accept(tree->info.nonterminal_info.children[2]);
+	symbol_table_remove_scope(symbol_table);
 	return NONE;
 }
 
 static Data_Type do_while_statement(SyntaxTree* tree) {
+	symbol_table_add_scope(symbol_table);
 	accept(tree->info.nonterminal_info.children[1]);
 
 	Data_Type condition = accept(tree->info.nonterminal_info.children[3]);
 	if (condition != BOOL) {
 		handle_error("ASSIGNMENT TYPE MISMATCH");
 	}
+	symbol_table_remove_scope(symbol_table);
+	return NONE;
+}
+
+static Data_Type if_block(SyntaxTree* tree) {
+	accept(tree->info.nonterminal_info.children[1]);
+	return NONE;
+}
+static Data_Type while_block(SyntaxTree* tree) {
+	accept(tree->info.nonterminal_info.children[1]);
 	return NONE;
 }
 
@@ -268,7 +291,7 @@ static Data_Type parameter(SyntaxTree* tree) {
 
 
 
-	FunctionInfo* cur_info = ((FunctionInfo*)symbol_table_lookup_symbol(symbol_table, "function")->info);
+	FunctionInfo* cur_info = ((FunctionInfo*)symbol_table_lookup_symbol(symbol_table, CURRENT_FUNCTION_SYMBOL)->info);
 	int cur_number_of_params = cur_info->num_of_params;
 	cur_info->num_of_params++;
 	cur_info->params = realloc(cur_info->params, cur_info->num_of_params * sizeof(VariableInfo));
@@ -278,103 +301,142 @@ static Data_Type parameter(SyntaxTree* tree) {
 }
 
 static Data_Type function_decl(SyntaxTree* tree) {
-	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
 	info->data_type = get_type(tree->info.nonterminal_info.children[5]);
-	info->identifier_name = "function";
-	info->identifier_type = FUNCTION;
-	info->info = malloc(sizeof(FunctionInfo));
-	((FunctionInfo*)info->info)->num_of_params = 0;
-	((FunctionInfo*)info->info)->params = NULL;
-	symbol_table_add_symbol(symbol_table, info);
-
-	accept(tree->info.nonterminal_info.children[3]);
-	accept(tree->info.nonterminal_info.children[6]);
-	symbol_table_remove_scope(symbol_table);
-
 	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
+	info->identifier_type = FUNCTION;
+	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
+
+	symbol_table_add_scope(symbol_table);
+	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
+	*helper_info = *info;
+	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->info = malloc(sizeof(FunctionInfo));
+	((FunctionInfo*)helper_info->info)->num_of_params = 0;
+	((FunctionInfo*)helper_info->info)->params = NULL;
+	symbol_table_add_symbol(symbol_table, helper_info);
+
+	accept(tree->info.nonterminal_info.children[3]);
+	info->info = helper_info->info;
+
+	accept(tree->info.nonterminal_info.children[6]);
+	symbol_table_remove_scope(symbol_table);
+
+	free(helper_info);
+
 	return NONE;
 }
 
 static Data_Type function_decl_returns_nothing(SyntaxTree* tree) {
-	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
 	info->data_type = NONE;
-	info->identifier_name = "function";
-	info->identifier_type = FUNCTION;
-	info->info = malloc(sizeof(FunctionInfo));
-	((FunctionInfo*)info->info)->num_of_params = 0;
-	((FunctionInfo*)info->info)->params = NULL;
-	symbol_table_add_symbol(symbol_table, info);
-
-	accept(tree->info.nonterminal_info.children[3]);
-	accept(tree->info.nonterminal_info.children[4]);
-	symbol_table_remove_scope(symbol_table);
-
 	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
+	info->identifier_type = FUNCTION;
+	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
+
+	symbol_table_add_scope(symbol_table);
+	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
+	*helper_info = *info;
+	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->info = malloc(sizeof(FunctionInfo));
+	((FunctionInfo*)helper_info->info)->num_of_params = 0;
+	((FunctionInfo*)helper_info->info)->params = NULL;
+	symbol_table_add_symbol(symbol_table, helper_info);
+
+	accept(tree->info.nonterminal_info.children[3]);
+	info->info = helper_info->info;
+
+	accept(tree->info.nonterminal_info.children[4]);
+	symbol_table_remove_scope(symbol_table);
+
+	free(helper_info);
+
 	return NONE;
 }
 
 
 static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
-	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
 	info->data_type = get_type(tree->info.nonterminal_info.children[3]);
-	info->identifier_name = "function";
+	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
 	info->identifier_type = FUNCTION;
-	info->info = malloc(sizeof(FunctionInfo));
-	((FunctionInfo*)info->info)->num_of_params = 0;
-	((FunctionInfo*)info->info)->params = NULL;
-	symbol_table_add_symbol(symbol_table, info);
+	info->info = NULL;
+	bool added = symbol_table_add_symbol(symbol_table, info);
+	if (!added) {
+		handle_error("IDENTIFER ALREADY DEFINED");
+	}
+
+	symbol_table_add_scope(symbol_table);
+	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
+	*helper_info = *info;
+	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->info = malloc(sizeof(FunctionInfo));
+	((FunctionInfo*)helper_info->info)->num_of_params = 0;
+	((FunctionInfo*)helper_info->info)->params = NULL;
+	symbol_table_add_symbol(symbol_table, helper_info);
+
+	info->info = helper_info->info;
 
 	accept(tree->info.nonterminal_info.children[4]);
 	symbol_table_remove_scope(symbol_table);
 
-	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
-	bool added = symbol_table_add_symbol(symbol_table, info);
-	if (!added) {
-		handle_error("IDENTIFER ALREADY DEFINED");
-	}
+	free(helper_info);
+
 	return NONE;
 }
 
 static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
-	symbol_table_add_scope(symbol_table);
-
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	info->data_type = NONE;
-	info->identifier_name = "function";
-	info->identifier_type = FUNCTION;
-	info->info = malloc(sizeof(FunctionInfo));
-	((FunctionInfo*)info->info)->num_of_params = 0;
-	((FunctionInfo*)info->info)->params = NULL;
-	symbol_table_add_symbol(symbol_table, info);
-
-	accept(tree->info.nonterminal_info.children[2]);
-	symbol_table_remove_scope(symbol_table);
-
+	info->data_type = get_type(tree->info.nonterminal_info.children[3]);
 	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
+	info->identifier_type = FUNCTION;
+	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
+
+	symbol_table_add_scope(symbol_table);
+	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
+	*helper_info = *info;
+	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->info = malloc(sizeof(FunctionInfo));
+	((FunctionInfo*)helper_info->info)->num_of_params = 0;
+	((FunctionInfo*)helper_info->info)->params = NULL;
+	symbol_table_add_symbol(symbol_table, helper_info);
+
+	info->info = helper_info->info;
+
+	accept(tree->info.nonterminal_info.children[4]);
+	symbol_table_remove_scope(symbol_table);
+
+	free(helper_info);
+
 	return NONE;
 }
 
 static Data_Type return_statement(SyntaxTree* tree) {
 	Data_Type info = accept(tree->info.nonterminal_info.children[1]);
-	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, "function")->data_type;
+	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, CURRENT_FUNCTION_SYMBOL)->data_type;
 	if (!compatible(info, supposed)) {
 		handle_error("RETURN TYPE MISMATCH");
 	}
+	return NONE;
+}
+static Data_Type return_none_statement(SyntaxTree* tree) {
+	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, CURRENT_FUNCTION_SYMBOL)->data_type;
+	if (supposed != NONE) {
+		handle_error("RETURN TYPE MISMATCH");
+	}
+
 	return NONE;
 }
 
@@ -408,7 +470,6 @@ static Data_Type function_call(SyntaxTree* tree) {
 	while (linkedlist_count(argList) > 0) {
 		argTypes[argCount++] = *(Data_Type*)linkedlist_pop(argList);
 	}
-
 	if (argCount != funcInfo->num_of_params) {
 		handle_error("ARGUMENT COUNT MISMATCH");
 	}
@@ -512,6 +573,9 @@ void init_visitor() {
 	hashmap_insert(visitor, "FUNCTION_CALL_WITH_NOTHING_STATEMENT", &function_call_with_nothing);
 	hashmap_insert(visitor, "FUNCTION_CALL_STATEMENT", &function_call);
 	hashmap_insert(visitor, "ARGUMENT_LIST", &arg_list);
+	hashmap_insert(visitor, "IF_BLOCK", &if_block);
+	hashmap_insert(visitor, "WHILE_BLOCK", &while_block);
+
 
 }
 

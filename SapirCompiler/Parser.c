@@ -128,6 +128,7 @@ SyntaxTree* commit_parser(Queue* tokens) {
         case ERROR:
             printf("ERROR");
             loop = false;
+            exit(-1);
             break;
 
         case ACCEPT:
