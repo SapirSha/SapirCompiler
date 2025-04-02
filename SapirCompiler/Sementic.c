@@ -34,7 +34,7 @@ static char* ast_to_string(SyntaxTree* tree) {
 
 #pragma warning(disable:4996)
 SymbolTable* symbol_table = NULL;
-HashMap* visitor = NULL;
+HashMap* ir_visitor = NULL;
 
 
 static void handle_error(char* msg) {
@@ -481,9 +481,11 @@ static Data_Type function_call(SyntaxTree* tree) {
 	int argCount = 0;
 	Data_Type argTypes[100];
 
+
 	LinkedList* argList = linkedlist_init(sizeof(Data_Type));
 	Data_Type type;
-	while (argListNode->type == NONTERMINAL_TYPE) {
+	while (argListNode->type == NONTERMINAL_TYPE 
+		&& strcmp(argListNode->info.nonterminal_info.nonterminal, "ARGUMENT_LIST") == 0) {
 		type = accept(argListNode->info.nonterminal_info.children[2]);
 		linkedlist_push(argList, &type);
 		argListNode = argListNode->info.nonterminal_info.children[0];
@@ -494,9 +496,12 @@ static Data_Type function_call(SyntaxTree* tree) {
 	while (linkedlist_count(argList) > 0) {
 		argTypes[argCount++] = *(Data_Type*)linkedlist_pop(argList);
 	}
+
+
 	if (argCount != funcInfo->num_of_params) {
 		handle_error("ARGUMENT COUNT MISMATCH");
 	}
+
 
 	for (int i = 0; i < argCount; i++) {
 		if (!compatible(argTypes[i], funcInfo->params[i].data_type)) {
@@ -556,7 +561,7 @@ Data_Type accept(SyntaxTree* tree) {
 		return get_type(tree);
 	}
 	else {
-		Data_Type(*pointer)(SyntaxTree*) = hashmap_get(visitor, tree->info.nonterminal_info.nonterminal);
+		Data_Type(*pointer)(SyntaxTree*) = hashmap_get(ir_visitor, tree->info.nonterminal_info.nonterminal);
 		if (pointer == NULL) {
 			printf("%s\n\n", tree->info.nonterminal_info.nonterminal);
 			handle_error("NO FUNCTION FOR NONTERMINAL");
@@ -568,37 +573,37 @@ Data_Type accept(SyntaxTree* tree) {
 }
 
 void init_visitor() {
-	hashmap_insert(visitor, "PROGRAM", &program);
-	hashmap_insert(visitor, "STATEMENTS", &statements);
-	hashmap_insert(visitor, "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", &decl_with_asign);
-	hashmap_insert(visitor, "EXPRESSION", &expression);
-	hashmap_insert(visitor, "TERM", &term);
-	hashmap_insert(visitor, "FACTOR", &factor);
-	hashmap_insert(visitor, "VARIABLE_ASSIGNMENT_STATEMENT", &assign);
-	hashmap_insert(visitor, "VARIABLE_DECLARATION_STATEMENT", &decl);
-	hashmap_insert(visitor, "CONDITION", &condition);
-	hashmap_insert(visitor, "CONDITION_LIST", &condition_list);
-	hashmap_insert(visitor, "IF_STATEMENT", &if_statement);
-	hashmap_insert(visitor, "BLOCK", &block);
-	hashmap_insert(visitor, "IF_ELSE_STATEMENT", &if_else_statement);
-	hashmap_insert(visitor, "WHILE_STATEMENT", &while_statement);
-	hashmap_insert(visitor, "DO_WHILE_STATEMENT", &do_while_statement);
-	hashmap_insert(visitor, "FOR_BLOCK", &for_block);
-	hashmap_insert(visitor, "FOR_STATEMENT", &for_statement);
-	hashmap_insert(visitor, "FOR_CHANGE_STATEMENT", &for_change_statement);
-	hashmap_insert(visitor, "FUNCTION_DECLARATION_STATEMENT", &function_decl);
-	hashmap_insert(visitor, "FUNCTION_BLOCK", &func_block);
-	hashmap_insert(visitor, "PARAMETER_LIST", &parameter_list);
-	hashmap_insert(visitor, "PARAMETER", &parameter);
-	hashmap_insert(visitor, "FUNCTION_DECLARATION_NO_RETURN_STATEMENT", &function_decl_returns_nothing);
-	hashmap_insert(visitor, "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", &function_decl_gets_nothing);
-	hashmap_insert(visitor, "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", &function_decl_gets_returns_nothing);
-	hashmap_insert(visitor, "RETURN_STATEMENT", &return_statement);
-	hashmap_insert(visitor, "FUNCTION_CALL_WITH_NOTHING_STATEMENT", &function_call_with_nothing);
-	hashmap_insert(visitor, "FUNCTION_CALL_STATEMENT", &function_call);
-	hashmap_insert(visitor, "ARGUMENT_LIST", &arg_list);
-	hashmap_insert(visitor, "IF_BLOCK", &if_block);
-	hashmap_insert(visitor, "WHILE_BLOCK", &while_block);
+	hashmap_insert(ir_visitor, "PROGRAM", &program);
+	hashmap_insert(ir_visitor, "STATEMENTS", &statements);
+	hashmap_insert(ir_visitor, "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", &decl_with_asign);
+	hashmap_insert(ir_visitor, "EXPRESSION", &expression);
+	hashmap_insert(ir_visitor, "TERM", &term);
+	hashmap_insert(ir_visitor, "FACTOR", &factor);
+	hashmap_insert(ir_visitor, "VARIABLE_ASSIGNMENT_STATEMENT", &assign);
+	hashmap_insert(ir_visitor, "VARIABLE_DECLARATION_STATEMENT", &decl);
+	hashmap_insert(ir_visitor, "CONDITION", &condition);
+	hashmap_insert(ir_visitor, "CONDITION_LIST", &condition_list);
+	hashmap_insert(ir_visitor, "IF_STATEMENT", &if_statement);
+	hashmap_insert(ir_visitor, "BLOCK", &block);
+	hashmap_insert(ir_visitor, "IF_ELSE_STATEMENT", &if_else_statement);
+	hashmap_insert(ir_visitor, "WHILE_STATEMENT", &while_statement);
+	hashmap_insert(ir_visitor, "DO_WHILE_STATEMENT", &do_while_statement);
+	hashmap_insert(ir_visitor, "FOR_BLOCK", &for_block);
+	hashmap_insert(ir_visitor, "FOR_STATEMENT", &for_statement);
+	hashmap_insert(ir_visitor, "FOR_CHANGE_STATEMENT", &for_change_statement);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_STATEMENT", &function_decl);
+	hashmap_insert(ir_visitor, "FUNCTION_BLOCK", &func_block);
+	hashmap_insert(ir_visitor, "PARAMETER_LIST", &parameter_list);
+	hashmap_insert(ir_visitor, "PARAMETER", &parameter);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_RETURN_STATEMENT", &function_decl_returns_nothing);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", &function_decl_gets_nothing);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", &function_decl_gets_returns_nothing);
+	hashmap_insert(ir_visitor, "RETURN_STATEMENT", &return_statement);
+	hashmap_insert(ir_visitor, "FUNCTION_CALL_WITH_NOTHING_STATEMENT", &function_call_with_nothing);
+	hashmap_insert(ir_visitor, "FUNCTION_CALL_STATEMENT", &function_call);
+	hashmap_insert(ir_visitor, "ARGUMENT_LIST", &arg_list);
+	hashmap_insert(ir_visitor, "IF_BLOCK", &if_block);
+	hashmap_insert(ir_visitor, "WHILE_BLOCK", &while_block);
 
 
 }
@@ -607,7 +612,7 @@ void init_visitor() {
 
 int sementic_analysis(SyntaxTree* tree) {
 	printf("\n\n\n SEMENTICS: \n");
-	visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT, string_hash, string_equals);
+	ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT, string_hash, string_equals);
 	init_visitor();
 
 	symbol_table = symbol_table_init();

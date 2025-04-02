@@ -15,6 +15,7 @@
 #include "SyntaxTree.h"
 #include "IR_CFG.h"
 
+
 void printINT(int* e) {
     if (e != NULL) printf("%d", *e);
     else printf("0");
@@ -31,11 +32,10 @@ void printSTR(char** str) {
 
 int main() {
     const char* code =
-        "function string_to_int gets string num returns int { "
-        "    return 48                                        "
-        "}                                                    "
-        "string str_num = \"123\"                             "
-        "int int_num = call string_to_int with str_num        "
+        "function mul gets int x, int y returns int{  "
+        "      return x * y   "
+        "}                                          "
+        "int result = call mul with 8 + 2, 2 + 8"
         ;
 
     printf("Tokenizing: %s\n", code);

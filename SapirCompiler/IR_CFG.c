@@ -8,8 +8,14 @@
 #include "Sementic.h"
 #include "IR_CFG.h"
 #include "LinkedList.h"
+#include "HashMap.h"
+#include "ArrayList.h"
+
+#define NONTERMINAL_COUNT_DEFUALT2 100
 
 #pragma warning(disable:4996)
+
+static HashMap* ir_visitor = NULL;
 
 char* int_to_string(int num) {
     char buffer[20];
@@ -17,7 +23,9 @@ char* int_to_string(int num) {
     return strdup(buffer);
 }
 
+LinkedList* function_entry_blocks = NULL;
 LinkedList* function_exit_blocks = NULL; 
+
 typedef enum {
     IR_RAW_STRING,
     IR_DECLARE,
@@ -44,105 +52,166 @@ typedef enum {
     IT_INST_COUNT
 } IR_Opcode;
 
+typedef enum {
+    IR_NULL = 0,
+    IR_TOKEN,
+    IR_BLOCK_ID,
+    IR_TEMPORARY_ID,
+    IR_TOKEN_LIST,
+    IR_STR
+} IR_DataType;
+
+typedef struct {
+    IR_DataType type;
+    union {
+        Token token;
+        int num;
+        ArrayList* token_list;
+        char* str;
+    } data;
+} IR_Value;
+
 typedef struct IR_Instruction {
     IR_Opcode opcode;
-    char* arg1;        char* arg2;        char* result;  } IR_Instruction;
+    IR_Value arg1;
+    IR_Value arg2;
+    IR_Value arg3;
+} 
+IR_Instruction;
 
 IR_Instruction* createRawIRInstruction(const char* text) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_RAW_STRING;
-    instr->arg1 = strdup(text);
-    instr->arg2 = NULL;
-    instr->result = NULL;
+
+    instr->arg1.type = IR_RAW_STRING;
+    instr->arg1.data.str = strdup(text);
+
+    instr->arg2.type = IR_NULL;
+    instr->arg3.type = IR_NULL;
     return instr;
 }
 
-IR_Instruction* createAssignInstruction(const char* dest, const char* src) {
+IR_Instruction* createAssignInstruction(Token dest, IR_Value src) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_ASSIGN;
-    instr->arg1 = strdup(dest);
-    instr->arg2 = strdup(src);
-    instr->result = NULL;
+    instr->arg1.type = IR_TOKEN;
+    instr->arg1.data.token = dest;
+
+    instr->arg2 = src;
+
+    instr->arg3.type = IR_NULL;
     return instr;
 }
 
-IR_Instruction* createBinaryOpInstruction(IR_Opcode op, const char* left, const char* right, const char* dest) {
+IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value left, IR_Value right) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = op;
-    instr->arg1 = strdup(left);
-    instr->arg2 = strdup(right);
-    instr->result = strdup(dest);
+    
+    instr->arg1 = temp;
+
+    instr->arg2 = left;
+
+    instr->arg3 = right;
     return instr;
 }
 
-IR_Instruction* createDeclareInstruction(const char* name) {
+IR_Instruction* createDeclareInstruction(Token name) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_DECLARE;
-    instr->arg1 = strdup(name);
-    instr->arg2 = NULL;
-    instr->result = NULL;
+
+
+    instr->arg1.type = IR_TOKEN;
+    instr->arg1.data.token = name;
+
+    instr->arg2.type = IR_NULL;
+    instr->arg3.type = IR_NULL;
     return instr;
 }
 
-IR_Instruction* createConditionalInstruction(IR_Opcode op, const char* condTemp, const char* left, const char* right) {
+IR_Instruction* createConditionalInstruction(IR_Opcode op, int temp_id, IR_Value left, IR_Value right) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = op;
-    instr->arg1 = strdup(left);
-    instr->arg2 = strdup(right);
-    instr->result = strdup(condTemp);
+
+    instr->arg1.type = IR_TEMPORARY_ID;
+    instr->arg1.data.num = temp_id;
+
+    instr->arg2 = left;
+
+    instr->arg3 = right;
     return instr;
 }
 
-IR_Instruction* createConditionalBranchInstruction(const char* condTemp, const char* thenLabel, const char* mergeLabel) {
+IR_Instruction* createConditionalBranchInstruction(IR_Value temp_id, int then_id, int after_or_else_id) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_CBR;
-    instr->arg1 = strdup(condTemp);
-    instr->arg2 = strdup(thenLabel);
-    instr->result = strdup(mergeLabel);
+    instr->arg1 = temp_id;
+
+    instr->arg2.type = IR_BLOCK_ID;
+    instr->arg2.data.num = then_id;
+
+    instr->arg3.type = IR_BLOCK_ID;
+    instr->arg3.data.num = after_or_else_id;
     return instr;
 }
 
-IR_Instruction* createFunctionLimitsInstruction(IR_Opcode op, const char* name) {
+IR_Instruction* createFunctionLimitsInstruction(IR_Opcode op, Token name) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = op;
-    instr->arg1 = strdup(name);
-    instr->arg2 = NULL;
-    instr->result = NULL;
+    instr->arg1.type = IR_TOKEN;
+    instr->arg1.data.token = name;
+    
+    instr->arg2.type = IR_NULL;
+    instr->arg3.type = IR_NULL;
     return instr;
 }
 
-IR_Instruction* createReturnInstruction(const char* retVal, const char* endLabel) {
+IR_Instruction* createReturnInstruction(const IR_Value ret_val, int end_id) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_RETURN;
-    instr->arg1 = strdup(retVal);
-    instr->arg2 = strdup(endLabel);
-    instr->result = NULL;
+    
+    instr->arg1 = ret_val;
+
+    instr->arg2.type = IR_BLOCK_ID;
+    instr->arg2.data.num = end_id;
+
+    instr->arg3.type = IR_NULL;
     return instr;
 }
 
-IR_Instruction* createCallInstruction(const char* funcStartLabel, const char* argList, const char* retTemp) {
+IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR_Value dest_temp) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_CALL;
-    instr->arg1 = strdup(funcStartLabel);
-    instr->arg2 = strdup(argList);
-    instr->result = strdup(retTemp);
+
+    instr->arg1.type = IR_BLOCK_ID;
+    instr->arg1.data.num = func_start_id;
+
+    instr->arg2.type = IR_TOKEN_LIST;
+    instr->arg2.data.token_list = arg_list;
+
+    instr->arg3 = dest_temp;
     return instr;
 }
 
-IR_Instruction* createJumpInstruction(const char* blockLabel) {
+IR_Instruction* createJumpInstruction(int block_id) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_JMP;
-    instr->arg1 = strdup(blockLabel);
-    instr->arg2 = NULL;
-    instr->result = NULL;
+    instr->arg1.type = IR_BLOCK_ID;
+    instr->arg1.data.num = block_id;
+    instr->arg2.type = IR_NULL;
+    instr->arg3.type = IR_NULL;
     return instr;
 }
 
 static int tempCounter = 0;
-char* newTemp() {
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "%dt", tempCounter++);
-    return strdup(buffer);
+static int newTempCounter() {
+    return tempCounter++;
+}
+
+static IR_Value newTemp() {
+    IR_Value* temporary = malloc(sizeof(IR_Value));
+    temporary->type = IR_TEMPORARY_ID;
+    temporary->data.num = tempCounter++;
+    return *temporary;
 }
 
 typedef struct BasicBlock {
@@ -158,6 +227,7 @@ typedef struct BasicBlock {
     int pred_capacity;
 } BasicBlock;
 BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current);
+
 int next_block_id = 0;
 BasicBlock* createBasicBlock(void) {
     BasicBlock* block = (BasicBlock*)malloc(sizeof(BasicBlock));
@@ -260,46 +330,70 @@ IR_Opcode mapComparisonOperator(const char* opStr) {
     return IR_RAW_STRING;
 }
 
-char* lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
-        char* funcName = ast_to_string(exprTree->info.nonterminal_info.children[1]);
-    int found = find_function_index(funcName);
+IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current);
 
-        char* argList = strdup("");
-    if (exprTree->info.nonterminal_info.num_of_children > 2) {
-        free(argList);
-        argList = ast_to_string(exprTree->info.nonterminal_info.children[3]);
+void find_arguments_for_call(SyntaxTree* tree, BasicBlock** current, ArrayList* list) {
+    if (strcmp(tree->info.nonterminal_info.nonterminal, "ARGUMENT_LIST") == 0) {
+        find_arguments_for_call(tree->info.nonterminal_info.children[0], current, list);
+
+        IR_Value arg = lowerExpression(tree->info.nonterminal_info.children[2], current);
+
+        arraylist_add(list, &arg);
+        return;
     }
 
-        char* retTemp = newTemp();
+    IR_Value arg = lowerExpression(tree, current);
+
+    arraylist_add(list, &arg);
+}
+
+IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
+    char* funcName = ast_to_string(exprTree->info.nonterminal_info.children[1]);
+    int found = find_function_index(funcName);
+
+    ArrayList* call_arguments = arraylist_init(sizeof(IR_Value), 3);
+
+    if (exprTree->info.nonterminal_info.num_of_children > 2) {
+        find_arguments_for_call(exprTree->info.nonterminal_info.children[3], current, call_arguments);
+    }
+
+    IR_Value temp = newTemp();
 
     if (found == -1) {
-        addIRInstruction(*current, createRawIRInstruction("error: function not found"));
-        free(funcName);
-        free(argList);
-        return retTemp;     }
+        
+        // recursion possibly?
+    }
+    else {
+
 
         addIRInstruction(*current, createCallInstruction(
-        int_to_string(functionCFGTable[found].entry->id),
-        argList,
-        retTemp
-    ));
+            functionCFGTable[found].entry->id,
+            call_arguments,
+            temp
+        ));
 
-    free(funcName);
-    free(argList);
+        free(funcName);
 
         addSuccessor(*current, functionCFGTable[found].entry);
         BasicBlock* cont = createBasicBlock();
         addSuccessor(functionCFGTable[found].exit, cont);
-        *current = cont;
 
-    return retTemp;
+        *current = cont;
+    }
+
+    return temp;
 }
 
-char* lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
-    if (exprTree->type == TERMINAL_TYPE)
-        return ast_to_string(exprTree);
-
-        if (strcmp(exprTree->info.nonterminal_info.nonterminal, "FUNCTION_CALL_STATEMENT") == 0 ||
+IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
+    if (exprTree->type == TERMINAL_TYPE) {
+        IR_Value return_value;
+        return_value.type = IR_TOKEN;
+        return_value.data.token = exprTree->info.terminal_info.token;
+    
+        return return_value;
+    }
+   
+    if (strcmp(exprTree->info.nonterminal_info.nonterminal, "FUNCTION_CALL_STATEMENT") == 0 ||
         strcmp(exprTree->info.nonterminal_info.nonterminal, "FUNCTION_CALL_WITH_NOTHING_STATEMENT") == 0) {
         return lowerFunctionCall(exprTree, current);
     }
@@ -309,94 +403,99 @@ char* lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
         SyntaxTree* opChild = exprTree->info.nonterminal_info.children[1];
         SyntaxTree* rightChild = exprTree->info.nonterminal_info.children[2];
 
-        char* leftValue = lowerExpression(leftChild, current);
-        char* rightValue = lowerExpression(rightChild, current);
+        IR_Value leftValue = lowerExpression(leftChild, current);
+        IR_Value rightValue = lowerExpression(rightChild, current);
 
         char* opStr = ast_to_string(opChild);
         IR_Opcode opCode = mapComparisonOperator(opStr);
         free(opStr);
 
-        char* temp = newTemp();
-        IR_Instruction* binInstr = createBinaryOpInstruction(opCode, leftValue, rightValue, temp);
+        IR_Value temp = newTemp();
+
+        IR_Instruction* binInstr = createBinaryOpInstruction(opCode, temp, leftValue, rightValue);
         addIRInstruction(*current, binInstr);
 
-        free(leftValue);
-        free(rightValue);
         return temp;
     }
 
-    return ast_to_string(exprTree);
+    printf("EXPRESSION ERROR!");
+    exit(-7);
 }
+
+
 BasicBlock* return_block(SyntaxTree* tree, BasicBlock* current) {
-    char* retVal;
+    IR_Value retVal;
     if (tree->info.nonterminal_info.num_of_children > 1) {
         retVal = lowerExpression(tree->info.nonterminal_info.children[1], &current);
     }
     else {
-        retVal = strdup("none");
+        retVal.type = IR_NULL;
     }
     BasicBlock* exitBlock = *(BasicBlock**)(linkedlist_peek(function_exit_blocks));
-    IR_Instruction* retInstr = createReturnInstruction(retVal, int_to_string(exitBlock->id));
+    IR_Instruction* retInstr = createReturnInstruction(retVal, exitBlock->id);
     addIRInstruction(current, retInstr);
-    free(retVal);
+
     addSuccessor(current, exitBlock);
     return current;
 }
 
 BasicBlock* assignment_block(SyntaxTree* tree, BasicBlock* current) {
-    char* dest = ast_to_string(tree->info.nonterminal_info.children[0]);
-        char* exprResult = lowerExpression(tree->info.nonterminal_info.children[2], &current);
+    Token dest = tree->info.nonterminal_info.children[0]->info.terminal_info.token;
+    IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[2], &current);
+
     IR_Instruction* assignInstr = createAssignInstruction(dest, exprResult);
     addIRInstruction(current, assignInstr);
 
-    free(dest);
-    free(exprResult);
     return current;
 }
 
 BasicBlock* decl_block(SyntaxTree* tree, BasicBlock* current) {
-    char* name = ast_to_string(tree->info.nonterminal_info.children[1]);
+    Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     addIRInstruction(current, createDeclareInstruction(name));
-    free(name);
     return current;
 }
 
 BasicBlock* decl_assignment_block(SyntaxTree* tree, BasicBlock* current) {
-    char* name = ast_to_string(tree->info.nonterminal_info.children[1]);
+    Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     addIRInstruction(current, createDeclareInstruction(name));
-    char* exprResult = lowerExpression(tree->info.nonterminal_info.children[3], &current);
+
+    IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[3], &current);
     IR_Instruction* assignInstr = createAssignInstruction(name, exprResult);
     addIRInstruction(current, assignInstr);
-    free(name);
-    free(exprResult);
+
     return current;
 }
 
 
 
 FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
-    char* funcName = ast_to_string(tree->info.nonterminal_info.children[1]);
+    Token funcName = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     BasicBlock* entry = createBasicBlock();
     addIRInstruction(entry, createFunctionLimitsInstruction(IR_FUNC_START, funcName));
+
     BasicBlock* exit = createBasicBlock();
+    linkedlist_push(function_entry_blocks, &entry);
     linkedlist_push(function_exit_blocks, &exit);
+
+
     BasicBlock* bodyEnd = buildCFG(tree->info.nonterminal_info.children[tree->info.nonterminal_info.num_of_children - 1], entry);
     addSuccessor(bodyEnd, exit);
+
     addIRInstruction(exit, createFunctionLimitsInstruction(IR_FUNC_END, funcName));
+    linkedlist_pop(function_entry_blocks);
     linkedlist_pop(function_exit_blocks);
 
     FunctionCFGEntry* fc = (FunctionCFGEntry*)malloc(sizeof(FunctionCFGEntry));
-    fc->name = strdup(funcName);
+    fc->name = strdup(funcName.lexeme);
     fc->entry = entry;
     fc->exit = exit;
-    free(funcName);
     return fc;
 }
 
 BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* condBlock = createBasicBlock();
     addSuccessor(current, condBlock);
-    addIRInstruction(current, createJumpInstruction(int_to_string(condBlock->id)));
+    addIRInstruction(current, createJumpInstruction(condBlock->id));
 
     BasicBlock* thenBlock = createBasicBlock();
     thenBlock = buildCFG(tree->info.nonterminal_info.children[2], thenBlock);
@@ -405,14 +504,15 @@ BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
     addSuccessor(condBlock, mergeBlock);
     addSuccessor(thenBlock, mergeBlock);
 
-    char* condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
+
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        int_to_string(thenBlock->id),
-        int_to_string(condBlock->id));
-    free(condTemp);
+        thenBlock->id,
+        condBlock->id);
+
     addIRInstruction(condBlock, cbrInstr);
 
-    addIRInstruction(thenBlock, createJumpInstruction(int_to_string(mergeBlock->id)));
+    addIRInstruction(thenBlock, createJumpInstruction(mergeBlock->id));
 
     return mergeBlock;
 }
@@ -420,27 +520,27 @@ BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
 BasicBlock* if_else_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* condBlock = createBasicBlock();
     addSuccessor(current, condBlock);
-    addIRInstruction(current, createJumpInstruction(int_to_string(condBlock->id)));
+    addIRInstruction(current, createJumpInstruction(condBlock->id));
 
     BasicBlock* thenBlock = createBasicBlock();
     thenBlock = buildCFG(tree->info.nonterminal_info.children[2], thenBlock);
     BasicBlock* elseBlock = createBasicBlock();
     elseBlock = buildCFG(tree->info.nonterminal_info.children[4], elseBlock);
     BasicBlock* mergeBlock = createBasicBlock();
+
     addSuccessor(condBlock, thenBlock);
     addSuccessor(condBlock, elseBlock);
     addSuccessor(thenBlock, mergeBlock);
     addSuccessor(elseBlock, mergeBlock);
 
-    char* condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        int_to_string(thenBlock->id),
-        int_to_string(elseBlock->id));
+        thenBlock->id,
+        elseBlock->id);
     addIRInstruction(condBlock, cbrInstr);
-    free(condTemp);
 
-    addIRInstruction(thenBlock, createJumpInstruction(int_to_string(mergeBlock->id)));
-    addIRInstruction(elseBlock, createJumpInstruction(int_to_string(mergeBlock->id)));
+    addIRInstruction(thenBlock, createJumpInstruction(mergeBlock->id));
+    addIRInstruction(elseBlock, createJumpInstruction(mergeBlock->id));
 
     return mergeBlock;
 }
@@ -448,7 +548,7 @@ BasicBlock* if_else_block(SyntaxTree* tree, BasicBlock* current) {
 BasicBlock* while_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* loopHeader = createBasicBlock();
     addSuccessor(current, loopHeader);
-    addIRInstruction(current, createJumpInstruction(int_to_string(loopHeader->id)));
+    addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
 
     BasicBlock* loopBody = createBasicBlock();
@@ -458,14 +558,13 @@ BasicBlock* while_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
-    char* condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &loopHeader);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        int_to_string(loopBody->id),
-        int_to_string(exitBlock->id));
+        loopBody->id,
+        exitBlock->id);
     addIRInstruction(loopHeader, cbrInstr);
-    free(condTemp);
 
-    addIRInstruction(loopBody, createJumpInstruction(int_to_string(loopHeader->id)));
+    addIRInstruction(loopBody, createJumpInstruction(loopHeader->id));
 
     return exitBlock;
 }
@@ -474,7 +573,7 @@ BasicBlock* do_while_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* loopBody = createBasicBlock();
     loopBody = buildCFG(tree->info.nonterminal_info.children[1], loopBody);
     addSuccessor(current, loopBody);
-    addIRInstruction(current, createJumpInstruction(int_to_string(loopBody->id)));
+    addIRInstruction(current, createJumpInstruction(loopBody->id));
 
     BasicBlock* loopHeader = createBasicBlock();
     addSuccessor(loopBody, loopHeader);
@@ -482,30 +581,29 @@ BasicBlock* do_while_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
-    char* condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        int_to_string(loopBody->id),
-        int_to_string(exitBlock->id));
+        loopBody->id,
+        exitBlock->id);
     addIRInstruction(loopHeader, cbrInstr);
 
-    addIRInstruction(loopBody, createJumpInstruction(int_to_string(loopHeader->id)));
+    addIRInstruction(loopBody, createJumpInstruction(loopHeader->id));
 
-    free(condTemp);
     return exitBlock;
 }
 
 BasicBlock* block_block(SyntaxTree* tree, BasicBlock* current) {
-    BasicBlock* block = createBasicBlock();
     if (tree->info.nonterminal_info.num_of_children > 1)
-        return buildCFG(tree->info.nonterminal_info.children[1], block);
-    return block;
+        return buildCFG(tree->info.nonterminal_info.children[1], current);
+
+    return current;
 }
 
 BasicBlock* for_block(SyntaxTree* tree, BasicBlock* current) {
     current = buildCFG(tree->info.nonterminal_info.children[1], current);
     BasicBlock* loopHeader = createBasicBlock();
     addSuccessor(current, loopHeader);
-    addIRInstruction(current, createJumpInstruction(int_to_string(loopHeader->id)));
+    addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
     BasicBlock* loopBody = createBasicBlock();
     loopBody = buildCFG(tree->info.nonterminal_info.children[4], loopBody);
@@ -514,14 +612,13 @@ BasicBlock* for_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
-    char* condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
         int_to_string(loopBody->id),
         int_to_string(exitBlock->id));
     addIRInstruction(loopHeader, cbrInstr);
-    free(condTemp);
 
-    addIRInstruction(loopBody, createJumpInstruction(int_to_string(loopHeader->id)));
+    addIRInstruction(loopBody, createJumpInstruction(loopHeader->id));
 
     return exitBlock;
 }
@@ -530,7 +627,7 @@ BasicBlock* for_change_block(SyntaxTree* tree, BasicBlock* current) {
     current = buildCFG(tree->info.nonterminal_info.children[1], current);
     BasicBlock* loopHeader = createBasicBlock();
     addSuccessor(current, loopHeader);
-    addIRInstruction(current, createJumpInstruction(int_to_string(loopHeader->id)));
+    addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
     BasicBlock* loopBody = createBasicBlock();
     loopBody = buildCFG(tree->info.nonterminal_info.children[4], loopBody);
@@ -542,15 +639,14 @@ BasicBlock* for_change_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
-    char* condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        int_to_string(loopBody->id),
-        int_to_string(exitBlock->id));
+        loopBody->id,
+        exitBlock->id);
     addIRInstruction(loopHeader, cbrInstr);
-    free(condTemp);
 
-    addIRInstruction(loopBody, createJumpInstruction(int_to_string(changeBlock->id)));
-    addIRInstruction(changeBlock, createJumpInstruction(int_to_string(loopHeader->id)));
+    addIRInstruction(loopBody, createJumpInstruction(changeBlock->id));
+    addIRInstruction(changeBlock, createJumpInstruction(loopHeader->id));
 
     return exitBlock;
 }
@@ -564,31 +660,8 @@ BasicBlock* function_block(SyntaxTree* tree, BasicBlock* current) {
 }
 
 BasicBlock* call_block(SyntaxTree* tree, BasicBlock* current) {
-    char* funcName = ast_to_string(tree->info.nonterminal_info.children[1]);
-    int found = find_function_index(funcName);
-    if (found == -1) {
-        char* callStr = ast_to_string(tree);
-        addIRInstruction(current, createRawIRInstruction(callStr));
-        free(callStr);
-        free(funcName);
-        return current;
-    }
-    char* argList = strdup("");
-    if (tree->info.nonterminal_info.num_of_children > 2) {
-        argList = ast_to_string(tree->info.nonterminal_info.children[3]);
-    }
-        
-    char* retTemp = newTemp();
-    IR_Instruction* callInstr = createCallInstruction(int_to_string(functionCFGTable[found].entry->id),
-        argList,
-        retTemp);
-    addIRInstruction(current, callInstr);
-    free(funcName);
-    free(argList);
-    BasicBlock* cont = createBasicBlock();
-    addSuccessor(current, functionCFGTable[found].entry);
-    addSuccessor(functionCFGTable[found].exit, cont);
-    return cont;
+    lowerFunctionCall(tree, &current);
+    return current;
 }
 
 BasicBlock* statements_block(SyntaxTree* tree, BasicBlock* current) {
@@ -598,158 +671,207 @@ BasicBlock* statements_block(SyntaxTree* tree, BasicBlock* current) {
     return current;
 }
 
+
+BasicBlock* defualt_block(SyntaxTree* tree, BasicBlock* current) {
+    printf("UNTARGETED NONTERMINAL: %s\n", tree->info.nonterminal_info.nonterminal);
+    for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
+        current = buildCFG(tree->info.nonterminal_info.children[i], current);
+    }
+    return current;
+}
+
+BasicBlock* (*get_block_fun(char* str))(SyntaxTree*, BasicBlock*) {
+    BasicBlock* (*pointer)(SyntaxTree*, BasicBlock*) = hashmap_get(ir_visitor, str);
+    if (pointer == NULL) {
+        return &defualt_block;
+    }
+    else {
+        return pointer;
+    }
+}
+
 BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
     if (!tree)
         return current;
+
     if (tree->type == TERMINAL_TYPE) {
+        printf("TERMINAL???");
         addIRInstruction(current, createRawIRInstruction(tree->info.terminal_info.token.lexeme));
         return current;
     }
     char* nonterminal = tree->info.nonterminal_info.nonterminal;
-    if (strcmp(nonterminal, "STATEMENTS") == 0) {
-        return statements_block(tree, current);
+
+    return (*get_block_fun(nonterminal))(tree, current);
+
+}
+
+
+
+static init_ir_visitor() {
+	hashmap_insert(ir_visitor, "STATEMENTS", &statements_block);
+	hashmap_insert(ir_visitor, "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", &decl_assignment_block);
+	hashmap_insert(ir_visitor, "VARIABLE_ASSIGNMENT_STATEMENT", &assignment_block);
+	hashmap_insert(ir_visitor, "VARIABLE_DECLARATION_STATEMENT", &decl_block);
+	hashmap_insert(ir_visitor, "IF_STATEMENT", &if_block);
+	hashmap_insert(ir_visitor, "IF_ELSE_STATEMENT", &if_else_block);
+	hashmap_insert(ir_visitor, "WHILE_STATEMENT", &while_block);
+	hashmap_insert(ir_visitor, "DO_WHILE_STATEMENT", &do_while_block);
+	hashmap_insert(ir_visitor, "FOR_STATEMENT", &for_block);
+	hashmap_insert(ir_visitor, "FOR_CHANGE_STATEMENT", &for_change_block);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_STATEMENT", &function_block);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_RETURN_STATEMENT", &function_block);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", &function_block);
+	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", &function_block);
+	hashmap_insert(ir_visitor, "RETURN_STATEMENT", &return_block);
+    hashmap_insert(ir_visitor, "FUNCTION_CALL_WITH_NOTHING_STATEMENT", &call_block);
+    hashmap_insert(ir_visitor, "FUNCTION_CALL_STATEMENT", &call_block);
+    hashmap_insert(ir_visitor, "FUNCTION_BLOCK", &block_block);
+    hashmap_insert(ir_visitor, "WHILE_BLOCK", &block_block);
+    hashmap_insert(ir_visitor, "IF_BLOCK", &block_block);
+    hashmap_insert(ir_visitor, "FOR_BLOCK", &block_block);
+
+
+
+}
+
+// Helper to convert IR_DataType to a human-readable string.
+const char* irDataTypeToString(IR_DataType type) {
+    switch (type) {
+    case IR_NULL:           return "IR_NULL";
+    case IR_TOKEN:          return "IR_TOKEN";
+    case IR_BLOCK_ID:       return "IR_BLOCK_ID";
+    case IR_TEMPORARY_ID:   return "IR_TEMPORARY_ID";
+    case IR_TOKEN_LIST:     return "IR_TOKEN_LIST";
+    case IR_STR:            return "IR_STR";
+    default:                return "UNKNOWN";
     }
-    else if (strcmp(nonterminal, "IF_STATEMENT") == 0) {
-        return if_block(tree, current);
+}
+void printIRValuePointer(IR_Value* val);
+
+// Proper print function for IR_Value.
+void printIRValue(IR_Value val) {
+    printf("[%s: ", irDataTypeToString(val.type));
+    switch (val.type) {
+    case IR_NULL:
+        printf("null");
+        break;
+    case IR_TOKEN:
+        // Assuming your Token structure has a 'lexeme' field.
+        printf("%d:%s", val.data.token.type, val.data.token.lexeme);
+        break;
+    case IR_BLOCK_ID:
+        printf("%d", val.data.num);
+        break;
+    case IR_TEMPORARY_ID:
+        printf("%d", val.data.num);
+        break;
+    case IR_TOKEN_LIST:
+        // If you have an ArrayList API to iterate over, you might do something like:
+        // for (int i = 0; i < arraylist_size(val.data.token_list); i++) {
+        //     Token* t = arraylist_get(val.data.token_list, i);
+        //     printf("%s", t ? t->lexeme : "null");
+        //     if (i < arraylist_size(val.data.token_list) - 1)
+        //         printf(", ");
+        // }
+        // For now, we'll print a placeholder.
+        printf("TOKEN_LIST   ");
+        arraylist_print(val.data.token_list, printIRValuePointer);
+        break;
+    case IR_STR:
+        printf("%s", val.data.str);
+        break;
+    default:
+        printf("UNKNOWN");
+        break;
     }
-    else if (strcmp(nonterminal, "IF_ELSE_STATEMENT") == 0) {
-        return if_else_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "WHILE_STATEMENT") == 0) {
-        return while_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "DO_WHILE_STATEMENT") == 0) {
-        return do_while_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "BLOCK") == 0) {
-        return statements_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "FOR_STATEMENT") == 0) {
-        return for_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "FOR_CHANGE_STATEMENT") == 0) {
-        return for_change_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "FUNCTION_DECLARATION_STATEMENT") == 0 ||
-        strcmp(nonterminal, "FUNCTION_DECLARATION_NO_RETURN_STATEMENT") == 0 ||
-        strcmp(nonterminal, "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT") == 0 ||
-        strcmp(nonterminal, "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT") == 0) {
-        return function_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "FUNCTION_CALL_STATEMENT") == 0 ||
-        strcmp(nonterminal, "FUNCTION_CALL_WITH_NOTHING_STATEMENT") == 0) {
-        return call_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "RETURN_STATEMENT") == 0) {
-        return return_block(tree, current);
-    }
-    if (strcmp(nonterminal, "VARIABLE_ASSIGNMENT_STATEMENT") == 0) {
-        return assignment_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT") == 0) {
-        return decl_assignment_block(tree, current);
-    }
-    else if (strcmp(nonterminal, "VARIABLE_DECLARATION_STATEMENT") == 0) {
-        return decl_block(tree, current);
-    }
-    else {
-        printf("UNTARGETED NONTERMINAL: %s\n", nonterminal);
-        for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
-            current = buildCFG(tree->info.nonterminal_info.children[i], current);
-        }
-        return current;
+    printf("]");
+}
+
+void printIRValuePointer(IR_Value* val) {
+    printIRValue(*val);
+}
+// Helper: convert IR_Opcode to string.
+const char* opcodeToString(IR_Opcode op) {
+    switch (op) {
+    case IR_RAW_STRING:    return "RAW_STRING";
+    case IR_DECLARE:       return "DECLARE";
+    case IR_ASSIGN:        return "ASSIGN";
+    case IR_ADD:           return "ADD";
+    case IR_SUB:           return "SUB";
+    case IR_MUL:           return "MUL";
+    case IR_DIV:           return "DIV";
+    case IR_MOD:           return "MOD";
+    case IR_LT:            return "LT";
+    case IR_LE:            return "LE";
+    case IR_GT:            return "GT";
+    case IR_GE:            return "GE";
+    case IR_EQ:            return "EQ";
+    case IR_NE:            return "NE";
+    case IR_AND:           return "AND";
+    case IR_OR:            return "OR";
+    case IR_CBR:           return "CBR";
+    case IR_FUNC_START:    return "FUNC_START";
+    case IR_FUNC_END:      return "FUNC_END";
+    case IR_RETURN:        return "RETURN";
+    case IR_CALL:          return "CALL";
+    case IR_JMP:           return "JMP";
+    default:               return "UNKNOWN";
     }
 }
 
+// Helper: prints an IR_Instruction.
+void printInstruction(IR_Instruction* instr) {
+    printf("  %s: ", opcodeToString(instr->opcode));
+    // Print first argument.
+    printIRValue(instr->arg1);
+
+    // Print second argument if it is not IR_NULL.
+    if (instr->arg2.type != IR_NULL) {
+        printf(" | ");
+        printIRValue(instr->arg2);
+    }
+
+    // Print third argument if it is not IR_NULL.
+    if (instr->arg3.type != IR_NULL) {
+        printf(" | ");
+        printIRValue(instr->arg3);
+    }
+    printf("\n");
+}
+
+// The updated CFG printer which recursively prints each block.
 void printCFG(BasicBlock* block, int* visited) {
     if (visited[block->id])
         return;
     visited[block->id] = 1;
-    printf("Block %d:\n", block->id);
+
+    printf("Basic Block %d:\n", block->id);
+
+    // Print instructions.
     for (int i = 0; i < block->inst_count; i++) {
-        IR_Instruction* instr = block->instructions[i];
-        switch (instr->opcode) {
-        case IR_RAW_STRING:
-            printf("  RAW: %s\n", instr->arg1);
-            break;
-        case IR_ASSIGN:
-            printf("  ASSIGN: %s = %s\n", instr->arg1, instr->arg2);
-            break;
-        case IR_ADD:
-            printf("  ADD: %s + %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_SUB:
-            printf("  SUB: %s - %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_MUL:
-            printf("  MUL: %s * %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_DIV:
-            printf("  DIV: %s / %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_MOD:
-            printf("  MOD: %s %% %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_DECLARE:
-            printf("  DECLARE: %s\n", instr->arg1);
-            break;
-        case IR_CBR:
-            printf("  CBR: if %s != 0 then goto BLOCK %s else goto BLOCK %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_NE:
-            printf("  NE: %s != %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_GT:
-            printf("  GT: %s > %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_GE:
-            printf("  GE: %s >= %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_LT:
-            printf("  LT: %s < %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_LE:
-            printf("  LE: %s <= %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_EQ:
-            printf("  EQ: %s == %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_OR:
-            printf("  OR: %s || %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_AND:
-            printf("  AND: %s && %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_FUNC_START:
-            printf("  FUNC_START: %s\n", instr->arg1);
-            break;
-        case IR_FUNC_END:
-            printf("  FUNC_END: %s\n", instr->arg1);
-            break;
-        case IR_RETURN:
-            printf("  RETURN: %s and go to BLOCK %s\n", instr->arg1, instr->arg2);
-            break;
-        case IR_CALL:
-            printf("  CALL: Block %s with %s -> %s\n", instr->arg1, instr->arg2, instr->result);
-            break;
-        case IR_JMP:
-            printf("  JUMP: To Block %s \n", instr->arg1);
-            break;
-        default:
-            printf("  UNKNOWN OPCODE: %d\n", instr->opcode);
-        }
+        printInstruction(block->instructions[i]);
     }
-    for (int j = 0; j < block->pred_count; j++) {
-        printf("  Predecessor: Block %d\n", block->predecessors[j]->id);
-    }
-    for (int j = 0; j < block->succ_count; j++) {
-        printf("  Successor: Block %d\n", block->successors[j]->id);
+
+    // Print predecessors.
+    printf("  Predecessors: ");
+    for (int i = 0; i < block->pred_count; i++) {
+        printf("%d ", block->predecessors[i]->id);
     }
     printf("\n");
-    for (int j = 0; j < block->succ_count; j++) {
-        printCFG(block->successors[j], visited);
+
+    // Print successors.
+    printf("  Successors: ");
+    for (int i = 0; i < block->succ_count; i++) {
+        printf("%d ", block->successors[i]->id);
+    }
+    printf("\n\n");
+
+    // Recurse over each successor.
+    for (int i = 0; i < block->succ_count; i++) {
+        printCFG(block->successors[i], visited);
     }
 }
+
 
 void printFunctionCFG() {
     printf("\n--- Function CFGs ---\n");
@@ -763,7 +885,12 @@ void printFunctionCFG() {
 }
 
 int mainCFG(SyntaxTree* tree) {
+    ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT2, string_hash, string_equals);
+    init_ir_visitor();
+
     function_exit_blocks = linkedlist_init(sizeof(BasicBlock*));
+    function_entry_blocks = linkedlist_init(sizeof(BasicBlock*));
+
     BasicBlock* mainBlock = createBasicBlock();
     buildCFG(tree, mainBlock);
     int maxBlocks = next_block_id;
