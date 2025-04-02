@@ -228,6 +228,7 @@ typedef struct BasicBlock {
 BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current);
 
 int next_block_id = 0;
+BasicBlock* arrr[100];
 BasicBlock* createBasicBlock(void) {
     BasicBlock* block = (BasicBlock*)malloc(sizeof(BasicBlock));
     block->id = next_block_id++;
@@ -240,6 +241,7 @@ BasicBlock* createBasicBlock(void) {
     block->pred_count = 0;
     block->pred_capacity = 2;
     block->predecessors = (BasicBlock**)malloc(sizeof(BasicBlock*) * block->pred_capacity);
+    arrr[next_block_id - 1] = block;
     return block;
 }
 
@@ -393,6 +395,9 @@ IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
     }
 
     if (exprTree->info.nonterminal_info.num_of_children == 3) {
+        if (strcmp(exprTree->info.nonterminal_info.nonterminal, "FACTOR") == 0) {
+            return lowerExpression(exprTree->info.nonterminal_info.children[1], current);
+        }
         SyntaxTree* leftChild = exprTree->info.nonterminal_info.children[0];
         SyntaxTree* opChild = exprTree->info.nonterminal_info.children[1];
         SyntaxTree* rightChild = exprTree->info.nonterminal_info.children[2];
@@ -486,20 +491,25 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
 
 BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* condBlock = createBasicBlock();
+
+    printf("CURRENT -- %d \n", current->id);
     addSuccessor(current, condBlock);
     addIRInstruction(current, createJumpInstruction(condBlock->id));
 
     BasicBlock* thenBlock = createBasicBlock();
+    BasicBlock* then_start = thenBlock;
     thenBlock = buildCFG(tree->info.nonterminal_info.children[2], thenBlock);
+
     BasicBlock* mergeBlock = createBasicBlock();
-    addSuccessor(condBlock, thenBlock);
+
+    addSuccessor(condBlock, then_start);
     addSuccessor(condBlock, mergeBlock);
     addSuccessor(thenBlock, mergeBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
 
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        thenBlock->id,
+        then_start->id,
         mergeBlock->id);
 
     addIRInstruction(condBlock, cbrInstr);
@@ -515,20 +525,24 @@ BasicBlock* if_else_block(SyntaxTree* tree, BasicBlock* current) {
     addIRInstruction(current, createJumpInstruction(condBlock->id));
 
     BasicBlock* thenBlock = createBasicBlock();
+    BasicBlock* then_start = thenBlock;
+
     thenBlock = buildCFG(tree->info.nonterminal_info.children[2], thenBlock);
     BasicBlock* elseBlock = createBasicBlock();
+    BasicBlock* else_start = elseBlock;
+
     elseBlock = buildCFG(tree->info.nonterminal_info.children[4], elseBlock);
     BasicBlock* mergeBlock = createBasicBlock();
 
-    addSuccessor(condBlock, thenBlock);
-    addSuccessor(condBlock, elseBlock);
+    addSuccessor(condBlock, then_start);
+    addSuccessor(condBlock, else_start);
     addSuccessor(thenBlock, mergeBlock);
     addSuccessor(elseBlock, mergeBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        thenBlock->id,
-        elseBlock->id);
+        then_start->id,
+        else_start->id);
     addIRInstruction(condBlock, cbrInstr);
 
     addIRInstruction(thenBlock, createJumpInstruction(mergeBlock->id));
@@ -544,15 +558,18 @@ BasicBlock* while_block(SyntaxTree* tree, BasicBlock* current) {
 
 
     BasicBlock* loopBody = createBasicBlock();
+    BasicBlock* body_start = loopBody;
+
     loopBody = buildCFG(tree->info.nonterminal_info.children[2], loopBody);
-    addSuccessor(loopHeader, loopBody);
+
+    addSuccessor(loopHeader, body_start);
     addSuccessor(loopBody, loopHeader);
     BasicBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        loopBody->id,
+        body_start->id,
         exitBlock->id);
     addIRInstruction(loopHeader, cbrInstr);
 
@@ -563,19 +580,22 @@ BasicBlock* while_block(SyntaxTree* tree, BasicBlock* current) {
 
 BasicBlock* do_while_block(SyntaxTree* tree, BasicBlock* current) {
     BasicBlock* loopBody = createBasicBlock();
+    BasicBlock* body_start = loopBody;
+
     loopBody = buildCFG(tree->info.nonterminal_info.children[1], loopBody);
-    addSuccessor(current, loopBody);
-    addIRInstruction(current, createJumpInstruction(loopBody->id));
+    addSuccessor(current, body_start);
+
+    addIRInstruction(current, createJumpInstruction(body_start->id));
 
     BasicBlock* loopHeader = createBasicBlock();
     addSuccessor(loopBody, loopHeader);
-    addSuccessor(loopHeader, loopBody);
+    addSuccessor(loopHeader, body_start);
     BasicBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        loopBody->id,
+        body_start->id,
         exitBlock->id);
     addIRInstruction(loopHeader, cbrInstr);
 
@@ -598,16 +618,18 @@ BasicBlock* for_block(SyntaxTree* tree, BasicBlock* current) {
     addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
     BasicBlock* loopBody = createBasicBlock();
+    BasicBlock* body_start = loopBody;
+
     loopBody = buildCFG(tree->info.nonterminal_info.children[4], loopBody);
-    addSuccessor(loopHeader, loopBody);
+    addSuccessor(loopHeader, body_start);
     addSuccessor(loopBody, loopHeader);
     BasicBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        int_to_string(loopBody->id),
-        int_to_string(exitBlock->id));
+        body_start->id,
+        exitBlock->id);
     addIRInstruction(loopHeader, cbrInstr);
 
     addIRInstruction(loopBody, createJumpInstruction(loopHeader->id));
@@ -622,10 +644,12 @@ BasicBlock* for_change_block(SyntaxTree* tree, BasicBlock* current) {
     addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
     BasicBlock* loopBody = createBasicBlock();
+    BasicBlock* body_start = loopBody;
+
     loopBody = buildCFG(tree->info.nonterminal_info.children[4], loopBody);
     BasicBlock* changeBlock = createBasicBlock();
     changeBlock = buildCFG(tree->info.nonterminal_info.children[6], changeBlock);
-    addSuccessor(loopHeader, loopBody);
+    addSuccessor(loopHeader, body_start);
     addSuccessor(loopBody, changeBlock);
     addSuccessor(changeBlock, loopHeader);
     BasicBlock* exitBlock = createBasicBlock();
@@ -633,7 +657,7 @@ BasicBlock* for_change_block(SyntaxTree* tree, BasicBlock* current) {
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
-        loopBody->id,
+        body_start->id,
         exitBlock->id);
     addIRInstruction(loopHeader, cbrInstr);
 
@@ -886,6 +910,8 @@ int mainCFG(SyntaxTree* tree) {
     int maxBlocks = next_block_id;
     int* visited = calloc(maxBlocks, sizeof(int));
     printCFG(mainBlock, visited);
+    printf("-------------------------------------------------------------\n");
+    //printCFG(arrr[5], visited);
     free(visited);
     printFunctionCFG();
     return 0;

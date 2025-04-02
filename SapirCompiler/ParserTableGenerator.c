@@ -861,6 +861,8 @@ void add_rules() {
     add_rule("CONDITION", "EXPRESSION < EXPRESSION");
     add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
     //add_rule("CONDITION", "identifier");
+    add_rule("CONDITION", "FUNCTION_CALL_STATEMENT");
+    add_rule("CONDITION", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
     add_rule("CONDITION", "true");
     add_rule("CONDITION", "false");
 

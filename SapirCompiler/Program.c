@@ -31,12 +31,18 @@ void printSTR(char** str) {
 }
 
 int main() {
+    //(call is_divisible_by_2 with num) == true
     const char* code =
-        "function pow gets int x, int y returns int{   "
-        "      if y <= 0 return 1  return x * call pow with x, y-1                            "
-        "}                                             "
-        "int result = call pow with 2, 8     " 
-        ""
+        "function pow gets int x, int y returns int{      "
+        "   if y <= 0 return 1                            "
+        "   else if y % 2 != 0 {                          "
+        "      int temp = call pow with x, (y - 1) / 2    "
+        "      return x * temp * temp                     "
+        "   }                                             "
+        "   int temp = call pow with x, y / 2             "
+        "   return temp * temp                            "
+        "}                                                "
+
         ;
 
     printf("Tokenizing: %s\n", code);
