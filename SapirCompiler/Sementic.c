@@ -8,7 +8,29 @@
 
 #define NONTERMINAL_COUNT_DEFUALT 100
 
+#pragma warning(disable:4996)
+
 #define CURRENT_FUNCTION_SYMBOL "function"
+
+static char* ast_to_string(SyntaxTree* tree) {
+	if (!tree)
+		return strdup("");
+	if (tree->type == TERMINAL_TYPE) {
+		return strdup(tree->info.terminal_info.token.lexeme);
+	}
+	else {
+		char buffer[1024] = "";
+		for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
+			char* childStr = ast_to_string(tree->info.nonterminal_info.children[i]);
+			strcat(buffer, childStr);
+			if (i < tree->info.nonterminal_info.num_of_children - 1)
+				strcat(buffer, " ");
+			free(childStr);
+		}
+		return strdup(buffer);
+	}
+}
+
 
 #pragma warning(disable:4996)
 SymbolTable* symbol_table = NULL;
@@ -90,13 +112,12 @@ static Data_Type decl_with_asign(SyntaxTree* tree) {
 	info->identifier_type = VARIABLE;
 	info->info = NULL;
 
+	Data_Type right = accept(tree->info.nonterminal_info.children[3]);
+
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
-
-	Data_Type right = accept(tree->info.nonterminal_info.children[3]);
-
 
 	if (!compatible(left, right)) {
 		handle_error("ASSIGNMENT TYPE MISMATCH");
@@ -164,6 +185,7 @@ static Data_Type condition(SyntaxTree* tree) {
 	Data_Type left = accept(tree->info.nonterminal_info.children[0]);
 	Data_Type right = accept(tree->info.nonterminal_info.children[2]);
 
+
 	if (!compatible(left, right)) {
 		handle_error("ASSIGNMENT TYPE MISMATCH");
 	}
@@ -175,8 +197,10 @@ static Data_Type condition_list(SyntaxTree* tree) {
 	Data_Type left = accept(tree->info.nonterminal_info.children[0]);
 	Data_Type right = accept(tree->info.nonterminal_info.children[2]);
 
+
 	if (left != BOOL || right != BOOL) {
-		handle_error("ASSIGNMENT TYPE MISMATCH");
+		printf("ASSIGNMENT TYPE MISMATCH %d %d\n", left, right);
+		handle_error("ASSIGNMENT TYPE MISMATCH\n");
 	}
 
 	return BOOL;

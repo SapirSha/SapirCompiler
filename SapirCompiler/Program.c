@@ -31,12 +31,11 @@ void printSTR(char** str) {
 
 int main() {
     const char* code =
-        "int num1 = 2 "
-        "int num2 = 8 "
-        "function pow gets int x, int y returns int{ "
-        "    if true call pow with x, y - 1 "
-        "}"
-        "call pow with num1, num2 "
+        "function string_to_int gets string num returns int { "
+        "    return 48                                        "
+        "}                                                    "
+        "string str_num = \"123\"                             "
+        "int int_num = call string_to_int with str_num        "
         ;
 
     printf("Tokenizing: %s\n", code);
@@ -53,7 +52,7 @@ int main() {
     
     sementic_analysis(syntax_tree);
 
-    //mainCFG(syntax_tree);
+    mainCFG(syntax_tree);
 
     return 0;
 

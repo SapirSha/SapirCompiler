@@ -860,7 +860,7 @@ void add_rules() {
     add_rule("CONDITION", "EXPRESSION >= EXPRESSION");
     add_rule("CONDITION", "EXPRESSION < EXPRESSION");
     add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
-    add_rule("CONDITION", "EXPRESSION");
+    //add_rule("CONDITION", "identifier");
     add_rule("CONDITION", "true");
     add_rule("CONDITION", "false");
 
@@ -878,7 +878,7 @@ void add_rules() {
     add_rule("FACTOR", "number");
     add_rule("FACTOR", "float_number");
     add_rule("FACTOR", "string_literal");
-    add_rule("FACTOR", "CONDITION");
+    add_rule("FACTOR", "CONDITION_LIST");
     add_rule("FACTOR", "FUNCTION_CALL_STATEMENT");
     add_rule("FACTOR", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
 
@@ -945,10 +945,8 @@ void add_rules() {
     add_rule("RETURN_STATEMENT", "return EXPRESSION");
     //add_rule("RETURN_NONE_STATEMENT", "return");
 
-
     add_rule("FUNCTION_CALL_STATEMENT", "call identifier with ARGUMENT_LIST");
     add_rule("FUNCTION_CALL_WITH_NOTHING_STATEMENT", "call identifier");
-
 
     add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
     add_rule("ARGUMENT_LIST", "EXPRESSION");
@@ -966,10 +964,6 @@ int create_parser_tables() {
     rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
 
     add_rules();
-
-
-
-
 
     build_states("PROGRAM");
     for (int i = 0; i < states->size; i++) {
