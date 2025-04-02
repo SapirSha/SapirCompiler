@@ -32,10 +32,11 @@ void printSTR(char** str) {
 
 int main() {
     const char* code =
-        "function mul gets int x, int y returns int{  "
-        "      return x * y   "
-        "}                                          "
-        "int result = call mul with 8 + 2, 2 + 8"
+        "function pow gets int x, int y returns int{   "
+        "      if y <= 0 return 1  return x * call pow with x, y-1                            "
+        "}                                             "
+        "int result = call pow with 2, 8     " 
+        ""
         ;
 
     printf("Tokenizing: %s\n", code);

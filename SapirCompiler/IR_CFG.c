@@ -23,7 +23,6 @@ char* int_to_string(int num) {
     return strdup(buffer);
 }
 
-LinkedList* function_entry_blocks = NULL;
 LinkedList* function_exit_blocks = NULL; 
 
 typedef enum {
@@ -359,27 +358,22 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
 
     IR_Value temp = newTemp();
 
-    if (found == -1) {
-        
-        // recursion possibly?
-    }
-    else {
 
 
-        addIRInstruction(*current, createCallInstruction(
-            functionCFGTable[found].entry->id,
-            call_arguments,
-            temp
-        ));
 
-        free(funcName);
+    addIRInstruction(*current, createCallInstruction(
+        functionCFGTable[found].entry->id,
+        call_arguments,
+        temp
+    ));
 
-        addSuccessor(*current, functionCFGTable[found].entry);
-        BasicBlock* cont = createBasicBlock();
-        addSuccessor(functionCFGTable[found].exit, cont);
+    free(funcName);
 
-        *current = cont;
-    }
+    addSuccessor(*current, functionCFGTable[found].entry);
+    BasicBlock* cont = createBasicBlock();
+    addSuccessor(functionCFGTable[found].exit, cont);
+
+    *current = cont;
 
     return temp;
 }
@@ -474,15 +468,13 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
     addIRInstruction(entry, createFunctionLimitsInstruction(IR_FUNC_START, funcName));
 
     BasicBlock* exit = createBasicBlock();
-    linkedlist_push(function_entry_blocks, &entry);
     linkedlist_push(function_exit_blocks, &exit);
-
+    addFunctionCFG(funcName.lexeme, entry, exit);
 
     BasicBlock* bodyEnd = buildCFG(tree->info.nonterminal_info.children[tree->info.nonterminal_info.num_of_children - 1], entry);
     addSuccessor(bodyEnd, exit);
 
     addIRInstruction(exit, createFunctionLimitsInstruction(IR_FUNC_END, funcName));
-    linkedlist_pop(function_entry_blocks);
     linkedlist_pop(function_exit_blocks);
 
     FunctionCFGEntry* fc = (FunctionCFGEntry*)malloc(sizeof(FunctionCFGEntry));
@@ -508,7 +500,7 @@ BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
 
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
         thenBlock->id,
-        condBlock->id);
+        mergeBlock->id);
 
     addIRInstruction(condBlock, cbrInstr);
 
@@ -653,7 +645,6 @@ BasicBlock* for_change_block(SyntaxTree* tree, BasicBlock* current) {
 
 BasicBlock* function_block(SyntaxTree* tree, BasicBlock* current) {
     FunctionCFGEntry* fc = buildFunctionCFG(tree);
-    addFunctionCFG(fc->name, fc->entry, fc->exit);
     free(fc->name);
     free(fc);
     return current;
@@ -889,7 +880,6 @@ int mainCFG(SyntaxTree* tree) {
     init_ir_visitor();
 
     function_exit_blocks = linkedlist_init(sizeof(BasicBlock*));
-    function_entry_blocks = linkedlist_init(sizeof(BasicBlock*));
 
     BasicBlock* mainBlock = createBasicBlock();
     buildCFG(tree, mainBlock);
