@@ -279,10 +279,6 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     }
 
     IR_Value temp = newTemp();
-
-
-
-
     addIRInstruction(*current, createCallInstruction(
         functionCFGTable[found].entry->id,
         call_arguments,
@@ -606,7 +602,6 @@ BasicBlock* statements_block(SyntaxTree* tree, BasicBlock* current) {
     return current;
 }
 
-
 BasicBlock* defualt_block(SyntaxTree* tree, BasicBlock* current) {
     printf("UNTARGETED NONTERMINAL: %s\n", tree->info.nonterminal_info.nonterminal);
     for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
@@ -637,9 +632,7 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
     char* nonterminal = tree->info.nonterminal_info.nonterminal;
 
     return (*get_block_fun(nonterminal))(tree, current);
-
 }
-
 
 
 static init_ir_visitor() {
@@ -664,12 +657,9 @@ static init_ir_visitor() {
     hashmap_insert(ir_visitor, "WHILE_BLOCK", &block_block);
     hashmap_insert(ir_visitor, "IF_BLOCK", &block_block);
     hashmap_insert(ir_visitor, "FOR_BLOCK", &block_block);
-
-
-
 }
 
-// Helper to convert IR_DataType to a human-readable string.
+
 const char* irDataTypeToString(IR_DataType type) {
     switch (type) {
     case IR_NULL:           return "IR_NULL";
@@ -683,7 +673,7 @@ const char* irDataTypeToString(IR_DataType type) {
 }
 void printIRValuePointer(IR_Value* val);
 
-// Proper print function for IR_Value.
+
 void printIRValue(IR_Value val) {
     printf("[%s: ", irDataTypeToString(val.type));
     switch (val.type) {
@@ -691,7 +681,7 @@ void printIRValue(IR_Value val) {
         printf("null");
         break;
     case IR_TOKEN:
-        // Assuming your Token structure has a 'lexeme' field.
+        
         printf("%d:%s", val.data.token.type, val.data.token.lexeme);
         break;
     case IR_BLOCK_ID:
@@ -701,14 +691,6 @@ void printIRValue(IR_Value val) {
         printf("%d", val.data.num);
         break;
     case IR_TOKEN_LIST:
-        // If you have an ArrayList API to iterate over, you might do something like:
-        // for (int i = 0; i < arraylist_size(val.data.token_list); i++) {
-        //     Token* t = arraylist_get(val.data.token_list, i);
-        //     printf("%s", t ? t->lexeme : "null");
-        //     if (i < arraylist_size(val.data.token_list) - 1)
-        //         printf(", ");
-        // }
-        // For now, we'll print a placeholder.
         printf("TOKEN_LIST   ");
         arraylist_print(val.data.token_list, printIRValuePointer);
         break;
@@ -725,7 +707,7 @@ void printIRValue(IR_Value val) {
 void printIRValuePointer(IR_Value* val) {
     printIRValue(*val);
 }
-// Helper: convert IR_Opcode to string.
+
 const char* opcodeToString(IR_Opcode op) {
     switch (op) {
     case IR_RAW_STRING:    return "RAW_STRING";
@@ -754,19 +736,19 @@ const char* opcodeToString(IR_Opcode op) {
     }
 }
 
-// Helper: prints an IR_Instruction.
+
 void printInstruction(IR_Instruction* instr) {
     printf("  %s: ", opcodeToString(instr->opcode));
-    // Print first argument.
+    
     printIRValue(instr->arg1);
 
-    // Print second argument if it is not IR_NULL.
+    
     if (instr->arg2.type != IR_NULL) {
         printf(" | ");
         printIRValue(instr->arg2);
     }
 
-    // Print third argument if it is not IR_NULL.
+    
     if (instr->arg3.type != IR_NULL) {
         printf(" | ");
         printIRValue(instr->arg3);
@@ -774,7 +756,7 @@ void printInstruction(IR_Instruction* instr) {
     printf("\n");
 }
 
-// The updated CFG printer which recursively prints each block.
+
 void printCFG(BasicBlock* block, int* visited) {
     if (visited[block->id])
         return;
@@ -782,26 +764,26 @@ void printCFG(BasicBlock* block, int* visited) {
 
     printf("Basic Block %d:\n", block->id);
 
-    // Print instructions.
+    
     for (int i = 0; i < block->instructions->size; i++) {
         printInstruction(*(IR_Instruction**)block->instructions->array[i]);
     }
 
-    // Print predecessors.
+    
     printf("  Predecessors: ");
     for (int i = 0; i < block->predecessors->size; i++) {
         printf("%d ", (*(BasicBlock**)block->predecessors->array[i])->id);
     }
     printf("\n");
 
-    // Print successors.
+    
     printf("  Successors: ");
     for (int i = 0; i < block->successors->size; i++) {
         printf("%d ", (*(BasicBlock**)block->successors->array[i])->id);
     }
     printf("\n\n");
 
-    // Recurse over each successor.
+    
     for (int i = 0; i < block->successors->size; i++) {
         printCFG((*(BasicBlock**)block->successors->array[i]), visited);
     }
