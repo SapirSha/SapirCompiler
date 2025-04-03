@@ -33,16 +33,12 @@ void printSTR(char** str) {
 int main() {
     //(call is_divisible_by_2 with num) == true
     const char* code =
-        "function pow gets int x, int y returns int{      "
-        "   if y <= 0 return 1                            "
-        "   else if y % 2 != 0 {                          "
-        "      int temp = call pow with x, (y - 1) / 2    "
-        "      return x * temp * temp                     "
-        "   }                                             "
-        "   int temp = call pow with x, y / 2             "
-        "   return temp * temp                            "
-        "}                                                "
-
+        "function add gets float num1, float num2 returns float{ "
+        "      return num1 + num2              "
+        "}                                     "
+        "int num1 = 8       int num2 = 16      "
+        "int result = call add with num1, num2 "
+        "num1 = 0           num2 = 0           "
         ;
 
     printf("Tokenizing: %s\n", code);

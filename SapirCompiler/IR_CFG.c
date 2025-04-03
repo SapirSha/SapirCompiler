@@ -25,64 +25,12 @@ char* int_to_string(int num) {
 
 LinkedList* function_exit_blocks = NULL; 
 
-typedef enum {
-    IR_RAW_STRING,
-    IR_DECLARE,
-    IR_ASSIGN,
-    IR_ADD,
-    IR_SUB,
-    IR_MUL,
-    IR_DIV,
-    IR_MOD,
-    IR_LT,          
-    IR_LE,          
-    IR_GT,          
-    IR_GE,          
-    IR_EQ,          
-    IR_NE,          
-    IR_AND,         
-    IR_OR,          
-    IR_CBR,         
-    IR_FUNC_START,
-    IR_FUNC_END,
-    IR_RETURN,      
-    IR_CALL,        
-    IR_JMP,
-    IT_INST_COUNT
-} IR_Opcode;
-
-typedef enum {
-    IR_NULL = 0,
-    IR_TOKEN,
-    IR_BLOCK_ID,
-    IR_TEMPORARY_ID,
-    IR_TOKEN_LIST,
-    IR_STR
-} IR_DataType;
-
-typedef struct {
-    IR_DataType type;
-    union {
-        Token token;
-        int num;
-        ArrayList* token_list;
-        char* str;
-    } data;
-} IR_Value;
-
-typedef struct IR_Instruction {
-    IR_Opcode opcode;
-    IR_Value arg1;
-    IR_Value arg2;
-    IR_Value arg3;
-} 
-IR_Instruction;
 
 IR_Instruction* createRawIRInstruction(const char* text) {
     IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
     instr->opcode = IR_RAW_STRING;
 
-    instr->arg1.type = IR_RAW_STRING;
+    instr->arg1.type = IR_STR;
     instr->arg1.data.str = strdup(text);
 
     instr->arg2.type = IR_NULL;
@@ -213,60 +161,32 @@ static IR_Value newTemp() {
     return *temporary;
 }
 
-typedef struct BasicBlock {
-    int id;
-    IR_Instruction** instructions;
-    int inst_count;
-    int inst_capacity;
-    struct BasicBlock** successors;
-    int succ_count;
-    int succ_capacity;
-    struct BasicBlock** predecessors;
-    int pred_count;
-    int pred_capacity;
-} BasicBlock;
+
+
 BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current);
 
 int next_block_id = 0;
-BasicBlock* arrr[100];
 BasicBlock* createBasicBlock(void) {
     BasicBlock* block = (BasicBlock*)malloc(sizeof(BasicBlock));
     block->id = next_block_id++;
-    block->inst_count = 0;
-    block->inst_capacity = 4;
-    block->instructions = (IR_Instruction**)malloc(sizeof(IR_Instruction*) * block->inst_capacity);
-    block->succ_count = 0;
-    block->succ_capacity = 2;
-    block->successors = (BasicBlock**)malloc(sizeof(BasicBlock*) * block->succ_capacity);
-    block->pred_count = 0;
-    block->pred_capacity = 2;
-    block->predecessors = (BasicBlock**)malloc(sizeof(BasicBlock*) * block->pred_capacity);
-    arrr[next_block_id - 1] = block;
+    block->instructions = arraylist_init(sizeof(IR_Instruction*), 8);
+    block->successors = arraylist_init(sizeof(BasicBlock*), 4);
+    block->predecessors = arraylist_init(sizeof(BasicBlock*), 4);
+
+
     return block;
 }
 
 void addIRInstruction(BasicBlock* block, IR_Instruction* instr) {
-    if (block->inst_count == block->inst_capacity) {
-        block->inst_capacity *= 2;
-        block->instructions = (IR_Instruction**)realloc(block->instructions, sizeof(IR_Instruction*) * block->inst_capacity);
-    }
-    block->instructions[block->inst_count++] = instr;
+    arraylist_add(block->instructions, &instr);
 }
 
 void addPredecessor(BasicBlock* block, BasicBlock* pred) {
-    if (block->pred_count == block->pred_capacity) {
-        block->pred_capacity *= 2;
-        block->predecessors = (BasicBlock**)realloc(block->predecessors, sizeof(BasicBlock*) * block->pred_capacity);
-    }
-    block->predecessors[block->pred_count++] = pred;
+    arraylist_add(block->predecessors, &pred);
 }
 
 void addSuccessor(BasicBlock* block, BasicBlock* succ) {
-    if (block->succ_count == block->succ_capacity) {
-        block->succ_capacity *= 2;
-        block->successors = (BasicBlock**)realloc(block->successors, sizeof(BasicBlock*) * block->succ_capacity);
-    }
-    block->successors[block->succ_count++] = succ;
+    arraylist_add(block->successors, &succ);
     addPredecessor(succ, block);
 }
 
@@ -863,27 +783,27 @@ void printCFG(BasicBlock* block, int* visited) {
     printf("Basic Block %d:\n", block->id);
 
     // Print instructions.
-    for (int i = 0; i < block->inst_count; i++) {
-        printInstruction(block->instructions[i]);
+    for (int i = 0; i < block->instructions->size; i++) {
+        printInstruction(*(IR_Instruction**)block->instructions->array[i]);
     }
 
     // Print predecessors.
     printf("  Predecessors: ");
-    for (int i = 0; i < block->pred_count; i++) {
-        printf("%d ", block->predecessors[i]->id);
+    for (int i = 0; i < block->predecessors->size; i++) {
+        printf("%d ", (*(BasicBlock**)block->predecessors->array[i])->id);
     }
     printf("\n");
 
     // Print successors.
     printf("  Successors: ");
-    for (int i = 0; i < block->succ_count; i++) {
-        printf("%d ", block->successors[i]->id);
+    for (int i = 0; i < block->successors->size; i++) {
+        printf("%d ", (*(BasicBlock**)block->successors->array[i])->id);
     }
     printf("\n\n");
 
     // Recurse over each successor.
-    for (int i = 0; i < block->succ_count; i++) {
-        printCFG(block->successors[i], visited);
+    for (int i = 0; i < block->successors->size; i++) {
+        printCFG((*(BasicBlock**)block->successors->array[i]), visited);
     }
 }
 
@@ -899,20 +819,19 @@ void printFunctionCFG() {
     }
 }
 
-int mainCFG(SyntaxTree* tree) {
+BasicBlock* mainCFG(SyntaxTree* tree) {
     ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT2, string_hash, string_equals);
     init_ir_visitor();
 
     function_exit_blocks = linkedlist_init(sizeof(BasicBlock*));
 
-    BasicBlock* mainBlock = createBasicBlock();
+    mainBlock = createBasicBlock();
     buildCFG(tree, mainBlock);
     int maxBlocks = next_block_id;
     int* visited = calloc(maxBlocks, sizeof(int));
     printCFG(mainBlock, visited);
-    printf("-------------------------------------------------------------\n");
-    //printCFG(arrr[5], visited);
     free(visited);
+    printf("-------------------------------------------------------------\n");
     printFunctionCFG();
-    return 0;
+    return mainBlock;
 }
