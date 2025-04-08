@@ -34,8 +34,17 @@ bool hashset_contains(HashSet* set, void* key);
 
 void hashset_free(HashSet* set);
 
-bool hashset_add_hashset(HashSet* set1, HashSet* set2);
+bool hashset_union(HashSet* set1, HashSet* set2);
 
 void hashset_print(HashSet*, void print(void*));
+
+void hashset_clear(HashSet* set);
+
+HashSet* hashset_copy(HashSet* set);
+
+bool hashset_equals(HashSet* set1, HashSet* set2);
+
+void hashset_remove_all(HashSet* set, HashSet* to_remove);
+
 
 #endif

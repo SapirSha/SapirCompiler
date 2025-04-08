@@ -1,5 +1,11 @@
 #include "HashSet.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define GROWTH_FACTOR 2
+#define MAX_LOAD_FACTOR 0.75
+#define MINIMUM_HASHSET_CAPACITY 16
 
 static void hashset_expand(HashSet* set) {
     unsigned int new_capacity = set->capacity * GROWTH_FACTOR;
@@ -105,7 +111,7 @@ void hashset_free(HashSet* set) {
     free(set);
 }
 
-bool hashset_add_hashset(HashSet* set1, HashSet* set2) {
+bool hashset_union(HashSet* set1, HashSet* set2) {
     bool changed = false;
     for (unsigned int i = 0; i < set2->capacity; i++) {
         HashSetNode* node = set2->buckets[i];
@@ -115,12 +121,10 @@ bool hashset_add_hashset(HashSet* set1, HashSet* set2) {
                 hashset_insert(set1, node->key);
             }
             node = node->next;
-
         }
     }
     return changed;
 }
-
 
 void hashset_print(HashSet* set, void print(void*)) {
     printf("HASHSET: ");
@@ -133,3 +137,57 @@ void hashset_print(HashSet* set, void print(void*)) {
     }
     printf("\n");
 }
+
+
+void hashset_clear(HashSet* set) {
+    for (unsigned int i = 0; i < set->capacity; i++) {
+        HashSetNode* node = set->buckets[i];
+        while (node) {
+            HashSetNode* temp = node;
+            node = node->next;
+            free(temp);
+        }
+        set->buckets[i] = NULL;
+    }
+    set->size = 0;
+}
+
+HashSet* hashset_copy(HashSet* set) {
+    HashSet* copy = hashset_create(set->capacity, set->hash, set->equals);
+    if (!copy)
+        return NULL;
+    for (unsigned int i = 0; i < set->capacity; i++) {
+        HashSetNode* node = set->buckets[i];
+        while (node) {
+            hashset_insert(copy, node->key);
+            node = node->next;
+        }
+    }
+    return copy;
+}
+
+bool hashset_equals(HashSet* set1, HashSet* set2) {
+    if (set1->size != set2->size)
+        return false;
+
+    for (unsigned int i = 0; i < set1->capacity; i++) {
+        HashSetNode* node = set1->buckets[i];
+        while (node) {
+            if (!hashset_contains(set2, node->key))
+                return false;
+            node = node->next;
+        }
+    }
+    return true;
+}
+
+void hashset_remove_all(HashSet* set, HashSet* to_remove) {
+    for (unsigned int i = 0; i < to_remove->capacity; i++) {
+        HashSetNode* node = to_remove->buckets[i];
+        while (node) {
+            hashset_remove(set, node->key);
+            node = node->next;
+        }
+    }
+}
+

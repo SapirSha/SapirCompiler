@@ -3,6 +3,8 @@
 #include "SyntaxTree.h"
 #include "ArrayList.h"
 #include "Tokens.h"
+#include "stdbool.h"
+#include "HashSet.h"
 
 typedef enum {
     IR_RAW_STRING,
@@ -27,6 +29,7 @@ typedef enum {
     IR_RETURN,
     IR_CALL,
     IR_JMP,
+    IR_PRINT,
     IT_INST_COUNT
 } IR_Opcode;
 
@@ -44,7 +47,7 @@ typedef struct IR_Value{
     union {
         Token token;
         int num;
-        ArrayList* token_list;
+        ArrayList* values_list;
         char* str;
     } data;
 } IR_Value;
@@ -54,6 +57,7 @@ typedef struct IR_Instruction {
     IR_Value arg1;
     IR_Value arg2;
     IR_Value arg3;
+    bool is_live;
 }
 IR_Instruction;
 
@@ -62,10 +66,16 @@ typedef struct BasicBlock {
     ArrayList* instructions;
     ArrayList* successors;
     ArrayList* predecessors;
+    HashSet* live_in;
+    HashSet* live_out;
 } BasicBlock;
 BasicBlock* mainBlock;
 
+unsigned int ir_value_hash(IR_Value* key);
+int ir_value_equals(IR_Value* key1, IR_Value* key2);
+void printIRValuePointer(IR_Value* val);
 
+void printCFG(BasicBlock* block, int* visited);
 BasicBlock* mainCFG(SyntaxTree* tree);
 
 

@@ -14,6 +14,7 @@
 #include "Sementic.h"
 #include "SyntaxTree.h"
 #include "IR_CFG.h"
+#include "IR_Liveness.h"
 
 
 void printINT(int* e) {
@@ -33,12 +34,11 @@ void printSTR(char** str) {
 int main() {
     //(call is_divisible_by_2 with num) == true
     const char* code =
-        "function add gets float num1, float num2 returns float{ "
-        "      return num1 + num2              "
-        "}                                     "
-        "int num1 = 8       int num2 = 16      "
-        "int result = call add with num1, num2 "
-        "num1 = 0           num2 = 0           "
+        "int x = 10 "
+        "for int i = 0 while i < 10 { "
+        "    x = i "
+        "} "
+        "print x "
         ;
 
     printf("Tokenizing: %s\n", code);
@@ -55,7 +55,9 @@ int main() {
     
     sementic_analysis(syntax_tree);
 
-    mainCFG(syntax_tree);
+    BasicBlock* mainblock = mainCFG(syntax_tree);
+
+    computeLiveness(mainblock);
 
     return 0;
 

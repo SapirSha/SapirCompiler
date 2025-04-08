@@ -3,6 +3,8 @@
 
 #define GROWTH_FACTOR 2
 
+#include <stdbool.h>
+
 //allocates space
 typedef struct ArrayList { 
 	void** array;
@@ -24,6 +26,8 @@ void arraylist_reset(ArrayList*);
 int arraylist_is_empty(ArrayList*);
 
 void arraylist_free(ArrayList*);
+
+bool arraylist_equals(ArrayList* a1, ArrayList* a2);
 
 void arraylist_print(ArrayList*, void printfunc(void*));
 

@@ -10,7 +10,6 @@
 
 #pragma warning(disable:4996)
 
-#define CURRENT_FUNCTION_SYMBOL "function"
 
 static char* ast_to_string(SyntaxTree* tree) {
 	if (!tree)
@@ -56,6 +55,7 @@ static bool compatible(Data_Type left, Data_Type right) {
 
 
 Data_Type get_type(SyntaxTree* tree) {
+	IdentifiersInfo* info;
 	if (tree->type == TERMINAL_TYPE) {
 		switch (tree->info.terminal_info.token.type) {
 		case TOKEN_INT:
@@ -72,7 +72,7 @@ Data_Type get_type(SyntaxTree* tree) {
 		case TOKEN_FLOAT_NUMBER:
 			return FLOAT;
 		case TOKEN_IDENTIFIER:
-			IdentifiersInfo* info =  symbol_table_lookup_symbol(symbol_table, tree->info.terminal_info.token.lexeme);
+			info =  symbol_table_lookup_symbol(symbol_table, &tree->info.terminal_info.token.lexeme);
 			if (info == NULL) {
 				handle_error("IDENTIFER NOT DEFINED");
 			}
@@ -123,6 +123,9 @@ static Data_Type decl_with_asign(SyntaxTree* tree) {
 		handle_error("ASSIGNMENT TYPE MISMATCH");
 	}
 
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+
+
 	return NONE;
 }
 
@@ -151,7 +154,7 @@ static Data_Type factor(SyntaxTree* tree) {
 }
 
 static Data_Type assign(SyntaxTree* tree) {
-	IdentifiersInfo* info = symbol_table_lookup_symbol(symbol_table, tree->info.nonterminal_info.children[0]->info.terminal_info.token.lexeme);
+	IdentifiersInfo* info = symbol_table_lookup_symbol(symbol_table, &tree->info.nonterminal_info.children[0]->info.terminal_info.token.lexeme);
 	if (info == NULL) {
 		handle_error("IDENTIFER NOT DEFINED");
 	}
@@ -162,6 +165,7 @@ static Data_Type assign(SyntaxTree* tree) {
 			handle_error("ASSIGNMENT TYPE MISMATCH");
 		}
 	}
+
 	return NONE;
 }
 
@@ -176,6 +180,9 @@ static Data_Type decl(SyntaxTree* tree) {
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
+
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+
 	return NONE;
 }
 
@@ -314,8 +321,8 @@ static Data_Type parameter(SyntaxTree* tree) {
 	}
 
 
-
-	FunctionInfo* cur_info = ((FunctionInfo*)symbol_table_lookup_symbol(symbol_table, CURRENT_FUNCTION_SYMBOL)->info);
+	char* supposed_name = strdup(CURRENT_FUNCTION_SYMBOL);
+	FunctionInfo* cur_info = ((FunctionInfo*)symbol_table_lookup_symbol(symbol_table, &supposed_name)->info);
 	int cur_number_of_params = cur_info->num_of_params;
 	cur_info->num_of_params++;
 	cur_info->params = realloc(cur_info->params, cur_info->num_of_params * sizeof(VariableInfo));
@@ -335,10 +342,12 @@ static Data_Type function_decl(SyntaxTree* tree) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
 
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
 	*helper_info = *info;
-	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	helper_info->info = malloc(sizeof(FunctionInfo));
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -365,11 +374,13 @@ static Data_Type function_decl_returns_nothing(SyntaxTree* tree) {
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+
 
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
 	*helper_info = *info;
-	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	helper_info->info = malloc(sizeof(FunctionInfo));
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -397,11 +408,12 @@ static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
 	*helper_info = *info;
-	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	helper_info->info = malloc(sizeof(FunctionInfo));
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -427,11 +439,13 @@ static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 	if (!added) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+
 
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
 	*helper_info = *info;
-	helper_info->identifier_name = CURRENT_FUNCTION_SYMBOL;
+	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	helper_info->info = malloc(sizeof(FunctionInfo));
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -449,14 +463,15 @@ static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 
 static Data_Type return_statement(SyntaxTree* tree) {
 	Data_Type info = accept(tree->info.nonterminal_info.children[1]);
-	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, CURRENT_FUNCTION_SYMBOL)->data_type;
+	char* supposed_name = strdup(CURRENT_FUNCTION_SYMBOL);
+	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, &supposed_name)->data_type;
 	if (!compatible(info, supposed)) {
 		handle_error("RETURN TYPE MISMATCH");
 	}
 	return NONE;
 }
 static Data_Type return_none_statement(SyntaxTree* tree) {
-	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, CURRENT_FUNCTION_SYMBOL)->data_type;
+	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, &CURRENT_FUNCTION_SYMBOL)->data_type;
 	if (supposed != NONE) {
 		handle_error("RETURN TYPE MISMATCH");
 	}
@@ -466,7 +481,7 @@ static Data_Type return_none_statement(SyntaxTree* tree) {
 
 static Data_Type function_call(SyntaxTree* tree) {
 	IdentifiersInfo* funcSymbol = symbol_table_lookup_symbol(symbol_table,
-		tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
+		&tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
 	if (funcSymbol == NULL) {
 		handle_error("FUNCTION NOT DEFINED");
 	}
@@ -514,7 +529,7 @@ static Data_Type function_call(SyntaxTree* tree) {
 
 static Data_Type function_call_with_nothing(SyntaxTree* tree) {
 	IdentifiersInfo* funcSymbol = symbol_table_lookup_symbol(symbol_table,
-		tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
+		&tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
 	if (funcSymbol == NULL) {
 		handle_error("FUNCTION NOT DEFINED");
 	}
@@ -572,6 +587,40 @@ Data_Type accept(SyntaxTree* tree) {
 	}
 }
 
+Data_Type print_sem(SyntaxTree* tree) {
+	Data_Type type_of_var = accept(tree->info.nonterminal_info.children[1]);
+	// not string?
+
+	return NONE;
+}
+Data_Type get_decl_sementic(SyntaxTree* tree) {
+	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
+	info->data_type = get_type(tree->info.nonterminal_info.children[1]);
+	// not string?
+
+	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
+	info->identifier_type = VARIABLE;
+	info->info = NULL;
+	bool added = symbol_table_add_symbol(symbol_table, info);
+	if (!added) {
+		handle_error("IDENTIFER ALREADY DEFINED");
+	}
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+	return NONE;
+}
+
+Data_Type get_sementic(SyntaxTree* tree) {
+	IdentifiersInfo* info = symbol_table_lookup_symbol(symbol_table, &tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
+	if (info == NULL) {
+		handle_error("IDENTIFER NOT DEFINED");
+	}
+	else {
+		Data_Type left = info->data_type;
+		// not string?
+	}
+	return NONE;
+}
+
 void init_visitor() {
 	hashmap_insert(ir_visitor, "PROGRAM", &program);
 	hashmap_insert(ir_visitor, "STATEMENTS", &statements);
@@ -604,6 +653,11 @@ void init_visitor() {
 	hashmap_insert(ir_visitor, "ARGUMENT_LIST", &arg_list);
 	hashmap_insert(ir_visitor, "IF_BLOCK", &if_block);
 	hashmap_insert(ir_visitor, "WHILE_BLOCK", &while_block);
+	hashmap_insert(ir_visitor, "PRINT_STATEMENT", &print_sem);
+	hashmap_insert(ir_visitor, "GET_DECLARE_STATEMENT", &get_decl_sementic);
+	hashmap_insert(ir_visitor, "GET_STATEMENT", &get_sementic);
+
+
 
 
 }

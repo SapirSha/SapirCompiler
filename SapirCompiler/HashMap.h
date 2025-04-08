@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define MAX_LOAD_FACTOR 0.7
 #define MINIMUM_HASHMAP_CAPACITY 5
 #define GROWTH_FACTOR 2
@@ -39,5 +40,6 @@ int string_equals(void* key1, void* key2);
 
 unsigned int int_hash(int* key);
 int int_equals(int* key1, int* key2);
+
 
 #endif

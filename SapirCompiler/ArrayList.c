@@ -96,3 +96,12 @@ void arraylist_print(ArrayList* list, void printfunc(void*)) {
 	}
     printf("\n");
 }
+
+
+bool arraylist_equals(ArrayList* a1, ArrayList* a2) {
+    if (a1->object_size != a2->object_size) return false;
+    if (a1->size != a2->size) return false;
+    for (int i = 0; i < a1->size; i++) {
+        if (memcmp(a1->array[i], a2->array[i], a1->object_size) != 0) return false;
+    }
+}

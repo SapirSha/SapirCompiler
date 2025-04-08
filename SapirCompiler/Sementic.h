@@ -2,6 +2,7 @@
 #define SEMENTIC_H
 
 #include "SyntaxTree.h"
+#define CURRENT_FUNCTION_SYMBOL "function"
 
 typedef enum {
 	NONE = 0,

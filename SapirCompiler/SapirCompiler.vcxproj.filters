@@ -66,6 +66,12 @@
     <ClCompile Include="SymbolTable.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IR_CFG.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IR_Liveness.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lexer.h">
@@ -111,6 +117,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SymbolTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IR_CFG.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IR_Liveness.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

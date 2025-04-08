@@ -6,13 +6,13 @@
 LinkedList* linkedlist_init(unsigned int object_byte_size) {
 	LinkedList* lst = (LinkedList*) malloc(sizeof(LinkedList));
 	lst->object_byte_size = object_byte_size;
-	lst->length = 0;
+	lst->size = 0;
 	lst->head = NULL;
 	return lst;
 }
 
 unsigned int linkedlist_count(LinkedList* lst) {
-	return lst->length;
+	return lst->size;
 }
 
 bool linkedlist_contains(LinkedList* lst, void* value, unsigned int compare_function(void*, void*)) {
@@ -42,7 +42,7 @@ void linkedlist_add(LinkedList* lst, void* value) {
 		while (pointer->next != NULL) pointer = pointer->next;
 		pointer->next = linkedlistnode_init(lst, value);
 	}
-	lst->length++;
+	lst->size++;
 }
 
 bool linkedlist_remove(LinkedList* lst, void* value) {
@@ -67,7 +67,7 @@ bool linkedlist_remove(LinkedList* lst, void* value) {
 	return true;
 }
 void* linkedlist_get(LinkedList* lst, unsigned int index) {
-	if (index >= lst->length) return NULL;
+	if (index >= lst->size) return NULL;
 	LinkedListNode* pointer = lst->head;
 	while (index-- > 0) pointer = pointer->next;
 	return pointer->value;
@@ -80,13 +80,13 @@ void linkedlist_push(LinkedList* lst, void* value) {
 	LinkedListNode* temp = lst->head;
 	lst->head = linkedlistnode_init(lst, value);
 	lst->head->next = temp;
-	lst->length++;
+	lst->size++;
 }
 void* linkedlist_pop(LinkedList* lst) {
 	if (lst->head == NULL) return NULL;
 	LinkedListNode* temp = lst->head;
 	lst->head = lst->head->next;
-	lst->length--;
+	lst->size--;
 	return temp->value;
 }
 void* linkedlist_peek(LinkedList* lst) {
@@ -95,7 +95,7 @@ void* linkedlist_peek(LinkedList* lst) {
 // Stack
 
 void linkedlist_print(LinkedList* lst, void (*print)(void*)) {
-	printf("LIST(%d items): ", lst->length);
+	printf("LIST(%d items): ", lst->size);
 	LinkedListNode* pointer = lst->head;
 	while (pointer != NULL) {
 		print(pointer->value);
@@ -108,7 +108,7 @@ void linkedlist_print(LinkedList* lst, void (*print)(void*)) {
 
 void linkedlist_free(LinkedList* list, void free_function(void*)){
 	LinkedListNode* temp;
-	while (list->length) {
+	while (list->size) {
 		temp = linkedlist_pop(list);
 		free_function(temp->value);
 	}

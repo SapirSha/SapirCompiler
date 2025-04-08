@@ -12,7 +12,7 @@ typedef struct LinkedListNode {
 typedef struct LinkedList {
 	LinkedListNode* head;
 	unsigned int object_byte_size;
-	unsigned int length;
+	unsigned int size;
 } LinkedList;
 
 LinkedList* linkedlist_init(unsigned int object_byte_size);

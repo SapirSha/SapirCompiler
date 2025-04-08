@@ -463,7 +463,7 @@ void compute_follow() {
                         // add to last symbol's follows, the current rule's follows
                         HashSet* LastSymbolSet = hashmap_get(follow, current_symbol);
                         HashSet* currentFollow = hashmap_get(follow, currentrule_nonterminal);
-                        changed |= hashset_add_hashset(LastSymbolSet, currentFollow);
+                        changed |= hashset_union(LastSymbolSet, currentFollow);
                     }
                 }
             }
@@ -773,10 +773,10 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_FOR= %d\n", associationArray[TOKEN_FOR]);
     associationArray[TOKEN_CHANGE] = find_column_of_terminal_in_table("change");
     printf("TOKEN_CHANGE= %d\n", associationArray[TOKEN_CHANGE]);
-    //associationArray[TOKEN_PRINT] = find_column_of_terminal_in_table("print");
-    //printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
-    //associationArray[TOKEN_GET] = find_column_of_terminal_in_table("get");
-    //printf("TOKEN_GET= %d\n", associationArray[TOKEN_GET]);
+    associationArray[TOKEN_PRINT] = find_column_of_terminal_in_table("print");
+    printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
+    associationArray[TOKEN_GET] = find_column_of_terminal_in_table("get");
+    printf("TOKEN_GET= %d\n", associationArray[TOKEN_GET]);
     associationArray[TOKEN_RETURNS] = find_column_of_terminal_in_table("returns");
     printf("TOKEN_RETURNS= %d\n", associationArray[TOKEN_RETURNS]);
     associationArray[TOKEN_GETS] = find_column_of_terminal_in_table("gets");
@@ -789,8 +789,8 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_COMMA= %d\n", associationArray[TOKEN_COMMA]);
     associationArray[TOKEN_CALL] = find_column_of_terminal_in_table("call");
     printf("TOKEN_CALL= %d\n", associationArray[TOKEN_CALL]);
-    associationArray[TOKEN_WITH] = find_column_of_terminal_in_table("with");
-    printf("TOKEN_WITH= %d\n", associationArray[TOKEN_WITH]);
+    //associationArray[TOKEN_WITH] = find_column_of_terminal_in_table("with");
+    //printf("TOKEN_WITH= %d\n", associationArray[TOKEN_WITH]);
     associationArray[TOKEN_RETURN] = find_column_of_terminal_in_table("return");
     printf("TOKEN_RETURN= %d\n", associationArray[TOKEN_RETURN]);
     associationArray[TOKEN_OPERATOR_MODULO] = find_column_of_terminal_in_table("%");
@@ -835,8 +835,9 @@ void add_rules() {
     add_rule("STATEMENT", "DO_WHILE_STATEMENT"); //
     add_rule("STATEMENT", "FOR_STATEMENT"); // 
     add_rule("STATEMENT", "FOR_CHANGE_STATEMENT"); //
-    //add_rule("STATEMENT", "PRINT_STATEMENT");
-    //add_rule("STATEMENT", "GET_STATEMENT");
+    add_rule("STATEMENT", "PRINT_STATEMENT");
+    add_rule("STATEMENT", "GET_STATEMENT");
+    add_rule("STATEMENT", "GET_DECLARE_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_RETURN_STATEMENT");
     add_rule("STATEMENT", "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT");
@@ -860,7 +861,7 @@ void add_rules() {
     add_rule("CONDITION", "EXPRESSION >= EXPRESSION");
     add_rule("CONDITION", "EXPRESSION < EXPRESSION");
     add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
-    //add_rule("CONDITION", "identifier");
+    add_rule("CONDITION", "identifier");
     add_rule("CONDITION", "FUNCTION_CALL_STATEMENT");
     add_rule("CONDITION", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
     add_rule("CONDITION", "true");
@@ -928,9 +929,9 @@ void add_rules() {
 
     add_rule("CHANGE_BLOCK", "VARIABLE_ASSIGNMENT_STATEMENT"); //
 
-    //add_rule("PRINT_STATEMENT", "print EXPRESSION");
-    //add_rule("GET_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
-    //add_rule("GET_STATEMENT", "get identifier");
+    add_rule("PRINT_STATEMENT", "print EXPRESSION");
+    add_rule("GET_DECLARE_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
+    add_rule("GET_STATEMENT", "get identifier");
 
     add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST returns VARIABLE_TYPE FUNCTION_BLOCK"); //
     add_rule("FUNCTION_DECLARATION_NO_RETURN_STATEMENT", "function identifier gets PARAMETER_LIST FUNCTION_BLOCK"); //
@@ -947,7 +948,7 @@ void add_rules() {
     add_rule("RETURN_STATEMENT", "return EXPRESSION");
     //add_rule("RETURN_NONE_STATEMENT", "return");
 
-    add_rule("FUNCTION_CALL_STATEMENT", "call identifier with ARGUMENT_LIST");
+    add_rule("FUNCTION_CALL_STATEMENT", "call identifier ( ARGUMENT_LIST )");
     add_rule("FUNCTION_CALL_WITH_NOTHING_STATEMENT", "call identifier");
 
     add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");

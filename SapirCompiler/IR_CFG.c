@@ -17,6 +17,40 @@
 
 static HashMap* ir_visitor = NULL;
 
+unsigned int ir_value_hash(IR_Value* key) {
+	if (key->type == IR_TOKEN) {
+		return string_hash(key->data.token.lexeme);
+	}
+	else if (key->type == IR_BLOCK_ID || key->type == IR_TEMPORARY_ID) {
+		return int_hash(&key->data.num);
+	}
+	else if (key->type == IR_TOKEN_LIST) {
+		return key->data.values_list->object_size * 31 + key->data.values_list->size * 117;
+	}
+	else if (key->type == IR_STR) {
+		return string_hash(key->data.str);
+	}
+}
+
+int ir_value_equals(IR_Value* key1, IR_Value* key2) {
+    if (key1->type != key2->type) {
+        return 0;
+    }
+    switch (key1->type) {
+    case IR_TOKEN:
+        return strcmp(key1->data.token.lexeme, key2->data.token.lexeme) == 0;
+    case IR_BLOCK_ID:
+    case IR_TEMPORARY_ID:
+        return key1->data.num == key2->data.num;
+    case IR_TOKEN_LIST:
+        return arraylist_equals(key1->data.values_list, key2->data.values_list);
+    case IR_STR:
+        return strcmp(key1->data.str, key2->data.str) == 0;
+    default:
+        return 0;
+    }
+}
+
 char* int_to_string(int num) {
     char buffer[20];
     snprintf(buffer, 20, "%d", num);
@@ -25,33 +59,44 @@ char* int_to_string(int num) {
 
 LinkedList* function_exit_blocks = NULL; 
 
+IR_Instruction* createIRInstructionBase() {
+	IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+
+	instr->arg1.type = IR_NULL;
+	instr->arg2.type = IR_NULL;
+	instr->arg3.type = IR_NULL;
+	instr->opcode = IR_NULL;
+	instr->arg1.data.num = 0;
+	instr->arg2.data.num = 0;
+	instr->arg3.data.num = 0;
+
+    instr->is_live = false;
+}
+
 
 IR_Instruction* createRawIRInstruction(const char* text) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_RAW_STRING;
 
     instr->arg1.type = IR_STR;
     instr->arg1.data.str = strdup(text);
 
-    instr->arg2.type = IR_NULL;
-    instr->arg3.type = IR_NULL;
     return instr;
 }
 
 IR_Instruction* createAssignInstruction(Token dest, IR_Value src) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_ASSIGN;
     instr->arg1.type = IR_TOKEN;
     instr->arg1.data.token = dest;
 
     instr->arg2 = src;
 
-    instr->arg3.type = IR_NULL;
     return instr;
 }
 
 IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value left, IR_Value right) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = op;
     
     instr->arg1 = temp;
@@ -59,24 +104,23 @@ IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value 
     instr->arg2 = left;
 
     instr->arg3 = right;
+
     return instr;
 }
 
 IR_Instruction* createDeclareInstruction(Token name) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_DECLARE;
 
 
     instr->arg1.type = IR_TOKEN;
     instr->arg1.data.token = name;
 
-    instr->arg2.type = IR_NULL;
-    instr->arg3.type = IR_NULL;
     return instr;
 }
 
 IR_Instruction* createConditionalInstruction(IR_Opcode op, int temp_id, IR_Value left, IR_Value right) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = op;
 
     instr->arg1.type = IR_TEMPORARY_ID;
@@ -85,11 +129,12 @@ IR_Instruction* createConditionalInstruction(IR_Opcode op, int temp_id, IR_Value
     instr->arg2 = left;
 
     instr->arg3 = right;
+
     return instr;
 }
 
 IR_Instruction* createConditionalBranchInstruction(IR_Value temp_id, int then_id, int after_or_else_id) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_CBR;
     instr->arg1 = temp_id;
 
@@ -98,22 +143,21 @@ IR_Instruction* createConditionalBranchInstruction(IR_Value temp_id, int then_id
 
     instr->arg3.type = IR_BLOCK_ID;
     instr->arg3.data.num = after_or_else_id;
+
     return instr;
 }
 
 IR_Instruction* createFunctionLimitsInstruction(IR_Opcode op, Token name) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = op;
     instr->arg1.type = IR_TOKEN;
     instr->arg1.data.token = name;
     
-    instr->arg2.type = IR_NULL;
-    instr->arg3.type = IR_NULL;
     return instr;
 }
 
 IR_Instruction* createReturnInstruction(const IR_Value ret_val, int end_id) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_RETURN;
     
     instr->arg1 = ret_val;
@@ -121,31 +165,38 @@ IR_Instruction* createReturnInstruction(const IR_Value ret_val, int end_id) {
     instr->arg2.type = IR_BLOCK_ID;
     instr->arg2.data.num = end_id;
 
-    instr->arg3.type = IR_NULL;
     return instr;
 }
 
 IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR_Value dest_temp) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_CALL;
 
     instr->arg1.type = IR_BLOCK_ID;
     instr->arg1.data.num = func_start_id;
 
     instr->arg2.type = IR_TOKEN_LIST;
-    instr->arg2.data.token_list = arg_list;
+    instr->arg2.data.values_list = arg_list;
 
     instr->arg3 = dest_temp;
+
+
     return instr;
 }
 
 IR_Instruction* createJumpInstruction(int block_id) {
-    IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
+    IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_JMP;
     instr->arg1.type = IR_BLOCK_ID;
     instr->arg1.data.num = block_id;
-    instr->arg2.type = IR_NULL;
-    instr->arg3.type = IR_NULL;
+    return instr;
+}
+
+IR_Instruction* createPrintInstruction(IR_Value exp) {
+    IR_Instruction* instr = createIRInstructionBase();
+    instr->opcode = IR_PRINT;
+    instr->arg1 = exp;
+
     return instr;
 }
 
@@ -172,7 +223,8 @@ BasicBlock* createBasicBlock(void) {
     block->instructions = arraylist_init(sizeof(IR_Instruction*), 8);
     block->successors = arraylist_init(sizeof(BasicBlock*), 4);
     block->predecessors = arraylist_init(sizeof(BasicBlock*), 4);
-
+	block->live_in = hashset_create(16, ir_value_hash, ir_value_equals);
+    block->live_out = hashset_create(16, ir_value_hash, ir_value_equals);
 
     return block;
 }
@@ -270,6 +322,7 @@ void find_arguments_for_call(SyntaxTree* tree, BasicBlock** current, ArrayList* 
 
 IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     char* funcName = ast_to_string(exprTree->info.nonterminal_info.children[1]);
+	printf("Function name: %s\n", funcName);
     int found = find_function_index(funcName);
 
     ArrayList* call_arguments = arraylist_init(sizeof(IR_Value), 3);
@@ -279,11 +332,12 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     }
 
     IR_Value temp = newTemp();
-    addIRInstruction(*current, createCallInstruction(
-        functionCFGTable[found].entry->id,
-        call_arguments,
-        temp
-    ));
+    functionCFGTable[found].entry->id;
+	IR_Instruction* instr = 
+        createCallInstruction(functionCFGTable[found].entry->id,
+            call_arguments, temp);
+
+    addIRInstruction(*current, instr);
 
     free(funcName);
 
@@ -634,6 +688,25 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
     return (*get_block_fun(nonterminal))(tree, current);
 }
 
+BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) {
+	IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[1], &current);
+	IR_Instruction* printInstr = createPrintInstruction(exprResult);
+	addIRInstruction(current, printInstr);
+	return current;
+}
+
+BasicBlock* get_decl_block(SyntaxTree* tree, BasicBlock* current) {
+    Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
+    ///
+    return current;
+}
+
+BasicBlock* get_block(SyntaxTree* tree, BasicBlock* current) {
+	IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[3], &current);
+	///
+	return current;
+}
+
 
 static init_ir_visitor() {
 	hashmap_insert(ir_visitor, "STATEMENTS", &statements_block);
@@ -657,6 +730,11 @@ static init_ir_visitor() {
     hashmap_insert(ir_visitor, "WHILE_BLOCK", &block_block);
     hashmap_insert(ir_visitor, "IF_BLOCK", &block_block);
     hashmap_insert(ir_visitor, "FOR_BLOCK", &block_block);
+    hashmap_insert(ir_visitor, "BLOCK", &block_block);
+    hashmap_insert(ir_visitor, "PRINT_STATEMENT", &print_block);
+	hashmap_insert(ir_visitor, "GET_DECLARE_STATEMENT", &get_decl_block);
+	hashmap_insert(ir_visitor, "GET_STATEMENT", &get_block);
+
 }
 
 
@@ -681,7 +759,6 @@ void printIRValue(IR_Value val) {
         printf("null");
         break;
     case IR_TOKEN:
-        
         printf("%d:%s", val.data.token.type, val.data.token.lexeme);
         break;
     case IR_BLOCK_ID:
@@ -692,7 +769,7 @@ void printIRValue(IR_Value val) {
         break;
     case IR_TOKEN_LIST:
         printf("TOKEN_LIST   ");
-        arraylist_print(val.data.token_list, printIRValuePointer);
+        arraylist_print(val.data.values_list, printIRValuePointer);
         break;
     case IR_STR:
         printf("%s", val.data.str);
@@ -732,6 +809,7 @@ const char* opcodeToString(IR_Opcode op) {
     case IR_RETURN:        return "RETURN";
     case IR_CALL:          return "CALL";
     case IR_JMP:           return "JMP";
+    case IR_PRINT:         return "PRINT";
     default:               return "UNKNOWN";
     }
 }
@@ -753,6 +831,8 @@ void printInstruction(IR_Instruction* instr) {
         printf(" | ");
         printIRValue(instr->arg3);
     }
+	printf("Live = %s", instr->is_live ? "true" : "false");
+
     printf("\n");
 }
 
@@ -781,12 +861,20 @@ void printCFG(BasicBlock* block, int* visited) {
     for (int i = 0; i < block->successors->size; i++) {
         printf("%d ", (*(BasicBlock**)block->successors->array[i])->id);
     }
+    printf("\n");
+
+	printf("  Live In: ");
+	hashset_print(block->live_in, printIRValuePointer);
+	printf("  Live Out: ");
+	hashset_print(block->live_out, printIRValuePointer);
+
     printf("\n\n");
 
-    
     for (int i = 0; i < block->successors->size; i++) {
         printCFG((*(BasicBlock**)block->successors->array[i]), visited);
     }
+
+
 }
 
 

@@ -26,6 +26,7 @@ typedef struct {
 typedef struct {
 	IdentifierType identifier_type;
 	char* identifier_name;
+	char* identifier_new_name;
 	Data_Type data_type;
 	void* info;
 } IdentifiersInfo;
@@ -42,7 +43,7 @@ SymbolTable* symbol_table_init();
 void symbol_table_add_scope(SymbolTable* table);
 void symbol_table_remove_scope(SymbolTable* table);
 bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info);
-IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, const char* name);
+IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, const char** name);
 
 
 #endif

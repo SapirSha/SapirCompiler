@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#pragma warning(disable:4996)
+
+int names_id = 1;
+
+
 
 // ADD SCOPE
 Scope* scope_init() {
@@ -36,15 +41,27 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 	if (hashmap_get(scope->identifiers, info->identifier_name) != NULL)
 		return false;
 	hashmap_insert(scope->identifiers, info->identifier_name, info);
+
+	char* code = malloc(8);
+	snprintf(code, strlen(code), "%d", names_id++);
+	info->identifier_new_name = malloc(strlen(info->identifier_name) + strlen(code));
+	strcpy(info->identifier_new_name, info->identifier_name);
+	info->identifier_new_name = strcat(code, info->identifier_new_name);
+
+
 	return true;
 }
 
 // LOOKUP SYMBOL
-IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, const char* name) {
+IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, const char** name) {
 	LinkedListNode* pointer = table->scopes->head;
 	while (pointer != NULL) {
-		if (hashmap_get(((Scope*)pointer->value)->identifiers, name) != NULL)
-			return hashmap_get(((Scope*)pointer->value)->identifiers, name);
+		if (hashmap_get(((Scope*)pointer->value)->identifiers, *name) != NULL) {
+			IdentifiersInfo* info = hashmap_get(((Scope*)pointer->value)->identifiers, *name);
+			*name = info->identifier_new_name;
+
+			return info;
+		}
 
 		pointer = pointer->next;
 	}
