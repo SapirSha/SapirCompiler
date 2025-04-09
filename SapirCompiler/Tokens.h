@@ -76,7 +76,7 @@ typedef enum {
     TOKEN_NOTHING,
     TOKEN_CALL,
     TOKEN_WITH,
-
+    TOKEN_BREAK,
     TOKEN_EOF,
 
     NUM_OF_TOKENS

@@ -3,7 +3,7 @@
 
 #include "IR_CFG.h"
 
-int computeLiveness(BasicBlock* entry);
+BasicBlock* computeLiveness(BasicBlock* entry);
 
 
 

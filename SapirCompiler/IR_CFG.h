@@ -30,6 +30,7 @@ typedef enum {
     IR_CALL,
     IR_JMP,
     IR_PRINT,
+    IR_PARAMETER,
     IT_INST_COUNT
 } IR_Opcode;
 
@@ -39,7 +40,8 @@ typedef enum {
     IR_BLOCK_ID,
     IR_TEMPORARY_ID,
     IR_TOKEN_LIST,
-    IR_STR
+    IR_STR,
+    IR_INT,
 } IR_DataType;
 
 typedef struct IR_Value{

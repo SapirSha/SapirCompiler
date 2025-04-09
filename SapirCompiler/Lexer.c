@@ -196,8 +196,9 @@ void init_finder() {
     stringin_insert_string(token_finder, "nothing", TOKEN_NOTHING);
     stringin_insert_string(token_finder, "call", TOKEN_CALL);
     stringin_insert_string(token_finder, "with", TOKEN_WITH);
+    stringin_insert_string(token_finder, "break", TOKEN_BREAK);
 
-
+    
 
 
 

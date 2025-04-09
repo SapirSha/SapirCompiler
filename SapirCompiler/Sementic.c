@@ -320,6 +320,8 @@ static Data_Type parameter(SyntaxTree* tree) {
 		handle_error("IDENTIFER ALREADY DEFINED");
 	}
 
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+
 
 	char* supposed_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	FunctionInfo* cur_info = ((FunctionInfo*)symbol_table_lookup_symbol(symbol_table, &supposed_name)->info);

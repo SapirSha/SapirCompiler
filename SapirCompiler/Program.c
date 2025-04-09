@@ -32,13 +32,11 @@ void printSTR(char** str) {
 }
 
 int main() {
-    //(call is_divisible_by_2 with num) == true
     const char* code =
-        "int x = 10 "
-        "for int i = 0 while i < 10 { "
-        "    x = i "
+		"function power gets int x, int y returns int{ "
+        "   break "
         "} "
-        "print x "
+        "int result = call power(7, 10) "
         ;
 
     printf("Tokenizing: %s\n", code);
@@ -57,7 +55,9 @@ int main() {
 
     BasicBlock* mainblock = mainCFG(syntax_tree);
 
-    computeLiveness(mainblock);
+    mainblock = computeLiveness(mainblock);
+
+
 
     return 0;
 

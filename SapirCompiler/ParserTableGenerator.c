@@ -803,6 +803,8 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_TRUE= %d\n", associationArray[TOKEN_TRUE]);
     associationArray[TOKEN_FALSE] = find_column_of_terminal_in_table("false");
     printf("TOKEN_FALSE= %d\n", associationArray[TOKEN_FALSE]);
+    associationArray[TOKEN_BREAK] = find_column_of_terminal_in_table("break");
+    printf("TOKEN_BREAK= %d\n", associationArray[TOKEN_BREAK]);
 
 }
 void print_follows() {
@@ -946,7 +948,7 @@ void add_rules() {
     add_rule("FUNCTION_BLOCK", "{ }");
 
     add_rule("RETURN_STATEMENT", "return EXPRESSION");
-    //add_rule("RETURN_NONE_STATEMENT", "return");
+    add_rule("RETURN_NONE_STATEMENT", "break");
 
     add_rule("FUNCTION_CALL_STATEMENT", "call identifier ( ARGUMENT_LIST )");
     add_rule("FUNCTION_CALL_WITH_NOTHING_STATEMENT", "call identifier");

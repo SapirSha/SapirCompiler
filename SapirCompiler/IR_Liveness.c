@@ -16,10 +16,8 @@ static HashSet* seen = NULL;
 HashSet* current_live = NULL;
 HashSet* used_at_all = NULL;
 
+void fill_liveness_queue(BasicBlock* entry) {
 
-
-
-void livness_stack(BasicBlock* entry) {
 	if (hashset_contains(seen, &entry->id)) {
 		return;
 	}
@@ -27,16 +25,15 @@ void livness_stack(BasicBlock* entry) {
 	hashset_insert(seen, &entry->id);
 	for (int i = 0; i < entry->successors->size; i++) {
 		BasicBlock* succ = *(BasicBlock**)entry->successors->array[i];
-		livness_stack(succ);
+		fill_liveness_queue(succ);
 	}
+	
 	queue_enqueue(Blocks, &entry);
 }
 
 bool matters(IR_Value* value) {
-	return true;
-
 	if (value->type == IR_TOKEN) {
-		return true;
+		return value->data.token.type == TOKEN_IDENTIFIER;
 	}
 	else if (value->type == IR_TEMPORARY_ID) {
 		return true;
@@ -50,10 +47,14 @@ bool matters(IR_Value* value) {
 	return false;
 }
 
-
+#define insert_ir_value_to_live(ir_value_pointer) \
+    if (matters(ir_value_pointer)) {\
+	hashset_insert(current_live, ir_value_pointer);  \
+	hashset_insert(used_at_all, ir_value_pointer); }
 
 void handle_instruction(BasicBlock* block, int* index_of_instr) {
 	IR_Instruction* instr = *(IR_Instruction**)block->instructions->array[*index_of_instr];
+	LinkedList* variables;
 	switch (instr->opcode)
 	{
 	case IR_RAW_STRING:
@@ -67,8 +68,7 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		if (hashset_contains(current_live, &instr->arg1)) {
 			hashset_remove(current_live, &instr->arg1);
 			if (matters(&instr->arg2)) {
-				hashset_insert(current_live, &instr->arg2);
-				hashset_insert(used_at_all, &instr->arg2);
+				insert_ir_value_to_live(&instr->arg2);
 			}
 			instr->is_live = true;
 		}
@@ -92,45 +92,38 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 			hashset_remove(current_live, &instr->arg1);
 			// insert use
 			if (matters(&instr->arg2)) {
-				hashset_insert(current_live, &instr->arg2);
-				hashset_insert(used_at_all, &instr->arg2);
+				insert_ir_value_to_live(&instr->arg2);
 			}
 			if (matters(&instr->arg3)) {
-				hashset_insert(current_live, &instr->arg3);
-				hashset_insert(used_at_all, &instr->arg3);
+				insert_ir_value_to_live(&instr->arg3);
 			}
 			instr->is_live = true;
 		}
 		break;
 	case IR_CBR:
 		if (matters(&instr->arg1)) {
-			hashset_insert(current_live, &instr->arg1);
-			hashset_insert(used_at_all, &instr->arg1);
+			insert_ir_value_to_live(&instr->arg1);
 		}
 		instr->is_live = true;
 		break;
 	case IR_FUNC_START:
+
 		instr->is_live = true;
 		break;
 	case IR_FUNC_END:
+
 		instr->is_live = true;
 		break;
 	case IR_RETURN:
 		if (matters(&instr->arg1)) {
-			hashset_insert(current_live, &instr->arg1);
-			hashset_insert(used_at_all, &instr->arg1);
+			insert_ir_value_to_live(&instr->arg1);
 		}
 		instr->is_live = true;
 		break;
 	case IR_CALL:
-		// ok boomer
-
 		for (int i = 0; i < instr->arg2.data.values_list->size; i++) {
-			hashset_insert(current_live, instr->arg2.data.values_list->array[i]);
-			hashset_insert(used_at_all, instr->arg2.data.values_list->array[i]);
+			insert_ir_value_to_live(instr->arg2.data.values_list->array[i]);
 		}
-		printf("HERE\n");
-
 		hashset_remove(current_live, &instr->arg3);
 
 		instr->is_live = true;
@@ -140,10 +133,15 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		break;
 	case IR_PRINT:
 		if (matters(&instr->arg1)) {
-			hashset_insert(current_live, &instr->arg1);
-			hashset_insert(used_at_all, &instr->arg1);
+			insert_ir_value_to_live(&instr->arg1);
 		}
 		instr->is_live = true;
+		break;
+	case IR_PARAMETER:
+		if (hashset_contains(used_at_all, &instr->arg1)) {
+			instr->is_live = true;
+		}
+		hashset_remove(current_live, &instr->arg1);
 		break;
 	default:
 		printf("WRONG %d: \n", instr->opcode);
@@ -215,13 +213,13 @@ void liveness() {
 }
 
 
-int computeLiveness(BasicBlock* entry) {
+BasicBlock* computeLiveness(BasicBlock* entry) {
 	Blocks = queue_init(sizeof(BasicBlock*));
 	seen = hashset_create(32, int_hash, int_equals);
 	current_live = hashset_create(32, ir_value_hash, ir_value_equals);
 	used_at_all = hashset_create(32, ir_value_hash, ir_value_equals);
-
-	livness_stack(entry);
+	
+	fill_liveness_queue(entry);
 	liveness();
 
 
@@ -240,7 +238,7 @@ int computeLiveness(BasicBlock* entry) {
 	free(visited);
 
 
-	return 1;
+	return entry;
 }
 
 

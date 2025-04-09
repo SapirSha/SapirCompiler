@@ -200,6 +200,19 @@ IR_Instruction* createPrintInstruction(IR_Value exp) {
     return instr;
 }
 
+IR_Instruction* createParameterInstruction(Token param, int param_num) {
+    IR_Instruction* instr = createIRInstructionBase();
+    instr->opcode = IR_PARAMETER;
+
+	instr->arg1.type = IR_TOKEN;
+    instr->arg1.data.token = param;
+
+    instr->arg2.type = IR_INT;
+    instr->arg2.data.num = param_num;
+
+    return instr;
+}
+
 static int tempCounter = 0;
 static int newTempCounter() {
     return tempCounter++;
@@ -345,6 +358,8 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     BasicBlock* cont = createBasicBlock();
     addSuccessor(functionCFGTable[found].exit, cont);
 
+    addIRInstruction(*current, createJumpInstruction(cont->id));
+
     *current = cont;
 
     return temp;
@@ -435,6 +450,23 @@ BasicBlock* decl_assignment_block(SyntaxTree* tree, BasicBlock* current) {
     return current;
 }
 
+void lower_parameter(SyntaxTree* tree, BasicBlock* block, int index) {
+	SyntaxTree* param = tree->info.nonterminal_info.children[1];
+	IR_Instruction* ir = createParameterInstruction(param->info.terminal_info.token, index);
+	addIRInstruction(block, ir);
+}
+
+void lower_parameter_list(SyntaxTree* tree, BasicBlock* block, int* param_index) {
+    if (strcmp(tree->info.nonterminal_info.nonterminal, "PARAMETER_LIST") == 0) {
+        lower_parameter_list(tree->info.nonterminal_info.children[0], block, param_index);
+        (*param_index)++;
+
+		lower_parameter(tree->info.nonterminal_info.children[2], block, *param_index);
+    }
+    else {
+        lower_parameter(tree, block, *param_index);
+    }
+}
 
 
 FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
@@ -442,9 +474,18 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
     BasicBlock* entry = createBasicBlock();
     addIRInstruction(entry, createFunctionLimitsInstruction(IR_FUNC_START, funcName));
 
+
+    if (strcmp(tree->info.nonterminal_info.nonterminal, "FUNCTION_DECLARATION_STATEMENT") == 0
+        || strcmp(tree->info.nonterminal_info.nonterminal, "FUNCTION_DECLARATION_NO_RETURN_STATEMENT") == 0) {
+        int num_of_params = 0;
+        lower_parameter_list(tree->info.nonterminal_info.children[3], entry, &num_of_params);
+    }
+    
     BasicBlock* exit = createBasicBlock();
     linkedlist_push(function_exit_blocks, &exit);
     addFunctionCFG(funcName.lexeme, entry, exit);
+
+    
 
     BasicBlock* bodyEnd = buildCFG(tree->info.nonterminal_info.children[tree->info.nonterminal_info.num_of_children - 1], entry);
     addSuccessor(bodyEnd, exit);
@@ -678,14 +719,10 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
     if (!tree)
         return current;
 
-    if (tree->type == TERMINAL_TYPE) {
-        printf("TERMINAL???");
-        addIRInstruction(current, createRawIRInstruction(tree->info.terminal_info.token.lexeme));
-        return current;
-    }
     char* nonterminal = tree->info.nonterminal_info.nonterminal;
 
     return (*get_block_fun(nonterminal))(tree, current);
+
 }
 
 BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) {
@@ -724,6 +761,7 @@ static init_ir_visitor() {
 	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", &function_block);
 	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", &function_block);
 	hashmap_insert(ir_visitor, "RETURN_STATEMENT", &return_block);
+    hashmap_insert(ir_visitor, "break" /* RETURN_NONE_STATEMENT */, &return_block);
     hashmap_insert(ir_visitor, "FUNCTION_CALL_WITH_NOTHING_STATEMENT", &call_block);
     hashmap_insert(ir_visitor, "FUNCTION_CALL_STATEMENT", &call_block);
     hashmap_insert(ir_visitor, "FUNCTION_BLOCK", &block_block);
@@ -746,6 +784,7 @@ const char* irDataTypeToString(IR_DataType type) {
     case IR_TEMPORARY_ID:   return "IR_TEMPORARY_ID";
     case IR_TOKEN_LIST:     return "IR_TOKEN_LIST";
     case IR_STR:            return "IR_STR";
+    case IR_INT:            return "IR_INT";
     default:                return "UNKNOWN";
     }
 }
@@ -773,6 +812,9 @@ void printIRValue(IR_Value val) {
         break;
     case IR_STR:
         printf("%s", val.data.str);
+        break;
+    case IR_INT:
+        printf("%d", val.data.num);
         break;
     default:
         printf("UNKNOWN");
@@ -810,6 +852,7 @@ const char* opcodeToString(IR_Opcode op) {
     case IR_CALL:          return "CALL";
     case IR_JMP:           return "JMP";
     case IR_PRINT:         return "PRINT";
+    case IR_PARAMETER:     return "PARAMETER";
     default:               return "UNKNOWN";
     }
 }
