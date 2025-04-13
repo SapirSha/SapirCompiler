@@ -825,7 +825,9 @@ void print_rules() {
 
 void add_rules() {
     add_rule("PROGRAM", "STATEMENTS"); //
-    add_rule("STATEMENTS", "STATEMENTS STATEMENT"); //
+    add_rule("STATEMENTS", "STATEMENTS STATEMENT");
+    add_rule("STATEMENTS", "STATEMENT"); 
+    add_rule("STATEMENTS", "STATEMENTS STATEMENT");
     add_rule("STATEMENTS", "STATEMENT"); //
     
     add_rule("STATEMENT", "VARIABLE_DECLARATION_STATEMENT"); //
@@ -850,6 +852,7 @@ void add_rules() {
     add_rule("STATEMENT", "RETURN_NONE_STATEMENT");
     add_rule("STATEMENT", "BLOCK");
 
+
     
 
     add_rule("CONDITION_LIST", "CONDITION");
@@ -863,7 +866,6 @@ void add_rules() {
     add_rule("CONDITION", "EXPRESSION >= EXPRESSION");
     add_rule("CONDITION", "EXPRESSION < EXPRESSION");
     add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
-    add_rule("CONDITION", "identifier");
     add_rule("CONDITION", "FUNCTION_CALL_STATEMENT");
     add_rule("CONDITION", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
     add_rule("CONDITION", "true");
@@ -944,8 +946,28 @@ void add_rules() {
     add_rule("PARAMETER_LIST", "PARAMETER");
     add_rule("PARAMETER", "VARIABLE_TYPE identifier");
 
-    add_rule("FUNCTION_BLOCK", "{ STATEMENTS }");
+    add_rule("FUNCTION_BLOCK", "{ FUNCTION_STATEMENTS }");
     add_rule("FUNCTION_BLOCK", "{ }");
+
+    add_rule("FUNCTION_STATEMENTS", "{ FUNCTION_STATEMENTS }");
+    add_rule("FUNCTION_STATEMENTS", "VARIABLE_DECLARATION_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "VARIABLE_ASSIGNMENT_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "IF_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "IF_ELSE_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "WHILE_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "DO_WHILE_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "FOR_STATEMENT"); // 
+    add_rule("FUNCTION_STATEMENTS", "FOR_CHANGE_STATEMENT"); //
+    add_rule("FUNCTION_STATEMENTS", "PRINT_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "GET_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "GET_DECLARE_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "FUNCTION_CALL_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "RETURN_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "RETURN_NONE_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "BLOCK");
+
 
     add_rule("RETURN_STATEMENT", "return EXPRESSION");
     add_rule("RETURN_NONE_STATEMENT", "break");

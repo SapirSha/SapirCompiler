@@ -2,18 +2,13 @@
 #define SEMENTIC_H
 
 #include "SyntaxTree.h"
-#define CURRENT_FUNCTION_SYMBOL "function"
-
-typedef enum {
-	NONE = 0,
-	INT,
-	STRING,
-	BOOL,
-	FLOAT,
-} Data_Type;
-
-
+#include "SymbolTable.h"
+#include <stdlib.h>
+#include "SymbolTable.h"
 
 int sementic_analysis(SyntaxTree* tree);
+
+#define CURRENT_FUNCTION_SYMBOL "function"
+
 
 #endif

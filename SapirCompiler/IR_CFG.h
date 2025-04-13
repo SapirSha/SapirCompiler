@@ -1,14 +1,18 @@
 #ifndef IR_CFG_H
 #define IR_CFG_H
+
 #include "SyntaxTree.h"
 #include "ArrayList.h"
 #include "Tokens.h"
 #include "stdbool.h"
 #include "HashSet.h"
+#include "LinkedList.h"
 
 typedef enum {
     IR_RAW_STRING,
-    IR_DECLARE,
+    IR_GLOBAL_TEMP_SPACE,
+    IR_DECLARE_GLOBAL,
+    IR_DECLARE_LOCAL,
     IR_ASSIGN,
     IR_ADD,
     IR_SUB,
@@ -31,7 +35,8 @@ typedef enum {
     IR_JMP,
     IR_PRINT,
     IR_PARAMETER,
-    IT_INST_COUNT
+    IT_INST_COUNT,
+    OPCODE_LENGTH
 } IR_Opcode;
 
 typedef enum {
@@ -72,6 +77,8 @@ typedef struct BasicBlock {
     HashSet* live_out;
 } BasicBlock;
 BasicBlock* mainBlock;
+
+LinkedList* globalVars;
 
 unsigned int ir_value_hash(IR_Value* key);
 int ir_value_equals(IR_Value* key1, IR_Value* key2);

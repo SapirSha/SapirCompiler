@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ArrayList.c" />
+    <ClCompile Include="CodeGeneration.c" />
     <ClCompile Include="HashMap.c" />
     <ClCompile Include="HashSet.c" />
     <ClCompile Include="IR_CFG.c" />
@@ -149,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayList.h" />
+    <ClInclude Include="CodeGeneration.h" />
     <ClInclude Include="HashMap.h" />
     <ClInclude Include="HashSet.h" />
     <ClInclude Include="IR_CFG.h" />

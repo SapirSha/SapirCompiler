@@ -2,12 +2,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #pragma warning(disable:4996)
 
 int names_id = 1;
 
+int type_to_size(Data_Type type){
+	switch (type)
+	{
+	case INT:
+		return 2;
+	case STRING:
+		return 2;
+	case BOOL:
+		return 1;
+	case FLOAT:
+		return 4;
+	default:
+		break;
+	}
+}
 
+int align_size(int size) {
+	return size >= 2 ? 2 : 1;
+}
+
+
+SymbolInfo* create_new_symbol_info(char* name, Data_Type type, char* og_name) {
+	SymbolInfo* info = malloc(sizeof(SymbolInfo));
+	info->name = name;
+	info->type = type;
+	info->size = type_to_size(type);
+	info->alignment = align_size(info->size);
+	info->origin_name = strdup(og_name);
+
+	return info;
+}
 
 // ADD SCOPE
 Scope* scope_init() {
@@ -24,6 +55,9 @@ void symbol_table_add_scope(SymbolTable* table) {
 SymbolTable* symbol_table_init() {
 	SymbolTable* st = malloc(sizeof(SymbolTable));
 	st->scopes = linkedlist_init(sizeof(Scope));
+	st->SymbolMap = createHashMap(100, string_hash, string_equals);
+	st->TemporaryVarMap = createHashMap(100, int_hash, int_equals);
+	st->temporary_vars_offset = 0;
 	symbol_table_add_scope(st);
 	return st;
 }
@@ -41,13 +75,16 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 	if (hashmap_get(scope->identifiers, info->identifier_name) != NULL)
 		return false;
 	hashmap_insert(scope->identifiers, info->identifier_name, info);
-
+	
 	char* code = malloc(8);
 	snprintf(code, strlen(code), "%d", names_id++);
 	info->identifier_new_name = malloc(strlen(info->identifier_name) + strlen(code));
 	strcpy(info->identifier_new_name, info->identifier_name);
 	info->identifier_new_name = strcat(code, info->identifier_new_name);
 
+	printf("ADDING %s\n", info->identifier_new_name);
+	hashmap_insert(table->SymbolMap, info->identifier_new_name,
+		create_new_symbol_info(info->identifier_new_name, info->data_type, info->identifier_name));
 
 	return true;
 }
@@ -59,11 +96,52 @@ IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, const char** nam
 		if (hashmap_get(((Scope*)pointer->value)->identifiers, *name) != NULL) {
 			IdentifiersInfo* info = hashmap_get(((Scope*)pointer->value)->identifiers, *name);
 			*name = info->identifier_new_name;
-
+			
 			return info;
 		}
 
 		pointer = pointer->next;
 	}
 	return NULL;
+}
+
+
+void print_symbolinfo(SymbolInfo* info) {
+	printf("Variable: name %s", info->name);
+	printf("- size %d ", info->size);
+	printf("- offset %d ", info->offset);
+	printf("- align %d ", info->alignment);
+	printf("- local %d \n", info->local);
+}
+
+void print_symbolinfotemp(TempSymbolInfo* info) {
+	printf("Temp: id %d ", info->id);
+	printf("- size %d ", info->size);
+	printf("- offset %d ", info->offset);
+	printf("- align %d ", info->alignment);
+	printf("- local %d \n", info->local);
+
+}
+
+void print_all_symbols(SymbolTable* table) {
+	printf("START OF SYMBOLS\n");
+
+
+	HashMapNode* cur;
+	for (int i = 0; i < table->SymbolMap->capacity; i++) {
+		cur = table->SymbolMap->buckets[i];
+		while (cur) {
+			print_symbolinfo(cur->value);
+			cur = cur->next;
+		}
+	}
+
+	for (int i = 0; i < table->TemporaryVarMap->capacity; i++) {
+		cur = table->TemporaryVarMap->buckets[i];
+		while (cur) {
+			print_symbolinfotemp(cur->value);
+			cur = cur->next;
+		}
+	}
+	printf("END OF SYMBOLS\n");
 }

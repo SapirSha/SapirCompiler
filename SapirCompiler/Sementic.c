@@ -32,7 +32,6 @@ static char* ast_to_string(SyntaxTree* tree) {
 
 
 #pragma warning(disable:4996)
-SymbolTable* symbol_table = NULL;
 HashMap* ir_visitor = NULL;
 
 
@@ -433,7 +432,7 @@ static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
 
 static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	info->data_type = get_type(tree->info.nonterminal_info.children[3]);
+	info->data_type = NONE;
 	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
 	info->identifier_type = FUNCTION;
 	info->info = NULL;
@@ -455,7 +454,7 @@ static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 
 	info->info = helper_info->info;
 
-	accept(tree->info.nonterminal_info.children[4]);
+	accept(tree->info.nonterminal_info.children[2]);
 	symbol_table_remove_scope(symbol_table);
 
 	free(helper_info);
@@ -470,13 +469,16 @@ static Data_Type return_statement(SyntaxTree* tree) {
 	if (!compatible(info, supposed)) {
 		handle_error("RETURN TYPE MISMATCH");
 	}
+
 	return NONE;
 }
 static Data_Type return_none_statement(SyntaxTree* tree) {
-	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, &CURRENT_FUNCTION_SYMBOL)->data_type;
+	char* supposed_name = strdup(CURRENT_FUNCTION_SYMBOL);
+	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, &supposed_name)->data_type;
 	if (supposed != NONE) {
 		handle_error("RETURN TYPE MISMATCH");
 	}
+	printf(" --------------------------- %d - %d \n", supposed, NONE);
 
 	return NONE;
 }
@@ -574,19 +576,13 @@ static Data_Type block(SyntaxTree* tree) {
 
 
 Data_Type accept(SyntaxTree* tree) {
-	if (tree->type == TERMINAL_TYPE) {
-		return get_type(tree);
-	}
-	else {
-		Data_Type(*pointer)(SyntaxTree*) = hashmap_get(ir_visitor, tree->info.nonterminal_info.nonterminal);
-		if (pointer == NULL) {
-			printf("%s\n\n", tree->info.nonterminal_info.nonterminal);
-			handle_error("NO FUNCTION FOR NONTERMINAL");
-		}
-		else {
-			return pointer(tree);
-		}
-	}
+	Data_Type(*pointer)(SyntaxTree*) = hashmap_get(ir_visitor, tree->info.nonterminal_info.nonterminal);
+	if (pointer != NULL) return pointer(tree);
+
+	if (tree->type == TERMINAL_TYPE) return get_type(tree);
+
+	printf("%s\n\n", tree->info.nonterminal_info.nonterminal);
+	handle_error("NO FUNCTION FOR NONTERMINAL");
 }
 
 Data_Type print_sem(SyntaxTree* tree) {
@@ -650,6 +646,7 @@ void init_visitor() {
 	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", &function_decl_gets_nothing);
 	hashmap_insert(ir_visitor, "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", &function_decl_gets_returns_nothing);
 	hashmap_insert(ir_visitor, "RETURN_STATEMENT", &return_statement);
+	hashmap_insert(ir_visitor, "break", &return_none_statement);
 	hashmap_insert(ir_visitor, "FUNCTION_CALL_WITH_NOTHING_STATEMENT", &function_call_with_nothing);
 	hashmap_insert(ir_visitor, "FUNCTION_CALL_STATEMENT", &function_call);
 	hashmap_insert(ir_visitor, "ARGUMENT_LIST", &arg_list);
@@ -670,6 +667,7 @@ int sementic_analysis(SyntaxTree* tree) {
 	printf("\n\n\n SEMENTICS: \n");
 	ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT, string_hash, string_equals);
 	init_visitor();
+
 
 	symbol_table = symbol_table_init();
 

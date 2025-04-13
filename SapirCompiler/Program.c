@@ -15,6 +15,7 @@
 #include "SyntaxTree.h"
 #include "IR_CFG.h"
 #include "IR_Liveness.h"
+#include "CodeGeneration.h"
 
 
 void printINT(int* e) {
@@ -31,12 +32,12 @@ void printSTR(char** str) {
     printf("%s ", *str);
 }
 
+
+
 int main() {
     const char* code =
-		"function power gets int x, int y returns int{ "
-        "   break "
-        "} "
-        "int result = call power(7, 10) "
+        "string hello = \"HELLO WORLD!\" "
+
         ;
 
     printf("Tokenizing: %s\n", code);
@@ -55,8 +56,9 @@ int main() {
 
     BasicBlock* mainblock = mainCFG(syntax_tree);
 
-    mainblock = computeLiveness(mainblock);
+    //mainblock = computeLiveness(mainblock);
 
+    generate_code(mainblock);
 
 
     return 0;

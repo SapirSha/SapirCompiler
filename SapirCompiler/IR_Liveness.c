@@ -59,7 +59,8 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 	{
 	case IR_RAW_STRING:
 		break;
-	case IR_DECLARE:
+	case IR_DECLARE_GLOBAL:
+	case IR_DECLARE_LOCAL:
 		if (hashset_contains(used_at_all, &instr->arg1)) {
 			instr->is_live = true;
 		}
@@ -142,6 +143,10 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 			instr->is_live = true;
 		}
 		hashset_remove(current_live, &instr->arg1);
+		break;
+	case IT_INST_COUNT:
+	case IR_GLOBAL_TEMP_SPACE:
+		instr->is_live = true;
 		break;
 	default:
 		printf("WRONG %d: \n", instr->opcode);

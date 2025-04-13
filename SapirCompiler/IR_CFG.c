@@ -6,16 +6,86 @@
 #include "Tokens.h"
 #include "SymbolTable.h"
 #include "Sementic.h"
+#include "SymbolTable.h"
 #include "IR_CFG.h"
 #include "LinkedList.h"
 #include "HashMap.h"
 #include "ArrayList.h"
+#include <stdbool.h>
 
 #define NONTERMINAL_COUNT_DEFUALT2 100
 
 #pragma warning(disable:4996)
 
 static HashMap* ir_visitor = NULL;
+
+
+int temporary_size(IR_Value v1, IR_Value v2, IR_Opcode opcode) {
+    SymbolInfo* symbol_info;
+
+    switch (opcode)
+    {
+    case IR_LE:
+    case IR_LT:
+    case IR_EQ:
+    case IR_NE:
+    case IR_GE:
+    case IR_GT:
+    case IR_OR:
+    case IR_AND:
+        return 1;
+    default:
+        break;
+    }
+
+    int size1;
+    if (v1.type == IR_TOKEN) {
+        Token t1 = v1.data.token;
+        switch (t1.type) {
+        case TOKEN_IDENTIFIER:
+            symbol_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, t1.lexeme);
+            size1 = symbol_info->size;
+            break;
+        case TOKEN_NUMBER:
+            size1 = 2;
+            break;
+        case TOKEN_FLOAT_NUMBER:
+            size1 = 4;
+            break;
+        default:
+            printf("%d\n", t1.type);
+            exit(7);
+        }
+    } if (v1.type == IR_TEMPORARY_ID) {
+        TempSymbolInfo* tempinfo = hashmap_get(symbol_table->TemporaryVarMap, &v1.data.num);
+        size1 = tempinfo->size;
+    }
+
+    int size2;
+    if (v2.type == IR_TOKEN) {
+        Token t2 = v2.data.token;
+        switch (t2.type) {
+        case TOKEN_IDENTIFIER:
+            symbol_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, t2.lexeme);
+            size2 = symbol_info->size;
+            break;
+        case TOKEN_NUMBER:
+            size2 = 2;
+            break;
+        case TOKEN_FLOAT_NUMBER:
+            size2 = 4;
+            break;
+        default:
+            exit(7);
+        }
+    } if (v2.type == IR_TEMPORARY_ID) {
+        TempSymbolInfo* tempinfo = hashmap_get(symbol_table->TemporaryVarMap, &v2.data.num);
+        size2 = tempinfo->size;
+    }
+
+    return size1 > size2 ? size1 : size2;
+}
+
 
 unsigned int ir_value_hash(IR_Value* key) {
 	if (key->type == IR_TOKEN) {
@@ -57,6 +127,7 @@ char* int_to_string(int num) {
     return strdup(buffer);
 }
 
+LinkedList* function_entry_blocks = NULL;
 LinkedList* function_exit_blocks = NULL; 
 
 IR_Instruction* createIRInstructionBase() {
@@ -73,6 +144,23 @@ IR_Instruction* createIRInstructionBase() {
     instr->is_live = false;
 }
 
+IR_Instruction* createGlobalTemps() {
+    IR_Instruction* instr = createIRInstructionBase();
+    instr->opcode = IR_GLOBAL_TEMP_SPACE;
+
+    instr->arg1.type = IR_INT;
+    instr->arg1.data.num = 0;
+
+    return instr;
+}
+
+IR_Instruction* setGlobalTemps(IR_Instruction* instr, int size) {
+    instr->arg1.type = IR_INT;
+    instr->arg1.data.num = size;
+
+    return instr;
+}
+
 
 IR_Instruction* createRawIRInstruction(const char* text) {
     IR_Instruction* instr  = createIRInstructionBase();
@@ -80,13 +168,16 @@ IR_Instruction* createRawIRInstruction(const char* text) {
 
     instr->arg1.type = IR_STR;
     instr->arg1.data.str = strdup(text);
-
+    
+    exit(2025);
     return instr;
 }
+
 
 IR_Instruction* createAssignInstruction(Token dest, IR_Value src) {
     IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_ASSIGN;
+
     instr->arg1.type = IR_TOKEN;
     instr->arg1.data.token = dest;
 
@@ -95,12 +186,72 @@ IR_Instruction* createAssignInstruction(Token dest, IR_Value src) {
     return instr;
 }
 
+void setFunctionCurrnetOffsetInstruction(IR_Instruction* instr, int number_of_params) {
+    instr->arg2.type = IR_INT;
+    instr->arg2.data.num = number_of_params;
+}
+
+
 IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value left, IR_Value right) {
     IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = op;
     
     instr->arg1 = temp;
 
+
+    if (function_entry_blocks->size != 0) {
+        IR_Instruction* func_enter =
+            *(IR_Instruction**)
+            ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+        int* pos = malloc(sizeof(int));
+        *pos = func_enter->arg2.data.num;
+
+
+        int size = temporary_size(left, right, op);
+        int align = align_size(size);
+
+        int aligned = (*pos + align - 1) / align * align;
+        int offset = -(aligned + size);
+
+
+
+        TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
+        info->id = temp.data.num;
+        info->size = size;
+        info->alignment = align;
+        info->offset = offset;
+        info->local = 1;
+
+
+        hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
+
+        *pos = aligned + size;
+        setFunctionCurrnetOffsetInstruction(func_enter, *pos);
+    }
+    else {
+
+        int id = temp.data.num;
+        int temp_size = temporary_size(left, right, op);
+        int temp_align = align_size(temp_size);
+
+
+        int aligned = (symbol_table->temporary_vars_offset + temp_align - 1) / temp_align * temp_align;
+        int offset = -(aligned + temp_size);
+        symbol_table->temporary_vars_offset = aligned + temp_size;
+
+        setGlobalTemps(*(IR_Instruction**)mainBlock->instructions->array[0], aligned + temp_size);
+
+        TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
+        info->id = id;
+        info->size = temp_size;
+        info->alignment = temp_align;
+        info->offset = offset;
+        info->local = 0;
+
+        hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
+
+    }
+
     instr->arg2 = left;
 
     instr->arg3 = right;
@@ -108,30 +259,50 @@ IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value 
     return instr;
 }
 
+
+
+
 IR_Instruction* createDeclareInstruction(Token name) {
     IR_Instruction* instr  = createIRInstructionBase();
-    instr->opcode = IR_DECLARE;
+    SymbolInfo* symbol_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, name.lexeme);
 
+    if (function_entry_blocks->size != 0) {
+        instr->opcode = IR_DECLARE_LOCAL;
+
+        IR_Instruction* func_enter =
+            *(IR_Instruction**)
+            ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+        int* pos = malloc(sizeof(int));
+        *pos = func_enter->arg2.data.num;
+
+        symbol_info->local = true;
+        
+        int size = symbol_info->size;
+        int align = symbol_info->alignment;
+        
+        int aligned = (*pos + align - 1) / align * align;   
+        int offset = -(aligned + size);   
+        symbol_info->offset = offset;
+
+        *pos = aligned + size;   
+        setFunctionCurrnetOffsetInstruction(func_enter, *pos);
+    }
+    else {
+        symbol_info->local = false;
+        instr->opcode = IR_DECLARE_GLOBAL;
+
+        linkedlist_push(globalVars, &name);
+    }
 
     instr->arg1.type = IR_TOKEN;
     instr->arg1.data.token = name;
 
-    return instr;
-}
 
-IR_Instruction* createConditionalInstruction(IR_Opcode op, int temp_id, IR_Value left, IR_Value right) {
-    IR_Instruction* instr  = createIRInstructionBase();
-    instr->opcode = op;
-
-    instr->arg1.type = IR_TEMPORARY_ID;
-    instr->arg1.data.num = temp_id;
-
-    instr->arg2 = left;
-
-    instr->arg3 = right;
 
     return instr;
 }
+
+
 
 IR_Instruction* createConditionalBranchInstruction(IR_Value temp_id, int then_id, int after_or_else_id) {
     IR_Instruction* instr  = createIRInstructionBase();
@@ -152,9 +323,15 @@ IR_Instruction* createFunctionLimitsInstruction(IR_Opcode op, Token name) {
     instr->opcode = op;
     instr->arg1.type = IR_TOKEN;
     instr->arg1.data.token = name;
+
+    instr->arg2.type = IR_INT;
+    instr->arg2.data.num = 0;
+    
     
     return instr;
 }
+
+
 
 IR_Instruction* createReturnInstruction(const IR_Value ret_val, int end_id) {
     IR_Instruction* instr  = createIRInstructionBase();
@@ -204,11 +381,30 @@ IR_Instruction* createParameterInstruction(Token param, int param_num) {
     IR_Instruction* instr = createIRInstructionBase();
     instr->opcode = IR_PARAMETER;
 
-	instr->arg1.type = IR_TOKEN;
-    instr->arg1.data.token = param;
+    IR_Instruction* func_enter =
+        *(IR_Instruction**)
+        ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+    int* pos = malloc(sizeof(int));
+    *pos = func_enter->arg2.data.num;
 
-    instr->arg2.type = IR_INT;
-    instr->arg2.data.num = param_num;
+    SymbolInfo* symbol_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, param.lexeme);
+
+    int size = symbol_info->size;
+    int align = symbol_info->alignment;
+
+    int aligned = (*pos + align - 1) / align * align;
+    int offset = -(aligned + size);
+    symbol_info->offset = offset;
+    *pos = aligned + size;
+
+    setFunctionCurrnetOffsetInstruction(func_enter, *pos);
+
+    instr->arg1.type = IR_INT;
+    instr->arg1.data.num = offset;
+
+
+    instr->arg2.type = IR_TOKEN;
+    instr->arg2.data.token = param;
 
     return instr;
 }
@@ -259,6 +455,7 @@ typedef struct {
     char* name;
     BasicBlock* entry;
     BasicBlock* exit;
+    int num_of_params;
 } FunctionCFGEntry;
 
 FunctionCFGEntry* functionCFGTable = NULL;
@@ -269,6 +466,7 @@ void addFunctionCFG(const char* name, BasicBlock* entry, BasicBlock* exit) {
     functionCFGTable[functionCFGCount].name = strdup(name);
     functionCFGTable[functionCFGCount].entry = entry;
     functionCFGTable[functionCFGCount].exit = exit;
+    functionCFGTable[functionCFGCount].num_of_params = 0;
     functionCFGCount++;
 }
 
@@ -415,6 +613,7 @@ BasicBlock* return_block(SyntaxTree* tree, BasicBlock* current) {
     else {
         retVal.type = IR_NULL;
     }
+
     BasicBlock* exitBlock = *(BasicBlock**)(linkedlist_peek(function_exit_blocks));
     IR_Instruction* retInstr = createReturnInstruction(retVal, exitBlock->id);
     addIRInstruction(current, retInstr);
@@ -436,6 +635,7 @@ BasicBlock* assignment_block(SyntaxTree* tree, BasicBlock* current) {
 BasicBlock* decl_block(SyntaxTree* tree, BasicBlock* current) {
     Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     addIRInstruction(current, createDeclareInstruction(name));
+
     return current;
 }
 
@@ -446,6 +646,13 @@ BasicBlock* decl_assignment_block(SyntaxTree* tree, BasicBlock* current) {
     IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[3], &current);
     IR_Instruction* assignInstr = createAssignInstruction(name, exprResult);
     addIRInstruction(current, assignInstr);
+
+    if (functionCFGCount != 0) {
+        functionCFGTable[functionCFGCount - 1].num_of_params++;
+    }
+    else {
+
+    }
 
     return current;
 }
@@ -472,7 +679,10 @@ void lower_parameter_list(SyntaxTree* tree, BasicBlock* block, int* param_index)
 FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
     Token funcName = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     BasicBlock* entry = createBasicBlock();
-    addIRInstruction(entry, createFunctionLimitsInstruction(IR_FUNC_START, funcName));
+    linkedlist_push(function_entry_blocks, &entry);
+
+    IR_Instruction* entry_instr = createFunctionLimitsInstruction(IR_FUNC_START, funcName);
+    addIRInstruction(entry, entry_instr);
 
 
     if (strcmp(tree->info.nonterminal_info.nonterminal, "FUNCTION_DECLARATION_STATEMENT") == 0
@@ -483,6 +693,7 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
     
     BasicBlock* exit = createBasicBlock();
     linkedlist_push(function_exit_blocks, &exit);
+    int function_index = functionCFGCount;
     addFunctionCFG(funcName.lexeme, entry, exit);
 
     
@@ -492,6 +703,10 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
 
     addIRInstruction(exit, createFunctionLimitsInstruction(IR_FUNC_END, funcName));
     linkedlist_pop(function_exit_blocks);
+    linkedlist_pop(function_entry_blocks);
+
+
+
 
     FunctionCFGEntry* fc = (FunctionCFGEntry*)malloc(sizeof(FunctionCFGEntry));
     fc->name = strdup(funcName.lexeme);
@@ -830,7 +1045,8 @@ void printIRValuePointer(IR_Value* val) {
 const char* opcodeToString(IR_Opcode op) {
     switch (op) {
     case IR_RAW_STRING:    return "RAW_STRING";
-    case IR_DECLARE:       return "DECLARE";
+    case IR_DECLARE_GLOBAL:       return "DECLARE-GLOBAL";
+    case IR_DECLARE_LOCAL:       return "DECLARE-LOCAL";
     case IR_ASSIGN:        return "ASSIGN";
     case IR_ADD:           return "ADD";
     case IR_SUB:           return "SUB";
@@ -853,6 +1069,7 @@ const char* opcodeToString(IR_Opcode op) {
     case IR_JMP:           return "JMP";
     case IR_PRINT:         return "PRINT";
     case IR_PARAMETER:     return "PARAMETER";
+    case IR_GLOBAL_TEMP_SPACE:return "TEMP_SPACE";
     default:               return "UNKNOWN";
     }
 }
@@ -932,13 +1149,21 @@ void printFunctionCFG() {
     }
 }
 
+void printTOKEN3(Token* token) {
+    printf("T%d:L%s", token->type, token->lexeme);
+}
+
 BasicBlock* mainCFG(SyntaxTree* tree) {
     ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT2, string_hash, string_equals);
     init_ir_visitor();
+    globalVars = linkedlist_init(sizeof(Token));
 
     function_exit_blocks = linkedlist_init(sizeof(BasicBlock*));
-
+    function_entry_blocks = linkedlist_init(sizeof(BasicBlock*));
     mainBlock = createBasicBlock();
+    addIRInstruction(mainBlock, createGlobalTemps());
+
+
     buildCFG(tree, mainBlock);
     int maxBlocks = next_block_id;
     int* visited = calloc(maxBlocks, sizeof(int));
@@ -946,5 +1171,10 @@ BasicBlock* mainCFG(SyntaxTree* tree) {
     free(visited);
     printf("-------------------------------------------------------------\n");
     printFunctionCFG();
+
+    print_all_symbols(symbol_table);
+    linkedlist_print(globalVars, printTOKEN3);
+
+
     return mainBlock;
 }
