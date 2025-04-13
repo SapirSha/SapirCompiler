@@ -9,8 +9,11 @@
 #define DEFAULT_OFFSET -2
 #define SIZE_OF_BOOLEAN 1
 
+HashMap* symbol_map;
+HashMap* temp_map;
+
 char* outputcode(char* str) {
-	printf("\t%s\n", str);
+	printf("%s\n", str);
 }
 
 char* get_number_str(int num) {
@@ -207,7 +210,7 @@ char* get_access_name(IR_Value* val) {
 	if (val->type == IR_TOKEN) {
 		Token t = val->data.token;
 		if (t.type == TOKEN_IDENTIFIER) {
-			SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, t.lexeme);
+			SymbolInfo* info = hashmap_get(symbol_map, t.lexeme);
 			if (info) {
 				char* size_pointer = size_to_size_name_pointer(info->size);
 				if (info->local) {
@@ -225,11 +228,11 @@ char* get_access_name(IR_Value* val) {
 	}
 	else if(val->type == IR_TEMPORARY_ID){
 		int id = val->data.num;
-		TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &id);
+		TempSymbolInfo* info = hashmap_get(temp_map, &id);
 
 		if (appoint_name(id) == -1) {
 			char* size_pointer = size_to_size_name_pointer(info->size);
-			TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &id);
+			TempSymbolInfo* info = hashmap_get(temp_map, &id);
 			snprintf(str, MAX_IDENTIFIER, "%s BP[%s] ", size_pointer, get_number_str(info->offset));
 		}
 		else {
@@ -247,15 +250,17 @@ char* get_access_name(IR_Value* val) {
 void handle_global_vars() {
 	Token* cur;
 	static char declaration[100];
+	outputcode("DATA SEGMENT");
 	while (globalVars->size != 0) {
 		cur = (Token*)linkedlist_pop(globalVars);
-		SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, cur->lexeme);
+		SymbolInfo* info = hashmap_get(symbol_map, cur->lexeme);
 		char* name = info->origin_name;
 		char* size_name = size_to_size_name_data_seg(info->size);
 		snprintf(declaration, 100, "%s %s 0", name, size_name);
 
 		outputcode(declaration);
 	}
+	outputcode("DATA ENDS");
 }
 
 void handle_global_temps(BasicBlock* main) {
@@ -325,7 +330,7 @@ void handle_add_sub_or_and_instr(IR_Instruction* instr) {
 		char* left_access = get_access_name(&instr->arg2);
 		char* right_access = get_access_name(&instr->arg3);
 
-		TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &instr->arg1.data.num);
+		TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 		int size = info->size;
 
 		char* temp_access = get_register_name(appoint_register(appointment, instr->arg1.data.num), size);
@@ -355,7 +360,7 @@ void handle_add_sub_or_and_instr(IR_Instruction* instr) {
 		char* right_access = get_access_name(&instr->arg3);
 		int appointment = try_to_appoint_register(instr->arg1.data.num);
 		char* temp_access = get_access_name(&instr->arg1);
-		TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &instr->arg1.data.num);
+		TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 		int size = info->size;
 
 
@@ -384,7 +389,7 @@ void handle_mul_div_instr(IR_Instruction* instr) {
 	char* right_access;
 	char* temp_access;
 
-	TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &instr->arg1.data.num);
+	TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 	int size = info->size;
 
 	if (
@@ -424,7 +429,7 @@ void handle_mod_instr(IR_Instruction* instr) {
 	char* right_access;
 	char* temp_access;
 
-	TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &instr->arg1.data.num);
+	TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 	int size = info->size;
 
 	if (
@@ -464,7 +469,7 @@ void handle_condition_instr(IR_Instruction* instr) {
 
 	char* jmp_condition = opcode_to_action[instr->opcode];
 
-	TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &instr->arg1.data.num);
+	TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 	int size = info->size;
 
 	if (
@@ -542,7 +547,7 @@ void handle_end_instr(IR_Instruction* instr) {
 
 void release_register(int register_id) {
 	int temp_id = available[register_id];
-	TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &temp_id);
+	TempSymbolInfo* info = hashmap_get(temp_map, &temp_id);
 	
 	snprintf(main_str_buffer, ONEHUNDRED, "MOV BP[%s]", get_number_str(info->offset));
 	outputcode(main_str_buffer);
@@ -575,14 +580,14 @@ void handle_func_end_instr(IR_Instruction* instr) {
 	snprintf(main_str_buffer, 100, "ADD SP, %d", reserve_space);
 	outputcode(main_str_buffer);
 
-	outputcode("PUSH BP");
+	outputcode("POP BP");
 	int params_space = instr->arg3.data.num;
 	snprintf(main_str_buffer, 100, "RET %d", params_space);
 	outputcode(main_str_buffer);
 }
 
 void handle_parameter_instr(IR_Instruction* instr) {
-	SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, instr->arg2.data.token.lexeme);
+	SymbolInfo* info = hashmap_get(symbol_map, instr->arg2.data.token.lexeme);
 	char* size_pointer = size_to_size_name_pointer(info->size);
 	snprintf(main_str_buffer, 100, "MOV %s, %s BP[%s]", get_register_name(AX_REGISTER, info->size), size_pointer, get_number_str( -info->offset - DEFAULT_OFFSET));
 	outputcode(main_str_buffer);
@@ -614,7 +619,7 @@ void handle_call_instr(IR_Instruction* instr) {
 			if (t.type == TOKEN_IDENTIFIER) {
 				char* access_name = get_access_name(cur);
 
-				SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, t.lexeme);
+				SymbolInfo* info = hashmap_get(symbol_map, t.lexeme);
 				if (info->size == 1) {
 					outputcode("XOR AH, AH");
 					snprintf(main_str_buffer, 100, "MOV AL, %s", get_register_name(AX_REGISTER,info->size), access_name);
@@ -642,7 +647,7 @@ void handle_call_instr(IR_Instruction* instr) {
 		else if (cur->type == IR_TEMPORARY_ID) {
 			char* access_name = get_access_name(cur);
 
-			SymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &cur->data.num);
+			SymbolInfo* info = hashmap_get(temp_map, &cur->data.num);
 			if (info->size == 1) {
 				outputcode("XOR AH, AH");
 				snprintf(main_str_buffer, 100, "MOV AL, %s", get_register_name(AX_REGISTER, info->size), access_name);
@@ -666,7 +671,7 @@ void handle_call_instr(IR_Instruction* instr) {
 	outputcode(main_str_buffer);
 
 	// ASIGN TEMP, AX
-	TempSymbolInfo* temp_info = hashmap_get(symbol_table->TemporaryVarMap, &temp_dest_id);
+	TempSymbolInfo* temp_info = hashmap_get(temp_map, &temp_dest_id);
 	if (temp_info->size == 2) {
 		appoint_register(AX_REGISTER, temp_dest_id);
 	}
@@ -781,11 +786,28 @@ void do_the_thing_with_ds_and_ax() {
 	outputcode("MOV DS, AX");
 }
 
+void init_stack() {
+	outputcode("STACK_SEG SEGMENT");
+	outputcode("DW 1000h");
+	outputcode("STACK_SEG ENDS");
+}
+
+void assume() {
+	outputcode("ASSUME CS : CODE, DS : DATA, SS : STACK_SEG");
+}
+
 void generate_code(BasicBlock* entry) {
-	printf("\n\n\nGENERATE CODE START:\n\n");
+	printf("\n\n\n\n");
+	symbol_map = symbol_table->SymbolMap;
+	temp_map = symbol_table->TemporaryVarMap;
+
 	init_registers();
 	handle_global_vars();
-	printf("\n\n\n");
+	init_stack();
+
+	outputcode("CODE SEGMENT");
+
+	assume();
 	do_the_thing_with_ds_and_ax();
 	handle_global_temps(entry);
 
@@ -794,5 +816,8 @@ void generate_code(BasicBlock* entry) {
 	traverse_cfg(entry, visitor);
 	free(visitor);
 
-	printf("\n\nGENERATE CODE END.\n");
+	outputcode("CODE ENDS");
+	outputcode("END START");
+
+
 }

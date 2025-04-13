@@ -36,10 +36,10 @@ void printSTR(char** str) {
 
 int main() {
     const char* code =
-        "function add gets int x, int y returns int{ "
-        "   return x + y "
-        "}"
-        "int res = call add(7, 8)"
+        "function mul gets int x, int y returns int{"
+        "   return x * y"
+        "} "
+        "int result = call mul(8,7)"
         ;
 
     printf("Tokenizing: %s\n", code);

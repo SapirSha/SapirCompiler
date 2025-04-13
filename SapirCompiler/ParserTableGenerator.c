@@ -1002,22 +1002,12 @@ int create_parser_tables() {
 
     set_nonterminals_position();
 
-    printf("\nTerminals: ");
-    arraylist_print(terminalsList, print_string_arraylist);
-    printf("\nNonterminals: ");
-    arraylist_print(nonterminalsList, print_string_arraylist);
-    printf("\n\n");
-
 
     init_tables();
 
     compute_follow();
 
-    print_follows();
-
     build_parsing_tables();
-
-    print_parsing_tables();
 
     createAssociationMap();
 
