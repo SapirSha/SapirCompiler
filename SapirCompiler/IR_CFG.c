@@ -186,9 +186,21 @@ IR_Instruction* createAssignInstruction(Token dest, IR_Value src) {
     return instr;
 }
 
+IR_Instruction* createEndInstruction() {
+    IR_Instruction* instr = createIRInstructionBase();
+    instr->opcode = IR_END;
+
+    return instr;
+}
+
 void setFunctionCurrnetOffsetInstruction(IR_Instruction* instr, int number_of_params) {
     instr->arg2.type = IR_INT;
     instr->arg2.data.num = number_of_params;
+}
+
+void setFunctionParamOffsetInstruction(IR_Instruction* instr, int number_of_params) {
+    instr->arg3.type = IR_INT;
+    instr->arg3.data.num = number_of_params;
 }
 
 
@@ -324,7 +336,10 @@ IR_Instruction* createFunctionLimitsInstruction(IR_Opcode op, Token name) {
     instr->arg1.type = IR_TOKEN;
     instr->arg1.data.token = name;
 
-    instr->arg2.type = IR_INT;
+    instr->arg2.type = IR_INT; // space
+    instr->arg2.data.num = 0;
+
+    instr->arg2.type = IR_INT; // space for params
     instr->arg2.data.num = 0;
     
     
@@ -333,7 +348,7 @@ IR_Instruction* createFunctionLimitsInstruction(IR_Opcode op, Token name) {
 
 
 
-IR_Instruction* createReturnInstruction(const IR_Value ret_val, int end_id) {
+IR_Instruction* createReturnInstruction(IR_Value ret_val, int end_id) {
     IR_Instruction* instr  = createIRInstructionBase();
     instr->opcode = IR_RETURN;
     
@@ -356,6 +371,16 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
     instr->arg2.data.values_list = arg_list;
 
     instr->arg3 = dest_temp;
+
+
+    int size = 2; // function return type
+
+    TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
+    info->id = dest_temp.data.num;
+    info->size = size;
+    info->local = 1;
+    hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
+
 
 
     return instr;
@@ -398,6 +423,7 @@ IR_Instruction* createParameterInstruction(Token param, int param_num) {
     *pos = aligned + size;
 
     setFunctionCurrnetOffsetInstruction(func_enter, *pos);
+    setFunctionParamOffsetInstruction(func_enter, *pos);
 
     instr->arg1.type = IR_INT;
     instr->arg1.data.num = offset;
@@ -701,7 +727,19 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
     BasicBlock* bodyEnd = buildCFG(tree->info.nonterminal_info.children[tree->info.nonterminal_info.num_of_children - 1], entry);
     addSuccessor(bodyEnd, exit);
 
-    addIRInstruction(exit, createFunctionLimitsInstruction(IR_FUNC_END, funcName));
+    IR_Instruction* func_enter =
+        *(IR_Instruction**)
+        ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+    int space = func_enter->arg2.data.num;
+    int params_space = func_enter->arg3.data.num;
+
+    IR_Instruction* end_instr = createFunctionLimitsInstruction(IR_FUNC_END, funcName);
+    setFunctionCurrnetOffsetInstruction(end_instr, space);
+    setFunctionParamOffsetInstruction(end_instr, params_space);
+
+    addIRInstruction(exit, end_instr);
+
+
     linkedlist_pop(function_exit_blocks);
     linkedlist_pop(function_entry_blocks);
 
@@ -716,29 +754,23 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
 }
 
 BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
-    BasicBlock* condBlock = createBasicBlock();
-
-    printf("CURRENT -- %d \n", current->id);
-    addSuccessor(current, condBlock);
-    addIRInstruction(current, createJumpInstruction(condBlock->id));
-
     BasicBlock* thenBlock = createBasicBlock();
     BasicBlock* then_start = thenBlock;
     thenBlock = buildCFG(tree->info.nonterminal_info.children[2], thenBlock);
 
     BasicBlock* mergeBlock = createBasicBlock();
 
-    addSuccessor(condBlock, then_start);
-    addSuccessor(condBlock, mergeBlock);
+    addSuccessor(current, then_start);
+    addSuccessor(current, mergeBlock);
     addSuccessor(thenBlock, mergeBlock);
 
-    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &current);
 
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
         then_start->id,
         mergeBlock->id);
 
-    addIRInstruction(condBlock, cbrInstr);
+    addIRInstruction(current, cbrInstr);
 
     addIRInstruction(thenBlock, createJumpInstruction(mergeBlock->id));
 
@@ -746,9 +778,6 @@ BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
 }
 
 BasicBlock* if_else_block(SyntaxTree* tree, BasicBlock* current) {
-    BasicBlock* condBlock = createBasicBlock();
-    addSuccessor(current, condBlock);
-    addIRInstruction(current, createJumpInstruction(condBlock->id));
 
     BasicBlock* thenBlock = createBasicBlock();
     BasicBlock* then_start = thenBlock;
@@ -760,16 +789,16 @@ BasicBlock* if_else_block(SyntaxTree* tree, BasicBlock* current) {
     elseBlock = buildCFG(tree->info.nonterminal_info.children[4], elseBlock);
     BasicBlock* mergeBlock = createBasicBlock();
 
-    addSuccessor(condBlock, then_start);
-    addSuccessor(condBlock, else_start);
+    addSuccessor(current, then_start);
+    addSuccessor(current, else_start);
     addSuccessor(thenBlock, mergeBlock);
     addSuccessor(elseBlock, mergeBlock);
 
-    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &condBlock);
+    IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &current);
     IR_Instruction* cbrInstr = createConditionalBranchInstruction(condTemp,
         then_start->id,
         else_start->id);
-    addIRInstruction(condBlock, cbrInstr);
+    addIRInstruction(current, cbrInstr);
 
     addIRInstruction(thenBlock, createJumpInstruction(mergeBlock->id));
     addIRInstruction(elseBlock, createJumpInstruction(mergeBlock->id));
@@ -937,7 +966,6 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
     char* nonterminal = tree->info.nonterminal_info.nonterminal;
 
     return (*get_block_fun(nonterminal))(tree, current);
-
 }
 
 BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) {
@@ -1070,6 +1098,7 @@ const char* opcodeToString(IR_Opcode op) {
     case IR_PRINT:         return "PRINT";
     case IR_PARAMETER:     return "PARAMETER";
     case IR_GLOBAL_TEMP_SPACE:return "TEMP_SPACE";
+    case IR_END:           return "TEMP_SPACE";
     default:               return "UNKNOWN";
     }
 }
@@ -1164,7 +1193,9 @@ BasicBlock* mainCFG(SyntaxTree* tree) {
     addIRInstruction(mainBlock, createGlobalTemps());
 
 
-    buildCFG(tree, mainBlock);
+    BasicBlock* last = buildCFG(tree, mainBlock);
+    addIRInstruction(last, createEndInstruction());
+
     int maxBlocks = next_block_id;
     int* visited = calloc(maxBlocks, sizeof(int));
     printCFG(mainBlock, visited);

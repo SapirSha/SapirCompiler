@@ -146,6 +146,7 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		break;
 	case IT_INST_COUNT:
 	case IR_GLOBAL_TEMP_SPACE:
+	case IR_END:
 		instr->is_live = true;
 		break;
 	default:

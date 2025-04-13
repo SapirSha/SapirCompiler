@@ -36,8 +36,10 @@ void printSTR(char** str) {
 
 int main() {
     const char* code =
-        "string hello = \"HELLO WORLD!\" "
-
+        "function add gets int x, int y returns int{ "
+        "   return x + y "
+        "}"
+        "int res = call add(7, 8)"
         ;
 
     printf("Tokenizing: %s\n", code);

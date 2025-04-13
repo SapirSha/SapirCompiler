@@ -10,31 +10,32 @@
 
 typedef enum {
     IR_RAW_STRING,
-    IR_GLOBAL_TEMP_SPACE,
-    IR_DECLARE_GLOBAL,
-    IR_DECLARE_LOCAL,
-    IR_ASSIGN,
-    IR_ADD,
-    IR_SUB,
-    IR_MUL,
-    IR_DIV,
-    IR_MOD,
-    IR_LT,
-    IR_LE,
-    IR_GT,
-    IR_GE,
-    IR_EQ,
-    IR_NE,
-    IR_AND,
-    IR_OR,
-    IR_CBR,
+    IR_GLOBAL_TEMP_SPACE, //
+    IR_DECLARE_GLOBAL,//
+    IR_DECLARE_LOCAL,//
+    IR_ASSIGN,//
+    IR_ADD,//
+    IR_SUB,//
+    IR_MUL,//
+    IR_DIV,//
+    IR_MOD,//
+    IR_LT,//
+    IR_LE,//
+    IR_GT,//
+    IR_GE,//
+    IR_EQ,//
+    IR_NE,//
+    IR_AND,//
+    IR_OR,//
+    IR_CBR,//
     IR_FUNC_START,
     IR_FUNC_END,
     IR_RETURN,
     IR_CALL,
-    IR_JMP,
+    IR_JMP,//
     IR_PRINT,
     IR_PARAMETER,
+    IR_END, //
     IT_INST_COUNT,
     OPCODE_LENGTH
 } IR_Opcode;

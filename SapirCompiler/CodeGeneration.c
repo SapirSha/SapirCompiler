@@ -6,11 +6,22 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define DEFUALT_OFFSET -2
+#define DEFAULT_OFFSET -2
 #define SIZE_OF_BOOLEAN 1
 
 char* outputcode(char* str) {
-	printf("%s\n", str);
+	printf("\t%s\n", str);
+}
+
+char* get_number_str(int num) {
+	static char number[100];
+	char* prefix;
+	if (num >= 0)
+		prefix = "+";
+	else prefix = "";
+
+	snprintf(number, 100, "%s%d", prefix, num);
+	return number;
 }
 
 typedef enum {
@@ -19,7 +30,7 @@ typedef enum {
 	SI,
 	DI,
 	AVAILABLE_REG,
-	//
+	// Below This Are not usable as temps
 	AX,
 	DX,
 	SP,
@@ -33,7 +44,7 @@ typedef enum {
 } Register;
 
 
-int available[AVAILABLE_REG];
+int available[AMOUNT_OF_REGISTERS];
 
 char* get_register_name(int register_id, int size) {
 	switch (size) {
@@ -96,8 +107,9 @@ int appoint_register(int register_id, int temp_id) {
 	available[register_id] = temp_id;
 }
 
+
 int appoint_name(int temp_id) {
-	for (int i = 0; i < AVAILABLE_REG; i++) {
+	for (int i = 0; i < AMOUNT_OF_REGISTERS; i++) {
 		if (available[i] == temp_id) {
 			return i;
 		}
@@ -111,7 +123,9 @@ void free_register(int temp_id) {
 }
 
 char* create_label(int block_id) {
-
+	char* label_buffer = malloc(sizeof(char) * 20);
+	snprintf(label_buffer, 20, "BLOCK%d", block_id);
+	return label_buffer;
 }
 
 int yes_counter = 0;
@@ -178,18 +192,30 @@ char* get_instant_name(Token_Types tt, char* lexeme) {
 }
 
 #define MAX_IDENTIFIER 100
+int is_instant_value(IR_Value* val) {
+	if (val->type == IR_TOKEN) {
+		Token t = val->data.token;
+		if (t.type == TOKEN_IDENTIFIER) {
+		}
+		else return 1;
+	}
+	return 0;
+}
+
 char* get_access_name(IR_Value* val) {
 	char* str = malloc(sizeof(MAX_IDENTIFIER));
 	if (val->type == IR_TOKEN) {
 		Token t = val->data.token;
 		if (t.type == TOKEN_IDENTIFIER) {
 			SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, t.lexeme);
-			char* size_pointer = size_to_size_name_pointer(info->size);
-			if (info->local) {
-				snprintf(str, MAX_IDENTIFIER, "%s BP[%d]", size_pointer,  info->offset + DEFUALT_OFFSET);
-			}
-			else {
-				snprintf(str, MAX_IDENTIFIER, "%s", info->origin_name);
+			if (info) {
+				char* size_pointer = size_to_size_name_pointer(info->size);
+				if (info->local) {
+					snprintf(str, MAX_IDENTIFIER, "%s BP[%s] ", size_pointer, get_number_str(info->offset));
+				}
+				else {
+					snprintf(str, MAX_IDENTIFIER, "%s", info->origin_name);
+				}
 			}
 		}
 		else {
@@ -204,7 +230,7 @@ char* get_access_name(IR_Value* val) {
 		if (appoint_name(id) == -1) {
 			char* size_pointer = size_to_size_name_pointer(info->size);
 			TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &id);
-			snprintf(str, MAX_IDENTIFIER, "%s BP[%d]", size_pointer, info->offset);
+			snprintf(str, MAX_IDENTIFIER, "%s BP[%s] ", size_pointer, get_number_str(info->offset));
 		}
 		else {
 			char* register_name = get_register_name(appoint_name(id), info->size);
@@ -212,7 +238,7 @@ char* get_access_name(IR_Value* val) {
 		}
 	}
 	else {
-		exit(997);
+		snprintf(str, MAX_IDENTIFIER, "WHAT --------------------------------------- %d", val->type);
 	}
 
 	return str;
@@ -226,7 +252,7 @@ void handle_global_vars() {
 		SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, cur->lexeme);
 		char* name = info->origin_name;
 		char* size_name = size_to_size_name_data_seg(info->size);
-		snprintf(declaration, strlen(name) + strlen(size_name) + 5, "%s %s 0", name, size_name);
+		snprintf(declaration, 100, "%s %s 0", name, size_name);
 
 		outputcode(declaration);
 	}
@@ -235,7 +261,9 @@ void handle_global_vars() {
 void handle_global_temps(BasicBlock* main) {
 	static char global_temp[25];
 	IR_Instruction* global_temps_instr = *(IR_Instruction**)main->instructions->array[0];
-	snprintf(global_temp, 25, "ADD SP, %d ", global_temps_instr->arg1.data.num);
+	outputcode("MOV BP, SP");
+	snprintf(global_temp, 25, "SUB SP, %d", global_temps_instr->arg1.data.num);
+
 	outputcode(global_temp);
 }
 
@@ -479,6 +507,178 @@ void handle_condition_instr(IR_Instruction* instr) {
 
 }
 
+void handle_branch_instr(IR_Instruction* instr) {
+	char* condition_access = get_access_name(&instr->arg1);;
+	if(is_instant_value(&instr->arg1)) {
+		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX_REGISTER, 2), "1");
+		outputcode(main_str_buffer);
+		condition_access = get_register_name(AX_REGISTER, 2);
+	}
+
+	char* block1 = create_label(instr->arg2.data.num);
+	char* block2 = create_label(instr->arg3.data.num);
+
+	snprintf(main_str_buffer, ONEHUNDRED, "TEST %s, %s ", condition_access, "1");
+	outputcode(main_str_buffer);
+
+	snprintf(main_str_buffer, ONEHUNDRED, "JNZ %s ", block1);
+	outputcode(main_str_buffer);
+
+	snprintf(main_str_buffer, ONEHUNDRED, "JMP %s ", block2);
+	outputcode(main_str_buffer);
+
+}
+
+void handle_jump_instr(IR_Instruction* instr) {
+	char* block_name = create_label(instr->arg1.data.num);
+
+	snprintf(main_str_buffer, ONEHUNDRED, "JMP %s ", block_name);
+	outputcode(main_str_buffer);
+}
+void handle_end_instr(IR_Instruction* instr) {
+	outputcode("MOV AX, 4C00H");
+	outputcode("INT 21H");
+}
+
+void release_register(int register_id) {
+	int temp_id = available[register_id];
+	TempSymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &temp_id);
+	
+	snprintf(main_str_buffer, ONEHUNDRED, "MOV BP[%s]", get_number_str(info->offset));
+	outputcode(main_str_buffer);
+}
+
+void release_all_registers() {
+	for (int i = 0; i < AVAILABLE_REG; i++) {
+		if (available[i] != -1) {
+			release_register(i);
+			available[i] = -1;
+			return i;
+		}
+	}
+	return -1;
+}
+
+void handle_func_start_instr(IR_Instruction* instr) {
+	release_all_registers();
+	outputcode("PUSH BP");
+	outputcode("MOV BP, SP");
+
+	int reserve_space = instr->arg2.data.num;
+	snprintf(main_str_buffer, 100, "SUB SP, %d",  reserve_space);
+	outputcode(main_str_buffer);
+
+}
+
+void handle_func_end_instr(IR_Instruction* instr) {
+	int reserve_space = instr->arg2.data.num;
+	snprintf(main_str_buffer, 100, "ADD SP, %d", reserve_space);
+	outputcode(main_str_buffer);
+
+	outputcode("PUSH BP");
+	int params_space = instr->arg3.data.num;
+	snprintf(main_str_buffer, 100, "RET %d", params_space);
+	outputcode(main_str_buffer);
+}
+
+void handle_parameter_instr(IR_Instruction* instr) {
+	SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, instr->arg2.data.token.lexeme);
+	char* size_pointer = size_to_size_name_pointer(info->size);
+	snprintf(main_str_buffer, 100, "MOV %s, %s BP[%s]", get_register_name(AX_REGISTER, info->size), size_pointer, get_number_str( -info->offset - DEFAULT_OFFSET));
+	outputcode(main_str_buffer);
+	snprintf(main_str_buffer, 100, "MOV BP[%s], %s", get_number_str(info->offset), get_register_name(AX_REGISTER, info->size));
+	outputcode(main_str_buffer);
+}
+
+void handle_return_instr(IR_Instruction* instr) {
+	int end_id = instr->arg2.data.num;
+	char* access_ret_value = get_access_name(&instr->arg1);
+	char* end_block_label = create_label(end_id);
+
+	snprintf(main_str_buffer, 100, "MOV %s, %s", get_register_name(AX_REGISTER, 2), access_ret_value);
+	outputcode(main_str_buffer);
+
+	snprintf(main_str_buffer, 100, "JMP %s", end_block_label);
+	outputcode(main_str_buffer);
+}
+
+void handle_call_instr(IR_Instruction* instr) {
+	int dest_block_id = instr->arg3.data.num;
+	ArrayList* arguments = instr->arg2.data.values_list;
+	int temp_dest_id = instr->arg1.data.num;
+
+	for (int i = arguments->size - 1; i >= 0; i--) {
+		IR_Value* cur = arguments->array[i];
+		if (cur->type == IR_TOKEN) {
+			Token t = cur->data.token;
+			if (t.type == TOKEN_IDENTIFIER) {
+				char* access_name = get_access_name(cur);
+
+				SymbolInfo* info = hashmap_get(symbol_table->SymbolMap, t.lexeme);
+				if (info->size == 1) {
+					outputcode("XOR AH, AH");
+					snprintf(main_str_buffer, 100, "MOV AL, %s", get_register_name(AX_REGISTER,info->size), access_name);
+					outputcode(main_str_buffer);
+					outputcode("PUSH AX");
+				}
+				else if (info->size == 2) {
+					snprintf(main_str_buffer, 100, "PUSH %s", access_name);
+					outputcode(main_str_buffer);
+				}
+				else {
+					exit(-920);
+				}
+				
+			}
+			else if (is_instant_value(cur)) {
+				char* access_name = get_access_name(cur);
+				snprintf(main_str_buffer, 100, "PUSH %s ", access_name);
+				outputcode(main_str_buffer);
+			}
+			else {
+				exit(-921);
+			}
+		}
+		else if (cur->type == IR_TEMPORARY_ID) {
+			char* access_name = get_access_name(cur);
+
+			SymbolInfo* info = hashmap_get(symbol_table->TemporaryVarMap, &cur->data.num);
+			if (info->size == 1) {
+				outputcode("XOR AH, AH");
+				snprintf(main_str_buffer, 100, "MOV AL, %s", get_register_name(AX_REGISTER, info->size), access_name);
+				outputcode(main_str_buffer);
+				outputcode("PUSH AX");
+			}
+			else if (info->size == 2) {
+				snprintf(main_str_buffer, 100, "PUSH %s", access_name);
+				outputcode(main_str_buffer);
+			}
+			else {
+				exit(-920);
+			}
+		}
+
+	}
+	
+
+	char* function_label = create_label(dest_block_id);
+	snprintf(main_str_buffer, 100, "CALL %s ", function_label);
+	outputcode(main_str_buffer);
+
+	// ASIGN TEMP, AX
+	TempSymbolInfo* temp_info = hashmap_get(symbol_table->TemporaryVarMap, &temp_dest_id);
+	if (temp_info->size == 2) {
+		appoint_register(AX_REGISTER, temp_dest_id);
+	}
+	else if (temp_info->size == 0) {
+		outputcode("XOR AH, AH");
+		appoint_register(AX_REGISTER, temp_dest_id);
+	}
+	else {
+		exit(-922);
+	}
+}
+
 
 void handle_block_instruction(IR_Instruction* instr) {
 	switch (instr->opcode)
@@ -492,24 +692,51 @@ void handle_block_instruction(IR_Instruction* instr) {
 	case IR_OR:
 		handle_add_sub_or_and_instr(instr);
 		break;
-		case IR_MUL:
-		case IR_DIV:
-			handle_mul_div_instr(instr);
- 		   break;
+	case IR_MUL:
+	case IR_DIV:
+		handle_mul_div_instr(instr);
+		break;
 	case IR_MOD:
 		handle_mod_instr(instr);
 		break;
-case IR_LT:
-case IR_LE:
-case IR_GT:
-case IR_GE:
-case IR_EQ:
-case IR_NE:
-	handle_condition_instr(instr);
-	break;
+	case IR_LT:
+	case IR_LE:
+	case IR_GT:
+	case IR_GE:
+	case IR_EQ:
+	case IR_NE:
+		handle_condition_instr(instr);
+		break;
+	case IR_CBR:
+		handle_branch_instr(instr);
+		break;
+	case IR_JMP:
+		handle_jump_instr(instr);
+		break;
+	case IR_FUNC_START:
+		handle_func_start_instr(instr);
+		break;
+	case IR_FUNC_END:
+		handle_func_end_instr(instr);
+		break;
+	case IR_RETURN:
+		handle_return_instr(instr);
+		break;
+	case IR_CALL:
+		handle_call_instr(instr);
+		break;
 	case IR_DECLARE_GLOBAL:
 	case IR_DECLARE_LOCAL:
+	case IR_GLOBAL_TEMP_SPACE:
+		break;
+	case IR_PARAMETER:
+		handle_parameter_instr(instr);
+		break;
+	case IR_END:
+		handle_end_instr(instr);
+		break;
 	default:
+		printf("UNKNOWN INSTR\n");
 		break;
 	}
 }
@@ -521,11 +748,24 @@ void traverse_instructions(BasicBlock* block) {
 	}
 }
 
+void print_label_start(char* block_label) {
+	snprintf(main_str_buffer, ONEHUNDRED, "%s:", block_label);
+	outputcode(main_str_buffer);
+}
 void traverse_cfg(BasicBlock* entry, int* visitor) {
 	if (visitor[entry->id] == 1) return;
 	else visitor[entry->id] = 1;
 
+	char* block_label;
+	block_label = create_label(entry->id);
+
+	print_label_start(block_label);
+
 	traverse_instructions(entry);
+
+	for (int i = 0; i < entry->successors->size; i++) {
+		traverse_cfg(*(BasicBlock**)entry->successors->array[i], visitor);
+	}
 }
 
 
@@ -535,21 +775,24 @@ void init_registers() {
 	}
 }
 
+void do_the_thing_with_ds_and_ax() {
+	outputcode("START:");
+	outputcode("MOV AX, DATA");
+	outputcode("MOV DS, AX");
+}
+
 void generate_code(BasicBlock* entry) {
 	printf("\n\n\nGENERATE CODE START:\n\n");
 	init_registers();
-
 	handle_global_vars();
-
-
 	printf("\n\n\n");
-
+	do_the_thing_with_ds_and_ax();
 	handle_global_temps(entry);
+
 
 	int* visitor = calloc(100, sizeof(int));
 	traverse_cfg(entry, visitor);
-
+	free(visitor);
 
 	printf("\n\nGENERATE CODE END.\n");
-
 }
