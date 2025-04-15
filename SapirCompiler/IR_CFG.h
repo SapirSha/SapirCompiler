@@ -34,8 +34,10 @@ typedef enum {
     IR_CALL,
     IR_JMP,//
     IR_PRINT,
+    IR_PRINT_INT,
     IR_PARAMETER,
     IR_END, //
+    IR_GET_INT,
     IT_INST_COUNT,
     OPCODE_LENGTH
 } IR_Opcode;

@@ -265,7 +265,140 @@ void handle_global_vars() {
 
 		outputcode(declaration);
 	}
+	outputcode("INVALID_NUMBER_INPUT DB 0DH, 0AH, 'Input was not a number! Start Over', 0DH, 0AH, '$'");
+	outputcode("NEW_LINE_CHARS DB 0DH, 0AH, '$'");
+	outputcode("NUMBER_OUT_PUT_BUFFER DB 8 DUP(?)");
+
 	outputcode("DATA ENDS");
+}
+
+void out_put_in_out_functions() {
+	outputcode("GETNUM PROC");
+	outputcode("PUSH BX");
+	outputcode("PUSH CX");
+	outputcode("PUSH DX");
+	outputcode("PUSH SI");
+	outputcode("XOR BX, BX");
+	outputcode("XOR CX, CX");
+	outputcode("MOV AH, 1");
+	outputcode("INT 21H");
+	outputcode("CMP AL, '-'");
+	outputcode("JE NEGATIVE_NUMBER_INPUT");
+	outputcode("XOR SI, SI");
+	outputcode("JMP POSITIVE_NUMBER_INPUT");
+	outputcode("NEGATIVE_NUMBER_INPUT:");
+	outputcode("INT 21H");
+	outputcode("MOV SI, 1");
+	outputcode("POSITIVE_NUMBER_INPUT:");
+	outputcode("CMP AL, '+'");
+	outputcode("JNE NUMBER_INPUT_LOOP");
+	outputcode("INT 21H");
+	outputcode("NUMBER_INPUT_LOOP:");
+	outputcode("CMP AL, 0DH");
+	outputcode("JE END_NUMBER_INPUT");
+	outputcode("CMP AL, '0'");
+	outputcode("JB INVALID_NUMBER_INPUT_BLOCK");
+	outputcode("CMP AL, '9'");
+	outputcode("JA INVALID_NUMBER_INPUT_BLOCK");
+	outputcode("MOV CL, AL");
+	outputcode("SUB CL, '0'");
+	outputcode("MOV AX, BX");
+	outputcode("MOV BX, 10");
+	outputcode("MUL BX");
+	outputcode("MOV BX, AX");
+	outputcode("ADD BX, CX");
+	outputcode("MOV AH, 1");
+	outputcode("INT 21H	");
+	outputcode("JMP NUMBER_INPUT_LOOP");
+	outputcode("END_NUMBER_INPUT:");
+	outputcode("MOV AX, BX");
+	outputcode("TEST SI, 1");
+	outputcode("JZ RETURN_FROM_NUMBER_INPUT");
+	outputcode("MOV SI, -1");
+	outputcode("IMUL SI");
+	outputcode("RETURN_FROM_NUMBER_INPUT:");
+	outputcode("POP BX");
+	outputcode("POP CX");
+	outputcode("POP DX");
+	outputcode("POP SI");
+	outputcode("RET");
+	outputcode("INVALID_NUMBER_INPUT_BLOCK:");
+	outputcode("LEA DX, INVALID_NUMBER_INPUT");
+	outputcode("MOV AH, 09H");
+	outputcode("INT 21H");
+	outputcode("POP BX");
+	outputcode("POP CX");
+	outputcode("POP DX");
+	outputcode("POP SI");
+	outputcode("CALL GETNUM");
+	outputcode("RET");
+	outputcode("GETNUM ENDP");
+	//
+	outputcode("PRINTNUM PROC");
+	outputcode("PUSH AX");
+	outputcode("PUSH BX");
+	outputcode("PUSH CX");
+	outputcode("PUSH DX");
+	outputcode("PUSH SI");
+	outputcode("PUSH DI");
+	outputcode("LEA DI, NUMBER_OUT_PUT_BUFFER");
+	outputcode("CMP AX, 8000H");
+	outputcode("JB PRINT_POSITIVE_NUMBER");
+	outputcode("MOV SI, WORD PTR -1");
+	outputcode("IMUL SI");
+	outputcode("MOV BX, AX");
+	outputcode("MOV DL, '-'");
+	outputcode("MOV [DI], DL");
+	outputcode("INC DI");
+	outputcode("JMP PRINT_NEGATIVE_NUMBER");
+	outputcode("PRINT_POSITIVE_NUMBER:");
+	outputcode("MOV BX, AX");
+	outputcode("PRINT_NEGATIVE_NUMBER:");
+	outputcode("CMP BX, 30000");
+	outputcode("JAE LENGTH_MAXIMUM_NUMBER_LENGTH");
+	outputcode("MOV AX, 10");
+	outputcode("MOV CX, 1");
+	outputcode("MOV SI, 10");
+	outputcode("NUMBER_PRINT_LENGTH_LOOP:");
+	outputcode("CMP AX, BX");
+	outputcode("JAE END_NUMBER_PRINT_LENGTH");
+	outputcode("MUL SI");
+	outputcode("INC CX");
+	outputcode("JMP NUMBER_PRINT_LENGTH_LOOP");
+	outputcode("LENGTH_MAXIMUM_NUMBER_LENGTH:");
+	outputcode("MOV CX, 5");
+	outputcode("MOV SI, 10");
+	outputcode("END_NUMBER_PRINT_LENGTH:");
+	outputcode("MOV AX, BX");
+	outputcode("ADD DI, CX");
+	outputcode("MOV BX, DI");
+	outputcode("DEC DI");
+	outputcode("NUMBER_PRINT_LOOP:");
+	outputcode("DIV SI");
+	outputcode("ADD DL, '0'");
+	outputcode("MOV [DI], DL");
+	outputcode("DEC DI");
+	outputcode("XOR DX, DX");
+	outputcode("LOOP NUMBER_PRINT_LOOP");
+	outputcode("END_PRINT_NUMBER:");
+	outputcode("MOV AL, '$'");
+	outputcode("MOV [BX], AL");
+	outputcode("LEA DX, NUMBER_OUT_PUT_BUFFER");
+	outputcode("MOV AH, 09H");
+	outputcode("INT 21H");
+	outputcode("LEA DX, NEW_LINE_CHARS");
+	outputcode("MOV AH, 09H");
+	outputcode("INT 21H");
+	outputcode("POP AX");
+	outputcode("POP BX");
+	outputcode("POP CX");
+	outputcode("POP DX");
+	outputcode("POP SI");
+	outputcode("POP DI");
+	outputcode("RET");
+	outputcode("PRINTNUM ENDP");
+	//
+
 }
 
 void handle_global_temps(BasicBlock* main) {
@@ -308,9 +441,41 @@ void handle_assign_instr(IR_Instruction* instr) {
 		}
 	}
 	else {
-		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX, 2), src);
+		int size1 = 2;
+		int size2 = 2;
+		if (instr->arg1.type == IR_TEMPORARY_ID) {
+			TempSymbolInfo* info = hashmap_get(temp_map, instr->arg1.data.num);
+			size1 = info->size;
+		}
+		else {
+			SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
+			size1 = info->size;
+		}
+
+		if (!is_instant_value(&instr->arg2)) {
+			if (instr->arg1.type == IR_TEMPORARY_ID) {
+				TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
+				size1 = info->size;
+			}
+			else if (instr->arg1.type == IR_TOKEN) {
+				SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
+				size1 = info->size;
+			}
+		}
+		if (!is_instant_value(&instr->arg2)) {
+			if (instr->arg2.type == IR_TEMPORARY_ID) {
+				TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg2.data.num);
+				size2 = info->size;
+			}
+			else if (instr->arg2.type == IR_TOKEN) {
+				SymbolInfo* info = hashmap_get(symbol_map, instr->arg2.data.token.lexeme);
+				size2 = info->size;
+			}
+		}
+
+		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX, size2), src);
 		outputcode(main_str_buffer);
-		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", dest, get_register_name(AX, 2));
+		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", dest, get_register_name(AX, size1));
 		outputcode(main_str_buffer);
 	}
 
@@ -320,8 +485,8 @@ void handle_assign_instr(IR_Instruction* instr) {
 
 char* opcode_to_action[OPCODE_LENGTH] = {
 	[IR_MOD] = "DIV",
-	[IR_MUL] = "MUL",
-	[IR_DIV] = "DIV",
+	[IR_MUL] = "IMUL",
+	[IR_DIV] = "IDIV",
 	[IR_ADD] = "ADD",
 	[IR_SUB] = "SUB",
 	[IR_LE] = "JLE",
@@ -802,7 +967,46 @@ void handle_call_instr(IR_Instruction* instr) {
 	snprintf(main_str_buffer, 100, "MOV BP[%s], %s", get_number_str(temp_info->offset), get_register_name(BX, temp_info->size));
 	outputcode(main_str_buffer);
 }
+void handle_print_int(IR_Instruction* instr) {
+	int size = 2;
+	if (instr->arg1.type == IR_TEMPORARY_ID) {
+		TempSymbolInfo* info = hashmap_get(temp_map, instr->arg1.data.num);
+		size = info->size;
+	}
+	else {
+		SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
+		size = info->size;
+	}
+	char* src_access = get_access_name(&instr->arg1);
+	if (size == 1)
+		outputcode("XOR AH, AH");
 
+	snprintf(main_str_buffer, 100, "MOV %s, %s", get_register_name(AX, size), src_access);
+	outputcode(main_str_buffer);
+	outputcode("CALL PRINTNUM");
+	free(src_access);
+
+}
+
+void handle_get_int(IR_Instruction* instr) {
+	outputcode("CALL GETNUM");
+	
+	int size = 2;
+	if (instr->arg1.type == IR_TEMPORARY_ID) {
+		TempSymbolInfo* info = hashmap_get(temp_map, instr->arg1.data.num);
+		size = info->size;
+	}
+	else {
+		SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
+		size = info->size;
+	}
+	char* src_access = get_access_name(&instr->arg1);
+
+	snprintf(main_str_buffer, 100, "MOV %s, %s", src_access, get_register_name(AX, size));
+	outputcode(main_str_buffer);
+
+	free(src_access);
+}
 
 int handle_block_instruction(IR_Instruction* instr) {
 	switch (instr->opcode)
@@ -858,6 +1062,14 @@ int handle_block_instruction(IR_Instruction* instr) {
 		break;
 	case IR_END:
 		handle_end_instr(instr);
+		break;
+	case IR_PRINT:
+		break; /////////////////////
+	case IR_PRINT_INT:
+		handle_print_int(instr);
+		break;
+	case IR_GET_INT:
+		handle_get_int(instr);
 		break;
 	default:
 		printf("UNKNOWN INSTR\n");
@@ -940,6 +1152,8 @@ void generate_code(BasicBlock* entry) {
 	int* visitor = calloc(100, sizeof(int));
 	traverse_cfg(entry, visitor);
 	free(visitor);
+
+	out_put_in_out_functions();
 
 	outputcode("CODE ENDS");
 	outputcode("END START");

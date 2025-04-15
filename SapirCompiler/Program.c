@@ -38,10 +38,15 @@ int main() {
     const char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
-        "    if y % 2 == 0 return call pow (call pow(x, y/2), 2) "
-        "    return call pow (call pow(x, y/2), 2) * x "
-        "} "
-        "int result = call pow(2, 1) "
+        "    int temp = call pow(x, y/2) "
+        "    if y % 2 == 0 return temp * temp "
+        "    return temp * temp * x "
+        "}  "
+        "get int num1 get int num2 "
+        "int result = call pow(num1, num2) "
+        "print result  "
+        "get num1 "
+        "print num1  "
         ;
 
     printf("Tokenizing: %s\n", code);
@@ -61,7 +66,7 @@ int main() {
 
     BasicBlock* mainblock = mainCFG(syntax_tree);
 
-    //mainblock = computeLiveness(mainblock);
+    mainblock = computeLiveness(mainblock);
 
     generate_code(mainblock);
 

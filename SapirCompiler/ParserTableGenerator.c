@@ -749,18 +749,10 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_ID = %d\n", associationArray[TOKEN_IDENTIFIER]);
     associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
     printf("TOKEN_NUM = %d\n", associationArray[TOKEN_NUMBER]);
-    associationArray[TOKEN_FLOAT_NUMBER] = find_column_of_terminal_in_table("float_number");
-    printf("TOKEN_FLOAT_NUMBER = %d\n", associationArray[TOKEN_FLOAT_NUMBER]);
     associationArray[TOKEN_INT] = find_column_of_terminal_in_table("int");
     printf("TOKEN_INT = %d\n", associationArray[TOKEN_INT]);
-    associationArray[TOKEN_FLOAT] = find_column_of_terminal_in_table("float");
-    printf("TOKEN_FLOAT = %d\n", associationArray[TOKEN_FLOAT]);
-    associationArray[TOKEN_STRING] = find_column_of_terminal_in_table("string");
-    printf("TOKEN_STRING = %d\n", associationArray[TOKEN_STRING]);
     associationArray[TOKEN_CHAR] = find_column_of_terminal_in_table("char");
     printf("TOKEN_CHAR = %d\n", associationArray[TOKEN_CHAR]);
-    //associationArray[TOKEN_SEMICOLON] = find_column_of_terminal_in_table(";");
-    //printf("TOKEN_SEMICOLON = %d\n", associationArray[TOKEN_SEMICOLON]);
     associationArray[TOKEN_ELSE] = find_column_of_terminal_in_table("else");
     printf("TOKEN_ELSE = %d\n", associationArray[TOKEN_ELSE]);
     associationArray[TOKEN_OPERATOR_ASSIGN] = find_column_of_terminal_in_table("=");
@@ -783,14 +775,10 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_GETS= %d\n", associationArray[TOKEN_GETS]);
     associationArray[TOKEN_FUNCTION] = find_column_of_terminal_in_table("function");
     printf("TOKEN_FUNCTION= %d\n", associationArray[TOKEN_FUNCTION]);
-    //associationArray[TOKEN_NOTHING] = find_column_of_terminal_in_table("nothing");
-    //printf("TOKEN_NOTHING= %d\n", associationArray[TOKEN_NOTHING]);
     associationArray[TOKEN_COMMA] = find_column_of_terminal_in_table(",");
     printf("TOKEN_COMMA= %d\n", associationArray[TOKEN_COMMA]);
     associationArray[TOKEN_CALL] = find_column_of_terminal_in_table("call");
     printf("TOKEN_CALL= %d\n", associationArray[TOKEN_CALL]);
-    //associationArray[TOKEN_WITH] = find_column_of_terminal_in_table("with");
-    //printf("TOKEN_WITH= %d\n", associationArray[TOKEN_WITH]);
     associationArray[TOKEN_RETURN] = find_column_of_terminal_in_table("return");
     printf("TOKEN_RETURN= %d\n", associationArray[TOKEN_RETURN]);
     associationArray[TOKEN_OPERATOR_MODULO] = find_column_of_terminal_in_table("%");
@@ -880,8 +868,6 @@ void add_rules() {
     add_rule("FACTOR", "( EXPRESSION )"); //
     add_rule("FACTOR", "identifier");
     add_rule("FACTOR", "number");
-    add_rule("FACTOR", "float_number");
-    add_rule("FACTOR", "string_literal");
     add_rule("FACTOR", "CONDITION_LIST");
     add_rule("FACTOR", "FUNCTION_CALL_STATEMENT");
     add_rule("FACTOR", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
@@ -890,8 +876,6 @@ void add_rules() {
 
     add_rule("VARIABLE_TYPE", "int");
     add_rule("VARIABLE_TYPE", "char");
-    add_rule("VARIABLE_TYPE", "string");
-    add_rule("VARIABLE_TYPE", "float");
     add_rule("VARIABLE_TYPE", "bool");
 
     
@@ -930,9 +914,11 @@ void add_rules() {
 
     add_rule("CHANGE_BLOCK", "VARIABLE_ASSIGNMENT_STATEMENT"); //
 
+    add_rule("PRINT_STATEMENT", "print string_literal");
     add_rule("PRINT_STATEMENT", "print EXPRESSION");
-    add_rule("GET_DECLARE_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
+
     add_rule("GET_STATEMENT", "get identifier");
+    add_rule("GET_DECLARE_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
 
     add_rule("FUNCTION_DECLARATION_STATEMENT", "function identifier gets PARAMETER_LIST returns VARIABLE_TYPE FUNCTION_BLOCK"); //
     add_rule("FUNCTION_DECLARATION_NO_RETURN_STATEMENT", "function identifier gets PARAMETER_LIST FUNCTION_BLOCK"); //

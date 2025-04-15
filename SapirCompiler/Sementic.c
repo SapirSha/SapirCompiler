@@ -182,7 +182,7 @@ static Data_Type decl(SyntaxTree* tree) {
 
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
-	return NONE;
+	return left;
 }
 
 
@@ -586,25 +586,32 @@ Data_Type accept(SyntaxTree* tree) {
 	return NONE;
 }
 
+static char* PRINT_INT_EXPRESSION_CHANGER = "PRINT_INT_EXPRESSION";
 Data_Type print_sem(SyntaxTree* tree) {
 	Data_Type type_of_var = accept(tree->info.nonterminal_info.children[1]);
-	// not string?
+	if (type_of_var == INT) {
+		tree->info.nonterminal_info.nonterminal = PRINT_INT_EXPRESSION_CHANGER;
+	}
+	else if (type_of_var != STRING) {
+		handle_error("INVALID PRINT_TYPE");
+	}
+	return NONE;
+}
+
+Data_Type print_sem_int(SyntaxTree* tree) {
+	Data_Type type_of_var = accept(tree->info.nonterminal_info.children[1]);
+	if (type_of_var != INT) 
+		handle_error("Expected INT in print_int expression");
 
 	return NONE;
 }
-Data_Type get_decl_sementic(SyntaxTree* tree) {
-	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	info->data_type = get_type(tree->info.nonterminal_info.children[1]);
-	// not string?
 
-	info->identifier_name = tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
-	info->identifier_type = VARIABLE;
-	info->info = NULL;
-	bool added = symbol_table_add_symbol(symbol_table, info);
-	if (!added) {
-		handle_error("IDENTIFER ALREADY DEFINED");
+Data_Type get_decl_sementic(SyntaxTree* tree) {
+	Data_Type type = decl(tree->info.nonterminal_info.children[1]);
+	if (type != INT) {
+		handle_error("Only Allowable print is int");
 	}
-	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
+
 	return NONE;
 }
 
@@ -615,7 +622,9 @@ Data_Type get_sementic(SyntaxTree* tree) {
 	}
 	else {
 		Data_Type left = info->data_type;
-		// not string?
+		if (info->data_type != INT) {
+			handle_error("Only Allowable print is int");
+		}
 	}
 	return NONE;
 }
@@ -653,11 +662,13 @@ void init_visitor() {
 	hashmap_insert(ir_visitor, "ARGUMENT_LIST", &arg_list);
 	hashmap_insert(ir_visitor, "IF_BLOCK", &if_block);
 	hashmap_insert(ir_visitor, "WHILE_BLOCK", &while_block);
-	hashmap_insert(ir_visitor, "PRINT_STATEMENT", &print_sem);
 	hashmap_insert(ir_visitor, "GET_DECLARE_STATEMENT", &get_decl_sementic);
 	hashmap_insert(ir_visitor, "GET_STATEMENT", &get_sementic);
 	hashmap_insert(ir_visitor, "FUNCTION_STATEMENTS", &statements);
 	
+	hashmap_insert(ir_visitor, "PRINT_STATEMENT", &print_sem);
+	hashmap_insert(ir_visitor, "PRINT_INT_EXPRESSION", &print_sem_int);
+
 
 
 }

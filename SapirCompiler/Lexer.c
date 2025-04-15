@@ -175,9 +175,6 @@ void init_finder() {
     stringin_insert_string(token_finder, "for", TOKEN_FOR);
 	stringin_insert_string(token_finder, "else", TOKEN_ELSE);
 	stringin_insert_string(token_finder, "char", TOKEN_CHAR);
-	stringin_insert_string(token_finder, "string", TOKEN_STRING);
-    stringin_insert_string(token_finder, "float", TOKEN_FLOAT);
-	stringin_insert_string(token_finder, "double", TOKEN_DOUBLE);
 	stringin_insert_string(token_finder, "void", TOKEN_VOID);
     stringin_insert_string(token_finder, "bool", TOKEN_BOOL);
     stringin_insert_string(token_finder, "true", TOKEN_TRUE);
@@ -188,6 +185,8 @@ void init_finder() {
     stringin_insert_string(token_finder, "until", TOKEN_UNTIL);
     stringin_insert_string(token_finder, "change", TOKEN_CHANGE);
     stringin_insert_string(token_finder, "print", TOKEN_PRINT);
+    stringin_insert_string(token_finder, "print_int", TOKEN_PRINT_INT);
+
     stringin_insert_string(token_finder, "get", TOKEN_GET);
     stringin_insert_string(token_finder, "gets", TOKEN_GETS);
     stringin_insert_string(token_finder, "function", TOKEN_FUNCTION);
@@ -216,27 +215,12 @@ void init_finder() {
     stringin_insert_string(token_finder, "^", TOKEN_OPERATOR_XOR);
     stringin_insert_string(token_finder, "!", TOKEN_OPERATOR_NOT);
 
-    stringin_insert_string(token_finder, "++", TOKEN_OPERATOR_INCREMENT);
-    stringin_insert_string(token_finder, "--", TOKEN_OPERATOR_DECREMENT);
-    stringin_insert_string(token_finder, "+=", TOKEN_OPERATOR_ADD_ASSIGN);
-    stringin_insert_string(token_finder, "-=", TOKEN_OPERATOR_SUB_ASSIGN);
-    stringin_insert_string(token_finder, "*=", TOKEN_OPERATOR_MUL_ASSIGN);
-    stringin_insert_string(token_finder, "/=", TOKEN_OPERATOR_DIV_ASSIGN);
-    stringin_insert_string(token_finder, "%=", TOKEN_OPERATOR_MOD_ASSIGN);
-    stringin_insert_string(token_finder, "&=", TOKEN_OPERATOR_AND_ASSIGN);
-    stringin_insert_string(token_finder, "|=", TOKEN_OPERATOR_OR_ASSIGN);
-    stringin_insert_string(token_finder, "^=", TOKEN_OPERATOR_XOR_ASSIGN);
     stringin_insert_string(token_finder, "!=", TOKEN_OPERATOR_NOT_EQUAL);
     stringin_insert_string(token_finder, ">=", TOKEN_OPERATOR_GREATER_EQUAL);
     stringin_insert_string(token_finder, "<=", TOKEN_OPERATOR_LESS_EQUAL);
-    stringin_insert_string(token_finder, "<<", TOKEN_OPERATOR_LEFT_SHIFT);
-    stringin_insert_string(token_finder, ">>", TOKEN_OPERATOR_RIGHT_SHIFT);
     stringin_insert_string(token_finder, "&&", TOKEN_OPERATOR_ALSO);
     stringin_insert_string(token_finder, "||", TOKEN_OPERATOR_EITHER);
     stringin_insert_string(token_finder, "==", TOKEN_OPERATOR_EQUAL);
-
-
-
 }
 
 void handle_error(const char* input, int* index, ArrayList* token, State* next_state) {

@@ -69,6 +69,7 @@ typedef enum {
     TOKEN_UNTIL,
     TOKEN_CHANGE,
     TOKEN_PRINT,
+    TOKEN_PRINT_INT,
     TOKEN_GET,
     TOKEN_GETS,
     TOKEN_FUNCTION,

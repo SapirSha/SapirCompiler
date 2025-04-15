@@ -447,6 +447,23 @@ IR_Instruction* createPrintInstruction(IR_Value exp) {
     return instr;
 }
 
+IR_Instruction* createPrintIntInstruction(IR_Value exp) {
+    IR_Instruction* instr = createIRInstructionBase();
+    instr->opcode = IR_PRINT_INT;
+    instr->arg1 = exp;
+
+    return instr;
+}
+
+IR_Instruction* createGetIntInstruction(Token exp) {
+    IR_Instruction* instr = createIRInstructionBase();
+    instr->opcode = IR_GET_INT;
+    instr->arg1.type = IR_TOKEN;
+    instr->arg1.data.token = exp;
+
+    return instr;
+}
+
 IR_Instruction* createParameterInstruction(Token param, int param_num) {
     IR_Instruction* instr = createIRInstructionBase();
     instr->opcode = IR_PARAMETER;
@@ -1015,22 +1032,32 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
     return (*get_block_fun(nonterminal))(tree, current);
 }
 
-BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) {
+BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) { // string
 	IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[1], &current);
 	IR_Instruction* printInstr = createPrintInstruction(exprResult);
 	addIRInstruction(current, printInstr);
-	return current;
+	return current; 
+}
+
+BasicBlock* print_int_block(SyntaxTree* tree, BasicBlock* current) {
+    IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[1], &current);
+    IR_Instruction* printInstr = createPrintIntInstruction(exprResult);
+    addIRInstruction(current, printInstr);
+    return current; 
 }
 
 BasicBlock* get_decl_block(SyntaxTree* tree, BasicBlock* current) {
-    Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
-    ///
+    SyntaxTree* var_decl = tree->info.nonterminal_info.children[1];
+    decl_block(var_decl, current);
+    Token name = var_decl->info.nonterminal_info.children[1]->info.terminal_info.token;
+    addIRInstruction(current, createGetIntInstruction(name));
+
     return current;
 }
 
 BasicBlock* get_block(SyntaxTree* tree, BasicBlock* current) {
-	IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[3], &current);
-	///
+    Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
+    addIRInstruction(current, createGetIntInstruction(name));
 	return current;
 }
 
@@ -1062,6 +1089,8 @@ static init_ir_visitor() {
     hashmap_insert(ir_visitor, "PRINT_STATEMENT", &print_block);
 	hashmap_insert(ir_visitor, "GET_DECLARE_STATEMENT", &get_decl_block);
 	hashmap_insert(ir_visitor, "GET_STATEMENT", &get_block);
+    hashmap_insert(ir_visitor, "PRINT_INT_EXPRESSION", &print_int_block);
+
 
 }
 
@@ -1143,6 +1172,7 @@ const char* opcodeToString(IR_Opcode op) {
     case IR_CALL:          return "CALL";
     case IR_JMP:           return "JMP";
     case IR_PRINT:         return "PRINT";
+    case IR_PRINT_INT:     return "PRINT_INT";
     case IR_PARAMETER:     return "PARAMETER";
     case IR_GLOBAL_TEMP_SPACE:return "TEMP_SPACE";
     case IR_END:           return "TEMP_SPACE";
