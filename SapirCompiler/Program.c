@@ -36,10 +36,12 @@ void printSTR(char** str) {
 
 int main() {
     const char* code =
-        "function mul gets int x, int y returns int{"
-        "   return x * y"
+        "function pow gets int x, int y returns int { "
+        "    if y <= 0 return 1  "
+        "    if y % 2 == 0 return call pow (call pow(x, y/2), 2) "
+        "    return call pow (call pow(x, y/2), 2) * x "
         "} "
-        "int result = call mul(8,7)"
+        "int result = call pow(2, 1) "
         ;
 
     printf("Tokenizing: %s\n", code);
@@ -53,7 +55,8 @@ int main() {
 
 
     SyntaxTree* syntax_tree = commit_parser(tokens);
-    
+    free_parser_table();
+
     sementic_analysis(syntax_tree);
 
     BasicBlock* mainblock = mainCFG(syntax_tree);

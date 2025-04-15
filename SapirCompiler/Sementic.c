@@ -583,6 +583,7 @@ Data_Type accept(SyntaxTree* tree) {
 
 	printf("%s\n\n", tree->info.nonterminal_info.nonterminal);
 	handle_error("NO FUNCTION FOR NONTERMINAL");
+	return NONE;
 }
 
 Data_Type print_sem(SyntaxTree* tree) {
@@ -655,8 +656,8 @@ void init_visitor() {
 	hashmap_insert(ir_visitor, "PRINT_STATEMENT", &print_sem);
 	hashmap_insert(ir_visitor, "GET_DECLARE_STATEMENT", &get_decl_sementic);
 	hashmap_insert(ir_visitor, "GET_STATEMENT", &get_sementic);
-
-
+	hashmap_insert(ir_visitor, "FUNCTION_STATEMENTS", &statements);
+	
 
 
 }

@@ -277,9 +277,9 @@ void build_states(const char* startNonterminal) {
     }
 }
 
-
-void print_state(State* s, int index) {
-    printf("State %d:\n", index);
+int counter = 0;
+void print_state(State* s) {
+    printf("State %d:\n", counter++);
     for (int i = 0; i < s->items->size; i++) {
         LRItem* item = arraylist_get(s->items, i);
         printf("  %s -> ", item->rule->nonterminal);
@@ -370,7 +370,7 @@ void init_follow() {
 
 bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* rule) {
     char* next_token = get_nth_token(rule->ruleContent, 0);
-    if (next_token == NULL) return;
+    if (next_token == NULL) return false;
     if (!isNonterminal(next_token)) {
         printf("ADDING to %s : %s\n", nonterminal, next_token);
         return hashset_insert(hashmap_get(follow, nonterminal), next_token);
@@ -495,7 +495,7 @@ int getNonterminalIndex(const char* sym) {
 void init_tables() {
     actionTable = malloc(states->size * sizeof(ActionCell*));
     ActionCell* actionContent = malloc(states->size * terminalsList->size * sizeof(ActionCell));
-    for (unsigned int i = 0; i < states->size; i++)
+    for (int i = 0; i < states->size; i++)
         actionTable[i] = actionContent + i * terminalsList->size;
 
     gotoTable = malloc(states->size * sizeof(int*));
@@ -852,9 +852,6 @@ void add_rules() {
     add_rule("STATEMENT", "RETURN_NONE_STATEMENT");
     add_rule("STATEMENT", "BLOCK");
 
-
-    
-
     add_rule("CONDITION_LIST", "CONDITION");
     add_rule("CONDITION_LIST", "CONDITION_LIST && CONDITION");
     add_rule("CONDITION_LIST", "CONDITION_LIST || CONDITION");
@@ -949,24 +946,26 @@ void add_rules() {
     add_rule("FUNCTION_BLOCK", "{ FUNCTION_STATEMENTS }");
     add_rule("FUNCTION_BLOCK", "{ }");
 
-    add_rule("FUNCTION_STATEMENTS", "{ FUNCTION_STATEMENTS }");
-    add_rule("FUNCTION_STATEMENTS", "VARIABLE_DECLARATION_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "VARIABLE_ASSIGNMENT_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "IF_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "IF_ELSE_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "WHILE_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "DO_WHILE_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "FOR_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "FOR_CHANGE_STATEMENT"); 
-    add_rule("FUNCTION_STATEMENTS", "PRINT_STATEMENT");
-    add_rule("FUNCTION_STATEMENTS", "GET_STATEMENT");
-    add_rule("FUNCTION_STATEMENTS", "GET_DECLARE_STATEMENT");
-    add_rule("FUNCTION_STATEMENTS", "FUNCTION_CALL_STATEMENT");
-    add_rule("FUNCTION_STATEMENTS", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
-    add_rule("FUNCTION_STATEMENTS", "RETURN_STATEMENT");
-    add_rule("FUNCTION_STATEMENTS", "RETURN_NONE_STATEMENT");
-    add_rule("FUNCTION_STATEMENTS", "BLOCK");
+    add_rule("FUNCTION_STATEMENTS", "FUNCTION_STATEMENTS FUNCTION_STATEMENT");
+    add_rule("FUNCTION_STATEMENTS", "FUNCTION_STATEMENT");
+
+    add_rule("FUNCTION_STATEMENT", "VARIABLE_DECLARATION_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "VARIABLE_ASSIGNMENT_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "IF_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "IF_ELSE_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "WHILE_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "DO_WHILE_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "FOR_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "FOR_CHANGE_STATEMENT"); 
+    add_rule("FUNCTION_STATEMENT", "PRINT_STATEMENT");
+    add_rule("FUNCTION_STATEMENT", "GET_STATEMENT");
+    add_rule("FUNCTION_STATEMENT", "GET_DECLARE_STATEMENT");
+    add_rule("FUNCTION_STATEMENT", "FUNCTION_CALL_STATEMENT");
+    add_rule("FUNCTION_STATEMENT", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
+    add_rule("FUNCTION_STATEMENT", "RETURN_STATEMENT");
+    add_rule("FUNCTION_STATEMENT", "RETURN_NONE_STATEMENT");
+    add_rule("FUNCTION_STATEMENT", "BLOCK");
 
 
     add_rule("RETURN_STATEMENT", "return EXPRESSION");
@@ -977,6 +976,8 @@ void add_rules() {
 
     add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
     add_rule("ARGUMENT_LIST", "EXPRESSION");
+
+
 }
 
 void set_nonterminals_position() {
@@ -993,25 +994,27 @@ int create_parser_tables() {
     add_rules();
 
     build_states("PROGRAM");
-    for (int i = 0; i < states->size; i++) {
-        print_state(arraylist_get(states, i), i);
-        printf("\n");
-    }
 
     collect_symbols();
 
     set_nonterminals_position();
 
-
     init_tables();
 
     compute_follow();
+
 
     build_parsing_tables();
 
     createAssociationMap();
 
-    print_rules();
-
     return 0;
+}
+
+void free_parser_table() {
+        free(*actionTable);
+        free(actionTable);
+
+        free(*gotoTable); 
+        free(gotoTable);
 }

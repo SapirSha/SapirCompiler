@@ -100,6 +100,7 @@ unsigned int ir_value_hash(IR_Value* key) {
 	else if (key->type == IR_STR) {
 		return string_hash(key->data.str);
 	}
+    return (int)key * 31;
 }
 
 int ir_value_equals(IR_Value* key1, IR_Value* key2) {
@@ -373,13 +374,57 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
     instr->arg3 = dest_temp;
 
 
-    int size = 2; // function return type
+    if (function_entry_blocks->size != 0) {
+        IR_Instruction* func_enter =
+            *(IR_Instruction**)
+            ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+        int* pos = malloc(sizeof(int));
+        *pos = func_enter->arg2.data.num;
 
-    TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
-    info->id = dest_temp.data.num;
-    info->size = size;
-    info->local = 1;
-    hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
+
+        int size = 2;
+        int align = align_size(size);
+
+        int aligned = (*pos + align - 1) / align * align;
+        int offset = -(aligned + size);
+
+
+
+        TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
+        info->id = dest_temp.data.num;
+        info->size = size;
+        info->alignment = align;
+        info->offset = offset;
+        info->local = 1;
+
+
+        hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
+
+        *pos = aligned + size;
+        setFunctionCurrnetOffsetInstruction(func_enter, *pos);
+    }
+    else {
+
+            int id = dest_temp.data.num;
+            int temp_size = 2;
+            int temp_align = align_size(temp_size);
+
+
+            int aligned = (symbol_table->temporary_vars_offset + temp_align - 1) / temp_align * temp_align;
+            int offset = -(aligned + temp_size);
+            symbol_table->temporary_vars_offset = aligned + temp_size;
+
+            setGlobalTemps(*(IR_Instruction**)mainBlock->instructions->array[0], aligned + temp_size);
+
+            TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
+            info->id = id;
+            info->size = temp_size;
+            info->alignment = temp_align;
+            info->offset = offset;
+            info->local = 0;
+
+            hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
+    }
 
 
 
@@ -726,6 +771,8 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
 
     BasicBlock* bodyEnd = buildCFG(tree->info.nonterminal_info.children[tree->info.nonterminal_info.num_of_children - 1], entry);
     addSuccessor(bodyEnd, exit);
+    addIRInstruction(bodyEnd, createJumpInstruction(exit->id));
+
 
     IR_Instruction* func_enter =
         *(IR_Instruction**)

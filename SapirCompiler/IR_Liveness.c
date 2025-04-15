@@ -139,10 +139,10 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		instr->is_live = true;
 		break;
 	case IR_PARAMETER:
-		if (hashset_contains(used_at_all, &instr->arg1)) {
+		if (hashset_contains(used_at_all, &instr->arg2)) {
 			instr->is_live = true;
 		}
-		hashset_remove(current_live, &instr->arg1);
+		hashset_remove(current_live, &instr->arg2);
 		break;
 	case IT_INST_COUNT:
 	case IR_GLOBAL_TEMP_SPACE:

@@ -126,6 +126,12 @@ SyntaxTree* commit_parser(Queue* tokens) {
         switch (current_action.type) {
 
         case ERROR:
+            printf("Prev Token: ");
+            linkedlist_print(prev_tokens, printTOKEN2);
+            printf("\nNEXT Token: ");
+            queue_print(tokens, printTOKEN2);
+            printf("\n");
+
             printf("ERROR");
             loop = false;
             exit(-1);

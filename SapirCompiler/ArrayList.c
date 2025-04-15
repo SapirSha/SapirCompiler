@@ -104,4 +104,5 @@ bool arraylist_equals(ArrayList* a1, ArrayList* a2) {
     for (int i = 0; i < a1->size; i++) {
         if (memcmp(a1->array[i], a2->array[i], a1->object_size) != 0) return false;
     }
+    return true;
 }

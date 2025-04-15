@@ -19,8 +19,8 @@ typedef struct HashMapNode {
 } HashMapNode;
 
 typedef struct HashMap {
-    unsigned int capacity;
-    unsigned int size;
+    int capacity;
+    int size;
     unsigned int (*hash)(void* key);
     int (*equals)(void* key1, void* key2);
     HashMapNode** buckets;
