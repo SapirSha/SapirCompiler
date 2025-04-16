@@ -16,6 +16,7 @@
 #include "IR_CFG.h"
 #include "IR_Liveness.h"
 #include "CodeGeneration.h"
+#include "ErrorHandler.h"
 
 
 void printINT(int* e) {
@@ -35,10 +36,7 @@ void printSTR(char** str) {
 
 
 int main() {
-    const char* code =
-        "\"wasdwasda@ wasdwasd @\"@";
-    /*
-    const char* code =
+    char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
         "    int temp = call pow(x, y/2) "
@@ -64,7 +62,7 @@ int main() {
         "get int index "
         "int fibo_res = call fibonachi(index) "
         "print fibo_res "
-        
+
         "function is_prime gets int number returns bool{ "
         "   if number <= 0 return false "
         "   if number <= 3 return true  "
@@ -82,16 +80,13 @@ int main() {
         "   print \"Number Is Prime!\"    "
         "else "
         "   print \"Number Is Not Prime!\"    "
-
-
-
         ;
-        */
-    printf("Tokenizing: %s\n", code);
+
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);
+
+    if (current_error_state != NO_ERROR) exit(0);
     
-    /*
     printf("\n\n\n");
     create_parser_tables();
     printf("\n\n\n");
@@ -99,7 +94,7 @@ int main() {
 
     SyntaxTree* syntax_tree = commit_parser(tokens);
     free_parser_table();
-
+    /*
     sementic_analysis(syntax_tree);
 
     BasicBlock* mainblock = mainCFG(syntax_tree);

@@ -87,7 +87,9 @@ void* linkedlist_pop(LinkedList* lst) {
 	LinkedListNode* temp = lst->head;
 	lst->head = lst->head->next;
 	lst->size--;
-	return temp->value;
+	void* value = temp->value;
+	free(temp);
+	return value;
 }
 void* linkedlist_peek(LinkedList* lst) {
 	return lst->head ? lst->head->value : NULL;

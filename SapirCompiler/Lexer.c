@@ -18,6 +18,7 @@ int current_line;
 int current_line_start_compared_to_index;
 int start_line;
 int start_line_col_compared_to_index;
+bool end_reached;
 
 void new_line(int index) {
     current_line++;
@@ -174,6 +175,8 @@ void handle_invalid_char(char c, int index) {
 CharClass get_char_class(char c, int index) {
     if (classifier_lookup[c] == CHAR_INVALID)
         handle_invalid_char(c, index);
+    else if (classifier_lookup[c] == END_OF_INPUT)
+        end_reached = true;
     return classifier_lookup[c];
 }
 
@@ -381,7 +384,7 @@ void handle_start(const char* input, int* index, ArrayList* token, LEXER_STATE* 
         }
         (*index)++;
         CharClass next_input = get_char_class(input[*index], (*index));
-        if (next_input == CHAR_INVALID) { (*index)++;  return; }
+        if (next_input == CHAR_INVALID || next_input == END_OF_INPUT) { (*index)++;  return; }
 
         current = state_table[START][next_input];
 
@@ -406,6 +409,7 @@ void handle_identifier(const char* input, int* index, ArrayList* token, LEXER_ST
 // FSM for tokenization
 Queue* tokenize(const char* input) {
     current_line = 1;
+    end_reached = false;
     current_line_start_compared_to_index = 0;
     LEXER_STATE state = START, next_state;
     ArrayList* token = arraylist_init(sizeof(char), DEFAULT_TOKEN_SIZE);
@@ -414,7 +418,7 @@ Queue* tokenize(const char* input) {
 
     init_finder();
     int i = 0;
-    while (input[i] != '\0') {
+    while (input[i] != '\0' && !end_reached) {
         start_line = current_line;
         start_line_col_compared_to_index = i - current_line_start_compared_to_index + 1;
         CharClass next_input = get_char_class(input[i], i);

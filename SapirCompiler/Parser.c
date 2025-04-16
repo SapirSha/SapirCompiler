@@ -36,8 +36,8 @@ void printINT2(int* in) {
     printf("%d", *in);
 }
 
-void printTOKEN2(Token* token) {
-    printf("Y:%d L:%s", token->type, token->lexeme);
+void printTOKEN2(Token** token) {
+    printf("Y:%d L:%s", (*token)->type, (*token)->lexeme);
 }
 
 static void printAST(SyntaxTree **t) {
@@ -111,7 +111,7 @@ static SyntaxTree* new_terminal_node(Token token) {
 
 SyntaxTree* commit_parser(Queue* tokens) {
 	LinkedList* States = linkedlist_init(sizeof(unsigned int));
-    LinkedList* prev_tokens = linkedlist_init(sizeof(Token));
+    LinkedList* prev_tokens = linkedlist_init(sizeof(Token*));
     LinkedList* prev_nodes = linkedlist_init(sizeof(SyntaxTree*));
 
     linkedlist_push(States, &ZERO);
@@ -126,13 +126,10 @@ SyntaxTree* commit_parser(Queue* tokens) {
         switch (current_action.type) {
 
         case ERROR_ACTION:
-            printf("Prev Token: ");
-            linkedlist_print(prev_tokens, printTOKEN2);
-            printf("\nNEXT Token: ");
-            queue_print(tokens, printTOKEN2);
-            printf("\n");
-
-            printf("ERROR");
+            Token* tk3 = queue_peek(tokens);
+            printTOKEN2(&tk3);
+            printf("SIZE %d\n", tokens->size);
+            printf("\nERROR");
             loop = false;
             exit(-1);
             break;
@@ -144,7 +141,8 @@ SyntaxTree* commit_parser(Queue* tokens) {
 
         case SHIFT:
             linkedlist_push(States, &current_action.value);
-            linkedlist_push(prev_tokens, queue_dequeue(tokens));
+            Token* tk = queue_dequeue(tokens);
+            linkedlist_push(prev_tokens, &tk);
             break;
 
         case REDUCE:
@@ -155,11 +153,12 @@ SyntaxTree* commit_parser(Queue* tokens) {
             char* token = strtok(content, " ");
 
             for (int i = 0; i < reduce_rule->ruleTerminalCount; i++) {
-                linkedlist_pop(States);
+                free(linkedlist_pop(States));
 
                 if (!isNonterminal(token)) {
-                    Token* temp = linkedlist_pop(prev_tokens);
+                    Token* temp = *(Token**)linkedlist_pop(prev_tokens);
                     new_node->info.nonterminal_info.children[i] = new_terminal_node(*temp);
+                    free(temp);
                 }
                 else {
                     new_node->info.nonterminal_info.children[i] = *(SyntaxTree**)linkedlist_pop(prev_nodes);

@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="ArrayList.h" />
     <ClInclude Include="CodeGeneration.h" />
+    <ClInclude Include="Compiler.h" />
     <ClInclude Include="ErrorHandler.h" />
     <ClInclude Include="HashMap.h" />
     <ClInclude Include="HashSet.h" />
