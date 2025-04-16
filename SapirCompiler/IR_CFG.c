@@ -439,10 +439,12 @@ IR_Instruction* createJumpInstruction(int block_id) {
     return instr;
 }
 
-IR_Instruction* createPrintInstruction(IR_Value exp) {
+IR_Instruction* createPrintInstruction(int string_id) {
     IR_Instruction* instr = createIRInstructionBase();
     instr->opcode = IR_PRINT;
-    instr->arg1 = exp;
+
+    instr->arg1.type = IR_INT;
+    instr->arg1.data.num = string_id;
 
     return instr;
 }
@@ -1033,9 +1035,14 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
 }
 
 BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) { // string
-	IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[1], &current);
-	IR_Instruction* printInstr = createPrintInstruction(exprResult);
+    Token src = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
+    linkedlist_add(globalStrings, &src);
+    
+    StringInfo* info = hashmap_get(symbol_table->GlobalStrings, src.lexeme);
+
+    IR_Instruction* printInstr = createPrintInstruction(info->id);
 	addIRInstruction(current, printInstr);
+
 	return current; 
 }
 
@@ -1176,6 +1183,7 @@ const char* opcodeToString(IR_Opcode op) {
     case IR_PARAMETER:     return "PARAMETER";
     case IR_GLOBAL_TEMP_SPACE:return "TEMP_SPACE";
     case IR_END:           return "TEMP_SPACE";
+    case IR_GET_INT:       return "GET_INT";
     default:               return "UNKNOWN";
     }
 }
@@ -1263,6 +1271,7 @@ BasicBlock* mainCFG(SyntaxTree* tree) {
     ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT2, string_hash, string_equals);
     init_ir_visitor();
     globalVars = linkedlist_init(sizeof(Token));
+    globalStrings = linkedlist_init(sizeof(Token));
 
     function_exit_blocks = linkedlist_init(sizeof(BasicBlock*));
     function_entry_blocks = linkedlist_init(sizeof(BasicBlock*));
@@ -1282,7 +1291,6 @@ BasicBlock* mainCFG(SyntaxTree* tree) {
 
     print_all_symbols(symbol_table);
     linkedlist_print(globalVars, printTOKEN3);
-
 
     return mainBlock;
 }

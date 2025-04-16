@@ -100,7 +100,7 @@ static const State state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
     /* IDENTIFIER */      { ERROR,          IDENTIFIER,     IDENTIFIER,     OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
     /* NUMBER */          { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            ERROR,              COMMENT,          SEPARATOR},
     /* OPERATOR */        { ERROR,          KEYWORD,        NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
-    /* STRING_LITERAL */  { ERROR,          STRING_LITERAL, STRING_LITERAL, STRING_LITERAL,  STRING_LITERAL,   START,              STRING_LITERAL,   STRING_LITERAL},
+    /* STRING_LITERAL */  { STRING_LITERAL, STRING_LITERAL, STRING_LITERAL, STRING_LITERAL,  STRING_LITERAL,   START,              STRING_LITERAL,   STRING_LITERAL},
     /* COMMENT */         { ERROR,          COMMENT,        COMMENT,        COMMENT,         COMMENT,          COMMENT,            START,            COMMENT},
     /* SEPARATOR */       { ERROR,          IDENTIFIER,     NUMBER,         OPERATOR,        START,            STRING_LITERAL,     COMMENT,          STRING_LITERAL},
     /* KeyWord */         { ERROR,          KEYWORD,        KEYWORD,        OPERATOR,        START,            STRING_LITERAL,     COMMENT,          SEPARATOR},
@@ -179,10 +179,10 @@ void init_finder() {
     stringin_insert_string(token_finder, "bool", TOKEN_BOOL);
     stringin_insert_string(token_finder, "true", TOKEN_TRUE);
 	stringin_insert_string(token_finder, "false", TOKEN_FALSE);
-    stringin_insert_string(token_finder, "continue", TOKEN_CONTINUE);
-    stringin_insert_string(token_finder, "then", TOKEN_THEN);
+    stringin_insert_string(token_finder, "continue", TOKEN_CONTINUE); //
+    stringin_insert_string(token_finder, "then", TOKEN_THEN); //
     stringin_insert_string(token_finder, "do", TOKEN_DO);
-    stringin_insert_string(token_finder, "until", TOKEN_UNTIL);
+    stringin_insert_string(token_finder, "until", TOKEN_UNTIL); //
     stringin_insert_string(token_finder, "change", TOKEN_CHANGE);
     stringin_insert_string(token_finder, "print", TOKEN_PRINT);
     stringin_insert_string(token_finder, "print_int", TOKEN_PRINT_INT);
@@ -323,7 +323,8 @@ void handle_string_literal(const char* input, int* index, ArrayList* token, Stat
     State current;
     (*index)++;
     while ((current = state_table[STRING_LITERAL][classifier_lookup[input[*index]]]) == STRING_LITERAL) {
-        arraylist_add(token, &input[*index]);
+        if (input[*index] != '\n')
+            arraylist_add(token, &input[*index]);
         (*index)++;
     }
     if (input[*index] == '"') {

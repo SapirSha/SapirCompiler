@@ -133,6 +133,8 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		instr->is_live = true;
 		break;
 	case IR_PRINT:
+		instr->is_live = true;
+		break;
 	case IR_PRINT_INT:
 		if (matters(&instr->arg1)) {
 			insert_ir_value_to_live(&instr->arg1);
@@ -140,9 +142,11 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		instr->is_live = true;
 		break;
 	case IR_GET_INT:
-		if ((hashset_contains(current_live, &instr->arg1))) {
-			instr->is_live = true;
-		}
+		instr->is_live = true;
+
+		//if ((hashset_contains(current_live, &instr->arg1))) {
+		//	instr->is_live = true;
+		//}
 	case IR_PARAMETER:
 		if (hashset_contains(used_at_all, &instr->arg2)) {
 			instr->is_live = true;

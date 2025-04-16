@@ -58,6 +58,7 @@ SymbolTable* symbol_table_init() {
 	st->SymbolMap = createHashMap(100, string_hash, string_equals);
 	st->TemporaryVarMap = createHashMap(100, int_hash, int_equals);
 	st->temporary_vars_offset = 0;
+	st->GlobalStrings = createHashMap(100, string_hash, string_equals);
 	symbol_table_add_scope(st);
 	return st;
 }

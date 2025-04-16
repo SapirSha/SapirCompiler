@@ -9,7 +9,7 @@
 #define NONTERMINAL_COUNT_DEFUALT 100
 
 #pragma warning(disable:4996)
-
+int string_ids = 0;
 
 static char* ast_to_string(SyntaxTree* tree) {
 	if (!tree)
@@ -592,7 +592,21 @@ Data_Type print_sem(SyntaxTree* tree) {
 	if (type_of_var == INT) {
 		tree->info.nonterminal_info.nonterminal = PRINT_INT_EXPRESSION_CHANGER;
 	}
-	else if (type_of_var != STRING) {
+	else if (type_of_var == STRING) {
+		StringInfo* info = malloc(sizeof(StringInfo));
+		info->id = string_ids++;
+		info->tk = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
+		info->size = strlen(info->tk.lexeme);
+		info->local = 0;
+
+		if (hashmap_get(symbol_table->GlobalStrings, info->tk.lexeme) != NULL) {
+			free(info);
+		}
+		else {
+			hashmap_insert(symbol_table->GlobalStrings, info->tk.lexeme, info);
+		}
+	}
+	else {
 		handle_error("INVALID PRINT_TYPE");
 	}
 	return NONE;

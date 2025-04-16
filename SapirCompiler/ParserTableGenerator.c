@@ -953,7 +953,6 @@ void add_rules() {
     add_rule("FUNCTION_STATEMENT", "RETURN_NONE_STATEMENT");
     add_rule("FUNCTION_STATEMENT", "BLOCK");
 
-
     add_rule("RETURN_STATEMENT", "return EXPRESSION");
     add_rule("RETURN_NONE_STATEMENT", "break");
 
@@ -962,8 +961,6 @@ void add_rules() {
 
     add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
     add_rule("ARGUMENT_LIST", "EXPRESSION");
-
-
 }
 
 void set_nonterminals_position() {

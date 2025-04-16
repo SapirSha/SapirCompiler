@@ -54,6 +54,14 @@ typedef struct {
 } TempSymbolInfo;
 
 typedef struct {
+	int id;
+	int size;
+	Token tk;
+
+	int local;
+} StringInfo;
+
+typedef struct {
 	IdentifierType identifier_type;
 	char* identifier_name;
 	char* identifier_new_name;
@@ -71,6 +79,8 @@ typedef struct {
 
 	HashMap* TemporaryVarMap;
 	int temporary_vars_offset;
+
+	HashMap* GlobalStrings;
 }SymbolTable;
 
 int align_size(int size);

@@ -42,11 +42,15 @@ int main() {
         "    if y % 2 == 0 return temp * temp "
         "    return temp * temp * x "
         "}  "
-        "get int num1 get int num2 "
+        "print \"Power Function:\" "
+        "print \"Number to power: \" "
+        "get int num1 "
+        "print \"Power by: \""
+        "get int num2 "
         "int result = call pow(num1, num2) "
-        "print result  "
+        "print \"Result:\" "
+        "print result "
         "get num1 "
-        "print num1  "
         ;
 
     printf("Tokenizing: %s\n", code);
@@ -57,7 +61,7 @@ int main() {
     printf("\n\n\n");
     create_parser_tables();
     printf("\n\n\n");
-
+     
 
     SyntaxTree* syntax_tree = commit_parser(tokens);
     free_parser_table();
