@@ -98,6 +98,30 @@ static SyntaxTree* new_terminal_node(Token token) {
     return node;
 }
 
+void error_action(int state_accured, Token* latest_token, Token* next_token) {
+    int terminals_length = terminalsList->size;
+    int nonterminals_length = nonterminalsList->size;
+
+    printf("After token '%s' at line %d column %d\n", latest_token->lexeme, latest_token->row, latest_token->col);
+
+    printf("The following tokens can appear: ");
+    for (int i = 0; i < terminals_length; i++) {
+        if (actionTable[state_accured][i].type != ERROR_ACTION) {
+            char* can_get = *(char**)terminalsList->array[i];
+            printf("'%s' ", can_get);
+        }
+    }
+
+    printf("\nOr the following statements:");
+    for (int i = 0; i < nonterminals_length; i++) {
+        if (gotoTable[state_accured][i] != -1) {
+            char* can_get = *(char**)nonterminalsList->array[i];
+            printf("'%s'  ", can_get);
+        }
+    }
+    printf("\nInstead recieved token '%s' at line %d column %d.\n", next_token->lexeme, next_token->row, next_token->col);
+}
+
 #define GET_CURRENT_STATE *(int*)linkedlist_peek(States)
 #define GET_NEXT_ACTION_COL associationArray[((Token*)queue_peek(tokens))->type]
 #define GET_NEXT_GOTO_COL(rule) rule->nonterminal_position
@@ -126,9 +150,12 @@ SyntaxTree* commit_parser(Queue* tokens) {
         switch (current_action.type) {
 
         case ERROR_ACTION:
-            Token* tk3 = queue_peek(tokens);
-            printTOKEN2(&tk3);
-            printf("SIZE %d\n", tokens->size);
+
+            error_action(
+                *(int*)linkedlist_peek(States),
+                *(Token**)linkedlist_pop(prev_tokens),
+                ((Token*)queue_peek(tokens)));
+
             printf("\nERROR");
             loop = false;
             exit(-1);
@@ -205,6 +232,9 @@ SyntaxTree* commit_parser(Queue* tokens) {
     printf("\nENDED IN: ");
     print_actioncell(&current_action);
     printf("\nEND PARSER\n\n");
+
+    linkedlist_free(States, &free);
+    linkedlist_free(prev_tokens, &free);
 
     return tree;
 }

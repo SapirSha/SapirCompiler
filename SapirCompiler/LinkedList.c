@@ -109,10 +109,8 @@ void linkedlist_print(LinkedList* lst, void (*print)(void*)) {
 
 
 void linkedlist_free(LinkedList* list, void free_function(void*)){
-	LinkedListNode* temp;
 	while (list->size) {
-		temp = linkedlist_pop(list);
-		free_function(temp->value);
+		free_function(linkedlist_pop(list));
 	}
 	free(list);
 	list = NULL;

@@ -51,6 +51,23 @@ int main() {
         "int result = call pow(num1, num2) "
         "print \"Result:\" "
         "print result "
+        ;
+    /*
+    char* code =
+        "function pow gets int x, int y returns int { "
+        "    if y <= 0 return 1  "
+        "    int temp = call pow(x, y/2) "
+        "    if y % 2 == 0 return temp * temp "
+        "    return temp * temp * x "
+        "}  "
+        "print \"Power Function:\" "
+        "print \"Number to power: \" "
+        "get int num1 "
+        "print \"Power by: \""
+        "get int num2 "
+        "int result = call pow(num1, num2) "
+        "print \"Result:\" "
+        "print result "
         ""
         "function fibonachi gets int index returns int{ "
         "  if index == 0 return 0 "
@@ -81,7 +98,7 @@ int main() {
         "else "
         "   print \"Number Is Not Prime!\"    "
         ;
-
+        */
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);
 

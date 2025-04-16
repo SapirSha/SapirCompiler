@@ -13,8 +13,7 @@
 #pragma warning(disable:4996)
 
 static ArrayList* states; // Convert states to hashset (make hashset dynamic)
-static ArrayList* nonterminalsList; // HAS TO BE AN ARRAY LIST DONT CHANGE
-static ArrayList* terminalsList; // HAS TO BE AN ARRAY LIST DONT CHANGE
+
 // can maybe make an appeared symbols hashset?
 static HashMap* follow;
 
@@ -224,6 +223,7 @@ void build_states(const char* startNonterminal) {
     closure(State0);
 
     arraylist_add(states, State0);
+    free(State0);
 
     // go through all the states (states size increases)
     for (int i = 0; i < states->size; i++) {
@@ -273,6 +273,8 @@ void build_states(const char* startNonterminal) {
                 free(g);
             }
         }
+        for (int i = 0; i < symbolList->size; i++)
+            free(*(char**)symbolList->array[i]);
         arraylist_free(symbolList);
     }
 }
@@ -372,8 +374,9 @@ bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* rule) {
     char* next_token = get_nth_token(rule->ruleContent, 0);
     if (next_token == NULL) return false;
     if (!isNonterminal(next_token)) {
-        printf("ADDING to %s : %s\n", nonterminal, next_token);
-        return hashset_insert(hashmap_get(follow, nonterminal), next_token);
+        bool changed = hashset_insert(hashmap_get(follow, nonterminal), next_token);
+        if (!changed) free(next_token);
+        return changed;
     }
     else {
         bool changed = false;
@@ -384,6 +387,7 @@ bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* rule) {
                 changed |= add_rules_content_to_nonterminals_follow(nonterminal, a_rule);
             }
         }
+        free(next_token);
         return changed;
     }
 }
@@ -442,7 +446,9 @@ void compute_follow() {
                                     free(sample);
                                     // if the first symbol in the content is terminal, add as follow
                                     if (firstSym && !isNonterminal(firstSym)) {
-                                        changed |= hashset_insert(hashmap_get(follow, current_symbol), firstSym);
+                                        bool f = hashset_insert(hashmap_get(follow, current_symbol), firstSym);
+                                        if (!f) free(firstSym);
+                                        changed |= f;
                                         break;
                                     }
                                     // if the first symbol is nonterminal, add its follows to current
@@ -454,7 +460,9 @@ void compute_follow() {
                                                 changed |= add_rules_content_to_nonterminals_follow(current_symbol, a_rule);
                                             }
                                         }
-                                    } 
+                                        free(firstSym);
+                                    }
+                                    else free(firstSym);
                                 }
                             }
                         }
@@ -467,11 +475,10 @@ void compute_follow() {
                     }
                 }
             }
+            if (!changed) free(contentCopy);
             arraylist_free(tokens);
         }
     }
-
-
 }
 
 
@@ -970,6 +977,13 @@ void set_nonterminals_position() {
     }
 }
 
+void free_states() {
+    for (int i = 0; i < states->size; i++) {
+        Parser_State* temp = states->array[i];
+        arraylist_free(temp->items);
+    }
+    free(states);
+}
 
 int create_parser_tables() {
     rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
@@ -991,6 +1005,7 @@ int create_parser_tables() {
 
     createAssociationMap();
 
+    free_states();
     return 0;
 }
 

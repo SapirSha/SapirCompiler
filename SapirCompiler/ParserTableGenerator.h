@@ -43,6 +43,9 @@ typedef struct {
 ActionCell** actionTable;
 int** gotoTable;
 
+ArrayList* nonterminalsList;
+ArrayList* terminalsList;
+
 int associationArray[NUM_OF_TOKENS];
 ArrayList* rules;
 
