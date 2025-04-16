@@ -26,10 +26,10 @@ typedef struct {
 
 typedef struct {
     ArrayList* items; // CHAGNE TO HASHSET?
-} State;
+} Parser_State;
 
 typedef enum {
-    ERROR,
+    ERROR_ACTION,
     SHIFT,
     REDUCE,
     ACCEPT

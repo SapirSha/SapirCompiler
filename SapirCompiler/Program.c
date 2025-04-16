@@ -24,7 +24,7 @@ void printINT(int* e) {
 }
 
 void printTOKEN(Token* token) {
-    printf("T%d:L%s", token->type, token->lexeme);
+    printf("T%d:L%s(%d,%d)", token->type, token->lexeme, token->row, token->col);
 }
 
 
@@ -35,6 +35,9 @@ void printSTR(char** str) {
 
 
 int main() {
+    const char* code =
+        "\"wasdwasda@ wasdwasd @\"@";
+    /*
     const char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
@@ -61,7 +64,7 @@ int main() {
         "get int index "
         "int fibo_res = call fibonachi(index) "
         "print fibo_res "
-        ""
+        
         "function is_prime gets int number returns bool{ "
         "   if number <= 0 return false "
         "   if number <= 3 return true  "
@@ -70,6 +73,7 @@ int main() {
         "   change index = index + 2    "
         "   return true  "
         "} "
+
         "print \"Prime Function: \"    "
         "print \"Enter Number to find if he is prime: \"    "
         "get int number "
@@ -82,12 +86,12 @@ int main() {
 
 
         ;
-
+        */
     printf("Tokenizing: %s\n", code);
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);
     
-    
+    /*
     printf("\n\n\n");
     create_parser_tables();
     printf("\n\n\n");
@@ -104,7 +108,7 @@ int main() {
 
     generate_code(mainblock);
 
-
+    */
     return 0;
 
 }

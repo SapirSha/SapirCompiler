@@ -57,3 +57,7 @@ void queue_print(Queue* queue, void print(void*)) {
 void* queue_peek(Queue* queue) {
 	return queue->head ? queue->head->value : NULL;
 }
+
+void* queue_peek_last(Queue* queue) {
+	return queue->tail ? queue->tail->value : NULL;
+}

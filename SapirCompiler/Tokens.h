@@ -63,10 +63,7 @@ typedef enum {
     TOKEN_SEMICOLON, 
     TOKEN_COMMA,
 
-    TOKEN_CONTINUE,
-    TOKEN_THEN,
     TOKEN_DO,
-    TOKEN_UNTIL,
     TOKEN_CHANGE,
     TOKEN_PRINT,
     TOKEN_PRINT_INT,
@@ -86,6 +83,8 @@ typedef enum {
 typedef struct  {
     char* lexeme;
     Token_Types type;
+    int row;
+    int col;
 }Token;
 
 #endif

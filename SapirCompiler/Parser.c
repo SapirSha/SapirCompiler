@@ -21,7 +21,7 @@ char* actiontypetostring2(int action) {
     case ACCEPT: return "A";
     case REDUCE: return "R";
     case SHIFT:  return "S";
-    case ERROR:  return "E";
+    case ERROR_ACTION:  return "E";
 
     default:
         return NULL;
@@ -125,7 +125,7 @@ SyntaxTree* commit_parser(Queue* tokens) {
 
         switch (current_action.type) {
 
-        case ERROR:
+        case ERROR_ACTION:
             printf("Prev Token: ");
             linkedlist_print(prev_tokens, printTOKEN2);
             printf("\nNEXT Token: ");

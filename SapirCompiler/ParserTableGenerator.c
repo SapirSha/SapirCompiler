@@ -105,7 +105,7 @@ static char* get_next_symbol(LRItem* item) {
  A function that checks if a state has a certain LR Item inside it
  * LRItems items with the same rules can be different if they have different dot position
 */
-static bool state_contains_item(State* s, LRItem* item) {
+static bool state_contains_item(Parser_State* s, LRItem* item) {
     for (int i = 0; i < s->items->size; i++) {
         LRItem* existing = arraylist_get(s->items, i);
         if (existing->rule == item->rule && existing->dot == item->dot)
@@ -120,7 +120,7 @@ static bool state_contains_item(State* s, LRItem* item) {
    In this function, we add to the current state all the rules of the nonterminals that can be got,
    with dot at zero (start of a new rule)
 */
-static void closure(State* s) {
+static void closure(Parser_State* s) {
     bool added;
     added = false;
     // go through every lr item in the state
@@ -150,8 +150,8 @@ static void closure(State* s) {
  * This function create a state for an allowed symbol in the state,
  * It gets all the possibilities in the previous state to the new state and not one
 */
-static State* goto_state(State* s, const char* symbol) {
-    State* newState = malloc(sizeof(State));
+static Parser_State* goto_state(Parser_State* s, const char* symbol) {
+    Parser_State* newState = malloc(sizeof(Parser_State));
     newState->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
     
     // find all the rules in the previous state that have 'symbol' as an allowed possibility, and add them
@@ -174,7 +174,7 @@ static State* goto_state(State* s, const char* symbol) {
     return newState;
 }
 
-bool state_equals(State* s1, State* s2) {
+bool state_equals(Parser_State* s1, Parser_State* s2) {
     if (s1->items->size != s2->items->size)
         return false;
     for (int i = 0; i < s1->items->size; i++) {
@@ -193,7 +193,7 @@ bool state_equals(State* s1, State* s2) {
     return true;
 }
 
-int find_state(State* s) {
+int find_state(Parser_State* s) {
     for (int i = 0; i < states->size; i++) {
         if (state_equals(arraylist_get(states, i), s))
             return i;
@@ -205,7 +205,7 @@ int find_state(State* s) {
  Builds the states
 */
 void build_states(const char* startNonterminal) {
-    states = arraylist_init(sizeof(State), DEFAULT_NUMBER_OF_STATES);
+    states = arraylist_init(sizeof(Parser_State), DEFAULT_NUMBER_OF_STATES);
 
     int len = strlen(startNonterminal) + 4;
     char* buffer = malloc(len);
@@ -215,7 +215,7 @@ void build_states(const char* startNonterminal) {
     add_rule("START'", buffer);
     free(buffer);
 
-    State* State0 = malloc(sizeof(State));
+    Parser_State* State0 = malloc(sizeof(Parser_State));
     State0->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
     LRItem startItem = { .rule = ((Rule*)rules->array[rules->size - 1]), .dot = 0 };
     arraylist_add(State0->items, &startItem);
@@ -227,7 +227,7 @@ void build_states(const char* startNonterminal) {
 
     // go through all the states (states size increases)
     for (int i = 0; i < states->size; i++) {
-        State* s = arraylist_get(states, i);
+        Parser_State* s = arraylist_get(states, i);
 
         // list of possible symbols to get in the state
         ArrayList* symbolList = arraylist_init(sizeof(char*), 25);
@@ -257,7 +257,7 @@ void build_states(const char* startNonterminal) {
             char* symbol = *(char**)arraylist_get(symbolList, k);
 
             // commit goto
-            State* g = goto_state(s, symbol);
+            Parser_State* g = goto_state(s, symbol);
             if (g->items->size == 0) {
                 free(g);
                 continue;
@@ -278,7 +278,7 @@ void build_states(const char* startNonterminal) {
 }
 
 int counter = 0;
-void print_state(State* s) {
+void print_state(Parser_State* s) {
     printf("State %d:\n", counter++);
     for (int i = 0; i < s->items->size; i++) {
         LRItem* item = arraylist_get(s->items, i);
@@ -509,7 +509,7 @@ void build_parsing_tables() {
     // initialized all the values as -1 and error
     for (int i = 0; i < states->size; i++) {
         for (int j = 0; j < terminalsList->size; j++) {
-            actionTable[i][j] = (ActionCell){ .type = ERROR };
+            actionTable[i][j] = (ActionCell){ .type = ERROR_ACTION };
         }
         for (int j = 0; j < nonterminalsList->size; j++) {
             gotoTable[i][j] = -1;
@@ -518,7 +518,7 @@ void build_parsing_tables() {
     
     // go through all the states
     for (int i = 0; i < states->size; i++) {
-        State* s = arraylist_get(states, i);
+        Parser_State* s = arraylist_get(states, i);
 
         // all the symbols a state can get
         ArrayList* symbols = arraylist_init(sizeof(char*), 50);
@@ -549,7 +549,7 @@ void build_parsing_tables() {
             char* sym = *(char**)arraylist_get(symbols, k);
 
             // get the full content of the state
-            State* g = goto_state(s, sym);
+            Parser_State* g = goto_state(s, sym);
 
             if (g->items->size == 0) {
                 free(g);
@@ -592,7 +592,7 @@ void build_parsing_tables() {
 
     // go through all the states
     for (int i = 0; i < states->size; i++) {
-        State* s = arraylist_get(states, i);
+        Parser_State* s = arraylist_get(states, i);
 
         // go through each states items
         for (int j = 0; j < s->items->size; j++) {
@@ -624,7 +624,7 @@ void build_parsing_tables() {
 
                         // if current item can be followed by the terminal, reduce by the rule
                         if (hashset_contains(hashmap_get(follow, item->rule->nonterminal), term)) {
-                            if (actionTable[i][k].type == ERROR)
+                            if (actionTable[i][k].type == ERROR_ACTION)
                                 actionTable[i][k] = (ActionCell){ .type = REDUCE, .value = item->rule->ruleID };
                         }
                     }
@@ -641,7 +641,7 @@ char* actiontypetostring(int action) {
     case ACCEPT: return "A";
     case REDUCE: return "R";
     case SHIFT:  return "S";
-    case ERROR:  return "E";
+    case ERROR_ACTION:  return "E";
 
     default:
         return NULL;
