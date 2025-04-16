@@ -50,7 +50,37 @@ int main() {
         "int result = call pow(num1, num2) "
         "print \"Result:\" "
         "print result "
-        "get num1 "
+        ""
+        "function fibonachi gets int index returns int{ "
+        "  if index == 0 return 0 "
+        "  if index == 1 return 1 "
+        "  return call fibonachi(index-1) + call fibonachi(index-2) "
+        "} "
+        "print \"Fibonachi Function: \"    "
+        "print \"Input fibonachi index: \" "
+        "get int index "
+        "int fibo_res = call fibonachi(index) "
+        "print fibo_res "
+        ""
+        "function is_prime gets int number returns bool{ "
+        "   if number <= 0 return false "
+        "   if number <= 3 return true  "
+        "   for int index = 3 while index < number/2 "
+        "       if number % index == 0 return false  "
+        "   change index = index + 2    "
+        "   return true  "
+        "} "
+        "print \"Prime Function: \"    "
+        "print \"Enter Number to find if he is prime: \"    "
+        "get int number "
+        "bool is_number_prime = call is_prime(number) "
+        "if is_number_prime == true "
+        "   print \"Number Is Prime!\"    "
+        "else "
+        "   print \"Number Is Not Prime!\"    "
+
+
+
         ;
 
     printf("Tokenizing: %s\n", code);

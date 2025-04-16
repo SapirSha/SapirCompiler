@@ -214,6 +214,19 @@ int is_instant_value(IR_Value* val) {
 	return 0;
 }
 
+int get_size(IR_Value* value) {
+	int size = 2;
+	if (value->type == IR_TEMPORARY_ID) {
+		TempSymbolInfo* info = hashmap_get(temp_map, &value->data.num);
+		size = info->size;
+	}
+	else {
+		SymbolInfo* info = hashmap_get(symbol_map, value->data.token.lexeme);
+		size = info->size;
+	}
+	return size;
+}
+
 char* get_access_name(IR_Value* val) {
 	char* str = malloc(MAX_IDENTIFIER);
 	if (val->type == IR_TOKEN) {
@@ -761,6 +774,9 @@ void handle_condition_instr(IR_Instruction* instr) {
 
 	TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 	int size = info->size;
+	bool need_to_free_left = true;
+	int left_size = get_size(&instr->arg2);
+
 
 	if (
 		(instr->arg2.type == IR_TEMPORARY_ID && appoint_name(instr->arg2.data.num) != -1)
@@ -786,6 +802,21 @@ void handle_condition_instr(IR_Instruction* instr) {
 		need_to_free_temp = 1;
 
 	}
+	if ((!is_instant_value(&instr->arg2.type) &&
+		(instr->arg2.type == IR_TEMPORARY_ID && appoint_name(instr->arg2.data.num) == -1 ||
+		instr->arg2.type == IR_TOKEN)) &&
+		(!is_instant_value(&instr->arg3.type) &&
+			(instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) == -1 ||
+			instr->arg3.type == IR_TOKEN)))
+	{
+		
+		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX, left_size), left_access);
+		outputcode(main_str_buffer);
+		free(left_access);
+		left_access = get_register_name(AX, left_size);
+		need_to_free_left = false;
+	}
+
 	snprintf(main_str_buffer, ONEHUNDRED, "CMP %s, %s ", left_access, right_access);
 	outputcode(main_str_buffer);
 	snprintf(main_str_buffer, ONEHUNDRED, "%s %s ", opcode_to_action[instr->opcode], yes_label);
@@ -808,7 +839,7 @@ void handle_condition_instr(IR_Instruction* instr) {
 	snprintf(main_str_buffer, ONEHUNDRED, "%s:", con_label);
 	outputcode(main_str_buffer);
 
-	if (left_access)
+	if (left_access && need_to_free_left)
 		free(left_access);
 	if (right_access)
 		free(right_access);
