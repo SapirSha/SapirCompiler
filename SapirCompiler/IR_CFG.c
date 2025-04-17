@@ -690,6 +690,9 @@ IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
 
         return temp;
     }
+    else {
+
+    }
 
     printf("EXPRESSION ERROR!");
     exit(-7);
@@ -1173,6 +1176,7 @@ const char* opcodeToString(IR_Opcode op) {
     case IR_NE:            return "NE";
     case IR_AND:           return "AND";
     case IR_OR:            return "OR";
+    case IR_NOT:            return "NOT";
     case IR_CBR:           return "CBR";
     case IR_FUNC_START:    return "FUNC_START";
     case IR_FUNC_END:      return "FUNC_END";

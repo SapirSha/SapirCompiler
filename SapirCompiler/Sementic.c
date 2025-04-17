@@ -19,7 +19,7 @@ static char* ast_to_string(SyntaxTree* tree) {
 		return strdup(tree->info.terminal_info.token.lexeme);
 	}
 	else {
-		char *buffer = malloc(sizeof(char) * 256);
+		char *buffer = calloc(256, sizeof(char));
 		for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
 			char* childStr = ast_to_string(tree->info.nonterminal_info.children[i]);
 			strcat(buffer, childStr);

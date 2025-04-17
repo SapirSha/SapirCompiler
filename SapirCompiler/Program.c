@@ -36,6 +36,7 @@ void printSTR(char** str) {
 
 
 int main() {
+    /*
     char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
@@ -81,7 +82,21 @@ int main() {
         "   print \"Number Is Not Prime!\"  "
         ;
 
-
+        */
+    char* code = 
+        "function is_even gets int num returns bool{ "
+        "      bool state = true        "
+        "      while num > 0 {          "
+        "         state = state != true "
+        "          num = num - 1        "
+        "      }                        "
+        "      return state             "
+        "}                              "
+        "get int num "
+        "bool is_even_num = call is_even(num) "
+        "if is_even_num == true print \"number is even\""
+        "else print \"number is not even\""
+        ;
 
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);
@@ -92,20 +107,20 @@ int main() {
      
 
     SyntaxTree* syntax_tree = commit_parser(tokens);
-    free_parser_table();
+    free_parser_table(); // remove rules, follow, nonterminals, terminals
 
-    if (current_error_state != NO_ERROR) exit(0);
+    if (current_error_state != NO_ERROR) exit(1);
 
     sementic_analysis(syntax_tree);
 
-    if (current_error_state != NO_ERROR) exit(-1);
+    if (current_error_state != NO_ERROR) exit(2);
 
     
     BasicBlock* mainblock = mainCFG(syntax_tree);
 
-    //mainblock = computeLiveness(mainblock);
+    mainblock = computeLiveness(mainblock);
 
-    //generate_code(mainblock);
+    generate_code(mainblock);
 
     
     return 0;

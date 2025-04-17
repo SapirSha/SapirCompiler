@@ -940,7 +940,9 @@ void handle_return_instr(IR_Instruction* instr) {
 	char* access_ret_value = get_access_name(&instr->arg1);
 	char* end_block_label = create_label(end_id);
 
-	snprintf(main_str_buffer, 100, "MOV %s, %s", get_register_name(BX, 2), access_ret_value);
+	int size = get_size(&instr->arg1);
+
+	snprintf(main_str_buffer, 100, "MOV %s, %s", get_register_name(BX, size), access_ret_value);
 	outputcode(main_str_buffer);
 
 	snprintf(main_str_buffer, 100, "JMP %s", end_block_label);

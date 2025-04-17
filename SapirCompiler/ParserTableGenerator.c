@@ -798,7 +798,6 @@ void createAssociationMap() { // to be changed
     printf("TOKEN_FALSE= %d\n", associationArray[TOKEN_FALSE]);
     associationArray[TOKEN_BREAK] = find_column_of_terminal_in_table("break");
     printf("TOKEN_BREAK= %d\n", associationArray[TOKEN_BREAK]);
-
 }
 void print_follows() {
     printf("FOLLOWS:\n");

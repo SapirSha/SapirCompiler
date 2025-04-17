@@ -27,6 +27,7 @@ typedef enum {
     IR_NE,//
     IR_AND,//
     IR_OR,//
+    IR_NOT, //
     IR_CBR,//
     IR_FUNC_START,
     IR_FUNC_END,
