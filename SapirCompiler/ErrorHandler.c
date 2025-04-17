@@ -98,10 +98,10 @@ char* DATA_TYPE_TO_STRING[] = {
 	[UNKNOWN] = "UNKNOWN",
 };
 
-void handle_sementic_error(Token left, char* tree_string, Data_Type left_type, Data_Type right_type) {
+void handle_sementic_error(Token left, Data_Type left_type, Data_Type right_type) {
 	snprintf(ErrorMsg, MAX_ERROR_MSG_LENGTH,
-		"Sementic Error at line %d, column %d: %s. %s is incompatible with %s\n"
-		, left.row, left.col, tree_string, DATA_TYPE_TO_STRING[left_type], DATA_TYPE_TO_STRING[right_type]
+		"Sementic Error at line %d, column %d: %s is incompatible with %s\n"
+		, left.row, left.col, DATA_TYPE_TO_STRING[left_type], DATA_TYPE_TO_STRING[right_type]
 	);
 	out_put_error(ErrorMsg);
 
@@ -128,10 +128,10 @@ void handle_sementic_error_identifier_not_defined(Token id) {
 
 	current_error_state = SEMENTIC_ERROR;
 }
-void handle_sementic_error_condition_must_be_bool(Token id, char* tree_string, Data_Type type) {
+void handle_sementic_error_condition_must_be_bool(Token id, Data_Type type) {
 	snprintf(ErrorMsg, MAX_ERROR_MSG_LENGTH,
-		"Condition %s at line %d column %d must be a bool! instead it was %s\n"
-		, tree_string, id.row, id.col, DATA_TYPE_TO_STRING[type]
+		"Condition at line %d column %d must be a BOOL! instead it was %s\n"
+		, id.row, id.col, DATA_TYPE_TO_STRING[type]
 	);
 	out_put_error(ErrorMsg);
 

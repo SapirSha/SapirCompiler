@@ -341,7 +341,7 @@ void handle_string_literal(char* input, int* index, ArrayList* token, LEXER_STAT
     (*index)++;
     
     while ((current = state_table[STRING_LITERAL][classifier_lookup[input[*index]]]) == STRING_LITERAL) {
-        if (input[*index] != '\n')
+        if (input[*index] != '\n' && input[*index] != '\'')
             arraylist_add(token, &input[*index]);
         else
             new_line(*index);
@@ -415,7 +415,7 @@ Queue* tokenize(const char* input) {
     int i = 0;
     while (input[i] != '\0' && !end_reached) {
         start_line = current_line;
-        start_line_col_compared_to_index = i - current_line_start_compared_to_index + 1;
+        start_line_col_compared_to_index = i - current_line_start_compared_to_index + 2;
         CharClass next_input = get_char_class(input[i], i);
         if (next_input == CHAR_INVALID) { i++; continue; }
         next_state = state_table[START][next_input];

@@ -65,9 +65,7 @@ static Data_Type handle_incompatability(SyntaxTree* tree, Data_Type left, Data_T
 			pos = pos->info.nonterminal_info.children[0];
 
 		Token id = pos->info.terminal_info.token;
-		char* str_string = ast_to_string(tree);
-		handle_sementic_error(id, str_string, left, right);
-		free(str_string);
+		handle_sementic_error(id, left, right);
 		return UNKNOWN;
 	}
 
@@ -81,9 +79,7 @@ static Data_Type condition_must_be_bool(SyntaxTree* tree, Data_Type type) {
 			pos = pos->info.nonterminal_info.children[0];
 
 		Token id = pos->info.terminal_info.token;
-		char* str_string = ast_to_string(tree);
-		handle_sementic_error_condition_must_be_bool(id, str_string, type);
-		free(str_string);
+		handle_sementic_error_condition_must_be_bool(id, type);
 		return UNKNOWN;
 	}
 

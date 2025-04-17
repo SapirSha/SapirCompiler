@@ -3,7 +3,6 @@
 
 int main() {
     char* code =
-        "function pow gets int x returns int y = 11 "
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
         "    int temp = call pow(x, y/2) "
