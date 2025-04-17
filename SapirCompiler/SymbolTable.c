@@ -73,13 +73,16 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 	Scope* scope = (Scope*)linkedlist_peek(table->scopes);
 	if (hashmap_get(scope->identifiers, info->identifier_name) != NULL)
 		return false;
+
 	hashmap_insert(scope->identifiers, info->identifier_name, info);
 	
-	static char* code[8];
+	static char code[8];
 	snprintf(code, 8, "%d", names_id++);
-	info->identifier_new_name = malloc(strlen(info->identifier_name) + strlen(code));
-	strcpy(info->identifier_new_name, info->identifier_name);
-	info->identifier_new_name = strcat(code, info->identifier_new_name);
+
+	int size = strlen(info->identifier_name) + strlen(code) + 1;
+	info->identifier_new_name = malloc(size);
+
+	snprintf(info->identifier_new_name, size, "%s%s", code, info->identifier_name);
 
 	printf("ADDING %s\n", info->identifier_name);
 	printf("ADDING %s\n", info->identifier_new_name);
