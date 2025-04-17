@@ -20,7 +20,6 @@ static char* ast_to_string(SyntaxTree* tree) {
 	}
 	else {
 		char *buffer = malloc(sizeof(char) * 256);
-		snprintf(buffer, 5, "%s", "");
 		for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
 			char* childStr = ast_to_string(tree->info.nonterminal_info.children[i]);
 			strcat(buffer, childStr);
@@ -131,18 +130,18 @@ static char* create_new_variable(Token id, Data_Type type) {
 
 
 static Data_Type decl_with_asign(SyntaxTree* tree) {
-	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
 	Data_Type left = get_type(tree->info.nonterminal_info.children[0]);
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 
 	char* new_name = create_new_variable(id, left);
 	if (new_name == NULL) return NONE;
+	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = new_name;
+
 
 	Data_Type right = accept(tree->info.nonterminal_info.children[3]);
 	if (!compatible(left, right))
 		return handle_incompatability(tree, left, right);
 
-	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = new_name;
 
 	return NONE;
 }
@@ -167,7 +166,8 @@ static Data_Type factor(SyntaxTree* tree) {
 
 static Data_Type assign(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[0]->info.terminal_info.token;
-	IdentifiersInfo* info = symbol_table_lookup_symbol(symbol_table, &id.lexeme);
+	IdentifiersInfo* info = symbol_table_lookup_symbol(symbol_table, 
+		&tree->info.nonterminal_info.children[0]->info.terminal_info.token.lexeme);
 
 	if (info) {
 		Data_Type left = info->data_type;
@@ -279,7 +279,6 @@ static Data_Type for_statement(SyntaxTree* tree) {
 
 static Data_Type for_change_statement(SyntaxTree* tree) {
 	symbol_table_add_scope(symbol_table);
-
 	Data_Type variable = accept(tree->info.nonterminal_info.children[1]);
 	Data_Type condition = accept(tree->info.nonterminal_info.children[3]);
 
@@ -337,6 +336,8 @@ static Data_Type function_decl(SyntaxTree* tree) {
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
+		free(info);
+		return;
 	}
 
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
@@ -371,6 +372,8 @@ static Data_Type function_decl_returns_nothing(SyntaxTree* tree) {
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
+		free(info);
+		return;
 	}
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
@@ -406,6 +409,8 @@ static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
+		free(info);
+		return;
 	}
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
@@ -438,6 +443,8 @@ static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
+		free(info);
+		return;
 	}
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
@@ -478,7 +485,7 @@ static Data_Type return_none_statement(SyntaxTree* tree) {
 static Data_Type function_call(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	IdentifiersInfo* funcSymbol = symbol_table_lookup_symbol(symbol_table,
-		&id.lexeme);
+		&tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
 
 	if (funcSymbol == NULL) {
 		handle_sementic_function_doesnt_exist(id);
@@ -531,7 +538,7 @@ static Data_Type function_call(SyntaxTree* tree) {
 static Data_Type function_call_with_nothing(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	IdentifiersInfo* funcSymbol = symbol_table_lookup_symbol(symbol_table,
-		&id.lexeme);
+		&tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
 
 	if (funcSymbol == NULL) {
 		handle_sementic_function_doesnt_exist(id);
@@ -633,7 +640,8 @@ Data_Type get_decl_sementic(SyntaxTree* tree) {
 
 Data_Type get_sementic(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
-	IdentifiersInfo* info = symbol_table_lookup_symbol(symbol_table, &id.lexeme);
+	IdentifiersInfo* info = symbol_table_lookup_symbol(symbol_table, 
+		&tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme);
 	if (info == NULL) {
 		handle_sementic_error_identifier_not_defined(id);
 	}

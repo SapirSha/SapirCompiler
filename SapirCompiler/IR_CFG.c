@@ -575,7 +575,7 @@ static char* ast_to_string(SyntaxTree* tree) {
         return strdup(tree->info.terminal_info.token.lexeme);
     }
     else {
-        char buffer[1024] = "";
+        char buffer[256] = "";
         for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
             char* childStr = ast_to_string(tree->info.nonterminal_info.children[i]);
             strcat(buffer, childStr);
@@ -631,6 +631,7 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     if (exprTree->info.nonterminal_info.num_of_children > 2) {
         find_arguments_for_call(exprTree->info.nonterminal_info.children[3], current, call_arguments);
     }
+
 
     IR_Value temp = newTemp();
     functionCFGTable[found].entry->id;

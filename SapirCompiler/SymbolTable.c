@@ -76,12 +76,12 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 	hashmap_insert(scope->identifiers, info->identifier_name, info);
 	
 	static char* code[8];
-	snprintf(code, strlen(code), "%d", names_id++);
+	snprintf(code, 8, "%d", names_id++);
 	info->identifier_new_name = malloc(strlen(info->identifier_name) + strlen(code));
 	strcpy(info->identifier_new_name, info->identifier_name);
 	info->identifier_new_name = strcat(code, info->identifier_new_name);
 
-
+	printf("ADDING %s\n", info->identifier_name);
 	printf("ADDING %s\n", info->identifier_new_name);
 	hashmap_insert(table->SymbolMap, info->identifier_new_name,
 		create_new_symbol_info(info->identifier_new_name, info->data_type, info->identifier_name));

@@ -36,7 +36,6 @@ void printSTR(char** str) {
 
 
 int main() {
-    
     char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
@@ -53,23 +52,23 @@ int main() {
         "print \"Result:\" "
         "print result "
         ""
-        "function fibonachi gets int index returns int{ "
-        "  if index == 0 return 0 "
-        "  if index == 1 return 1 "
-        "  return call fibonachi(index-1) + call fibonachi(index-2) "
+        "function fibonachi gets int index2 returns int{ "
+        "  if index2 == 0 return 0 "
+        "  if index2 == 1 return 1 "
+        "  return call fibonachi(index2-1) + call fibonachi(index2-2) "
         "} "
         "print \"Fibonachi Function: \"    "
         "print \"Input fibonachi index: \" "
-        "get int index "
-        "int fibo_res = call fibonachi(index) "
+        "get int index3 "
+        "int fibo_res = call fibonachi(index3) "
         "print fibo_res "
         ""
         "function is_prime gets int number returns bool{ "
         "   if number <= 0 return false "
         "   if number <= 3 return true  "
-        "   for int index = 3 while index < number/2 "
-        "       if number % index == 0 return false  "
-        "   change index = index + 2    "
+        "   for int index1 = 3 while index1 < number/2 "
+        "       if number % index1 == 0 return false  "
+        "   change index1 = index1 + 2    "
         "   return true  "
         "} "
         "print \"Prime Function: \" "
@@ -80,8 +79,8 @@ int main() {
         "   print \"Number Is Prime!\"    "
         "else "
         "   print \"Number Is Not Prime!\"  "
-        "bool is_number_prime2 = call is_prime(number, 7) "
         ;
+
 
 
     Queue* tokens = tokenize(code);
@@ -89,9 +88,7 @@ int main() {
 
     if (current_error_state != NO_ERROR) exit(0);
     
-    printf("\n\n\n");
     create_parser_tables();
-    printf("\n\n\n");
      
 
     SyntaxTree* syntax_tree = commit_parser(tokens);
@@ -103,14 +100,14 @@ int main() {
 
     if (current_error_state != NO_ERROR) exit(-1);
 
-    /*
+    
     BasicBlock* mainblock = mainCFG(syntax_tree);
 
-    mainblock = computeLiveness(mainblock);
+    //mainblock = computeLiveness(mainblock);
 
-    generate_code(mainblock);
+    //generate_code(mainblock);
 
-    */
+    
     return 0;
 
 }
