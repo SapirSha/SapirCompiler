@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "Queue.h"
+#include "ErrorHandler.h"
 
 typedef struct {
     SyntaxTree* node;

@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ArrayList.h"
+#include "ErrorHandler.h"
 
 
 ArrayList* arraylist_init(int object_size, int initial_capacity) {
     ArrayList* list = malloc(sizeof(ArrayList));
+    if (!list) handle_out_of_memory_error();
 
     list->object_size = object_size;
     list->capacity = initial_capacity;
@@ -19,6 +21,7 @@ void arraylist_add(ArrayList* list, void* value) {
     if (list->size == list->capacity) {
         list->capacity *= GROWTH_FACTOR;
         void** temp = realloc(list->array, sizeof(void*) * list->capacity);
+        if (!temp) handle_out_of_memory_error();
         for (int i = list->size; i < list->capacity; i++)
             temp[i] = NULL;
 
@@ -26,10 +29,8 @@ void arraylist_add(ArrayList* list, void* value) {
         list->array = temp;
     }
     list->array[list->size] = malloc(list->object_size);
-    if (!list->array[list->size]) {
-        printf("Failed to allocate memory for new element\n");
-        exit(6);
-    }
+    if (!list->array[list->size]) handle_out_of_memory_error();
+    
     memcpy(list->array[list->size], value, list->object_size);
     list->size++;
 }
@@ -64,6 +65,8 @@ void* arraylist_set(ArrayList* list, void* value, int index) {
     }
     void* temp = list->array[index];
     list->array[index] = malloc(list->object_size);
+    if (list->array[index] == NULL) handle_out_of_memory_error();
+
     memcpy(list->array[index], value, list->object_size);
     if (index >= list->size) {
         list->size = index + 1;

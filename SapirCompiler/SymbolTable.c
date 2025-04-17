@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "ErrorHandler.h"
 
 #pragma warning(disable:4996)
 
@@ -29,6 +30,8 @@ int align_size(int size) {
 
 SymbolInfo* create_new_symbol_info(char* name, Data_Type type, char* og_name) {
 	SymbolInfo* info = malloc(sizeof(SymbolInfo));
+	if(!info) handle_out_of_memory_error();
+
 	info->name = name;
 	info->type = type;
 	info->size = type_to_size(type);
@@ -41,6 +44,8 @@ SymbolInfo* create_new_symbol_info(char* name, Data_Type type, char* og_name) {
 // ADD SCOPE
 Scope* scope_init() {
 	Scope* scope = malloc(sizeof(Scope));
+	if (!scope) handle_out_of_memory_error();
+	
 	scope->identifiers = createHashMap(DEFUALT_IDENTIFIERS_PER_SCOPE, string_hash, string_equals);
 	return scope;
 }
@@ -52,6 +57,8 @@ void symbol_table_add_scope(SymbolTable* table) {
 // INIT
 SymbolTable* symbol_table_init() {
 	SymbolTable* st = malloc(sizeof(SymbolTable));
+	if (!st) handle_out_of_memory_error();
+
 	st->scopes = linkedlist_init(sizeof(Scope));
 	st->SymbolMap = createHashMap(100, string_hash, string_equals);
 	st->TemporaryVarMap = createHashMap(100, int_hash, int_equals);
@@ -81,6 +88,7 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 
 	int size = strlen(info->identifier_name) + strlen(code) + 1;
 	info->identifier_new_name = malloc(size);
+	if (!info->identifier_new_name) handle_out_of_memory_error();
 
 	snprintf(info->identifier_new_name, size, "%s%s", code, info->identifier_name);
 

@@ -85,6 +85,8 @@ BasicBlock* mainBlock;
 LinkedList* globalVars;
 LinkedList* globalStrings;
 
+int number_of_blocks;
+
 unsigned int ir_value_hash(IR_Value* key);
 int ir_value_equals(IR_Value* key1, IR_Value* key2);
 void printIRValuePointer(IR_Value* val);

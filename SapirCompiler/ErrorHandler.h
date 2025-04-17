@@ -11,7 +11,8 @@ typedef enum {
 	NO_ERROR,
 	LEXICAL_ERROR,
 	PARSER_ERROR,
-	SEMENTIC_ERROR
+	SEMENTIC_ERROR,
+	OTHER_ERROR
 } ErrorType;
 
 
@@ -31,4 +32,5 @@ void handle_sementic_function_call_arguments_mismatch(Token func_call, int argum
 void handle_sementic_invalid_print_type(Token content, Data_Type type);
 void handle_sementic_get_type(Token content, Data_Type type);
 
+void handle_out_of_memory_error();
 #endif

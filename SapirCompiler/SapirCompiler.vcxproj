@@ -136,19 +136,15 @@
     <ClCompile Include="IR_CFG.c" />
     <ClCompile Include="IR_Liveness.c" />
     <ClCompile Include="Lexer.c" />
-    <ClCompile Include="LexerFSM.c" />
     <ClCompile Include="LinkedList.c" />
-    <ClCompile Include="Matrix.c" />
     <ClCompile Include="Parser.c" />
     <ClCompile Include="ParserTableGenerator.c" />
-    <ClCompile Include="ParserTableSymbols.c" />
     <ClCompile Include="Program.c" />
     <ClCompile Include="Queue.c" />
     <ClCompile Include="Sementic.c" />
     <ClCompile Include="StringTrie.c" />
     <ClCompile Include="SymbolTable.c" />
     <ClCompile Include="SyntaxTree.c" />
-    <ClCompile Include="Token.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayList.h" />

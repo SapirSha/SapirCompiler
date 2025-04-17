@@ -5,6 +5,7 @@
 #include "SymbolTable.h"
 #include <string.h>
 #include <stdarg.h>
+#include "ErrorHandler.h"
 
 #define DEFAULT_OFFSET -2
 #define SIZE_OF_BOOLEAN 1
@@ -134,6 +135,8 @@ void free_register(int temp_id) {
 
 char* create_label(int block_id) {
 	char* label_buffer = malloc(sizeof(char) * 20);
+	if (!label_buffer) handle_out_of_memory_error();
+
 	snprintf(label_buffer, 20, "BLOCK%d", block_id);
 	return label_buffer;
 }
@@ -201,7 +204,7 @@ char* get_instant_name(Token_Types tt, char* lexeme) {
 	return lexeme;
 }
 
-#define MAX_IDENTIFIER 100
+#define MAX_IDENTIFIER 50
 
 
 int is_instant_value(IR_Value* val) {
@@ -233,6 +236,7 @@ int get_size(IR_Value* value) {
 
 char* get_access_name(IR_Value* val) {
 	char* str = malloc(MAX_IDENTIFIER);
+	if (!str) handle_out_of_memory_error();
 	if (val->type == IR_TOKEN) {
 		Token t = val->data.token;
 		if (t.type == TOKEN_IDENTIFIER) {
@@ -1223,7 +1227,8 @@ void generate_code(BasicBlock* entry) {
 	handle_global_temps(entry);
 
 
-	int* visitor = calloc(100, sizeof(int));
+	int* visitor = calloc(number_of_blocks, sizeof(int));
+	if (!visitor) handle_out_of_memory_error();
 	traverse_cfg(entry, visitor);
 	free(visitor);
 

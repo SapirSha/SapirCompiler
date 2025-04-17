@@ -2,9 +2,12 @@
 #include "string.h"
 #include "stdlib.h"
 #include <stdio.h>
+#include "ErrorHandler.h"
 
 LinkedList* linkedlist_init(unsigned int object_byte_size) {
 	LinkedList* lst = (LinkedList*) malloc(sizeof(LinkedList));
+	if(!lst) handle_out_of_memory_error();
+
 	lst->object_byte_size = object_byte_size;
 	lst->size = 0;
 	lst->head = NULL;
@@ -26,8 +29,12 @@ bool linkedlist_contains(LinkedList* lst, void* value, unsigned int compare_func
 
 LinkedListNode* linkedlistnode_init(LinkedList* lst, void* value) {
 	LinkedListNode* node = malloc(sizeof(LinkedListNode));
+	if (!node) handle_out_of_memory_error();
+
 	node->next = NULL;
 	node->value = malloc(sizeof(lst->object_byte_size));
+	if (!node->value) handle_out_of_memory_error();
+
 	memcpy(node->value, value, lst->object_byte_size);
 	return node;
 }

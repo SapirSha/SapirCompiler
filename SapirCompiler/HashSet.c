@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ErrorHandler.h"
 
 #define GROWTH_FACTOR 2
 #define MAX_LOAD_FACTOR 0.75
@@ -10,6 +11,7 @@
 static void hashset_expand(HashSet* set) {
     unsigned int new_capacity = set->capacity * GROWTH_FACTOR;
     HashSetNode** new_buckets = calloc(new_capacity, sizeof(HashSetNode*));
+    if (!new_buckets) handle_out_of_memory_error();
 
     for (unsigned int i = 0; i < set->capacity; i++) {
         HashSetNode* node = set->buckets[i];
@@ -28,8 +30,7 @@ static void hashset_expand(HashSet* set) {
 
 HashSet* hashset_create(unsigned int default_capacity, unsigned int (*hash)(void* key), int (*equals)(void* key1, void* key2)) {
     HashSet* set = malloc(sizeof(HashSet));
-    if (!set)
-        return NULL;
+    if (!set) handle_out_of_memory_error();
 
     set->capacity = (default_capacity < MINIMUM_HASHSET_CAPACITY) ? MINIMUM_HASHSET_CAPACITY : default_capacity;
     set->size = 0;
@@ -38,6 +39,7 @@ HashSet* hashset_create(unsigned int default_capacity, unsigned int (*hash)(void
     set->buckets = calloc(set->capacity, sizeof(HashSetNode*));
     if (!set->buckets) {
         free(set);
+        handle_out_of_memory_error();
         return NULL;
     }
 
@@ -64,8 +66,7 @@ bool hashset_insert(HashSet* set, void* key) {
 
     unsigned int index = set->hash(key) % set->capacity;
     HashSetNode* new_node = malloc(sizeof(HashSetNode));
-    if (!new_node)
-        return false;
+    if (!new_node) handle_out_of_memory_error();
 
     new_node->key = key;
     new_node->next = set->buckets[index];

@@ -86,16 +86,23 @@ void check_for_single_children(SyntaxTree** arr, int n) {
 
 static SyntaxTree* new_nonterminal_node(Rule* reduce_rule) {
     SyntaxTree* node = malloc(sizeof(SyntaxTree));
+    if (!node) handle_out_of_memory_error();
+
+    SyntaxTree* children = calloc(reduce_rule->ruleTerminalCount, sizeof(SyntaxTree*));
+    if (!children) handle_out_of_memory_error();
+
     node->type = NONTERMINAL_TYPE;
     node->info.nonterminal_info = (struct NonterminalType){
         .nonterminal = reduce_rule->nonterminal,
         .num_of_children = reduce_rule->ruleTerminalCount,
-        .children = calloc(reduce_rule->ruleTerminalCount, sizeof(SyntaxTree*)) };
+        .children =  children};
     return node;
 }
 
 static SyntaxTree* new_terminal_node(Token token) {
     SyntaxTree* node = malloc(sizeof(SyntaxTree));
+    if (!node) handle_out_of_memory_error();
+
     node->type = TERMINAL_TYPE;
     node->info.terminal_info.token = token;
     return node;

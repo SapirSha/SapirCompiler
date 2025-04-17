@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ErrorHandler.h"
 
 #ifdef _WIN32
 #define strdup _strdup
@@ -11,6 +12,8 @@
 
 StringTrie* stringin_init() {
     StringTrie* s = (StringTrie*)malloc(sizeof(StringTrie));
+    if (!s) handle_out_of_memory_error();
+
     if (!s) return NULL;
 
     s->to_clear = strdup("");
@@ -95,6 +98,8 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
         s->is_end = TOKEN_UNKNOWN;
 
 		char* buffer = (char*)malloc(spos - str + 1);
+        if (!buffer) handle_out_of_memory_error();
+
         for (int i = 0; i < spos - str; i++)
             buffer[i] = str[i];
 		buffer[spos - str] = '\0';

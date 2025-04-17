@@ -26,9 +26,11 @@ void new_line(int index) {
 
 
 char* token_to_string(ArrayList* token) {
-    static const char ZERO = '\0';
+    static char ZERO = '\0';
     arraylist_add(token, &ZERO);
     char* string = malloc(token->size * sizeof(char));
+    if (!string) handle_out_of_memory_error();
+
     for (int i = 0; i < token->size; i++) {
         string[i] = *(char*)token->array[i];
     }
@@ -92,13 +94,12 @@ typedef enum {
     CHAR_DIGIT,
     CHAR_OPERATOR,
     CHAR_WHITESPACE,
-    CHAR_QUOTE, // For handling the double quote for string literals
-    CHAR_COMMENT, // For handling comments
+    CHAR_QUOTE,
+    CHAR_COMMENT,
     CHAR_SEPARATOR,
     END_OF_INPUT,
     NUM_CHAR_CLASSES
-};
-typedef char CharClass;
+} CharClass;
 
 // Lookup table for state transitions
 static const LEXER_STATE state_table[NUM_STATES][NUM_CHAR_CLASSES] = {
@@ -210,10 +211,6 @@ void init_finder() {
     stringin_insert_string(token_finder, "with", TOKEN_WITH);
     stringin_insert_string(token_finder, "break", TOKEN_BREAK);
 
-    
-
-
-
 
     stringin_insert_string(token_finder, "+", TOKEN_OPERATOR_PLUS);
     stringin_insert_string(token_finder, "-", TOKEN_OPERATOR_MINUS);
@@ -225,7 +222,6 @@ void init_finder() {
     stringin_insert_string(token_finder, "%", TOKEN_OPERATOR_MODULO);
     stringin_insert_string(token_finder, "&", TOKEN_OPERATOR_AND);
     stringin_insert_string(token_finder, "|", TOKEN_OPERATOR_OR);
-    stringin_insert_string(token_finder, "^", TOKEN_OPERATOR_XOR);
     stringin_insert_string(token_finder, "!", TOKEN_OPERATOR_NOT);
 
     stringin_insert_string(token_finder, "!=", TOKEN_OPERATOR_NOT_EQUAL);
@@ -243,7 +239,7 @@ void handle_error(const char* input, int* index, ArrayList* token, LEXER_STATE* 
     (*index)++;
 }
 
-void handle_keyword(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_keyword(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     StringTrie* pos = token_finder;
     char* clearance = pos->to_clear;
 
@@ -272,7 +268,7 @@ void handle_keyword(const char* input, int* index, ArrayList* token, LEXER_STATE
     }
 }
 
-void handle_operator(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_operator(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     StringTrie* pos = token_finder;
     char* clearance = pos->to_clear;
 
@@ -297,13 +293,13 @@ static const Token_Types SEPARATOR_TO_TOKEN_CONVERTER[] = {
     [','] = TOKEN_COMMA,
 
 };
-void handle_separator(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_separator(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     arraylist_add(token, &input[*index]);
 	add_token(token, tokens, SEPARATOR_TO_TOKEN_CONVERTER[input[*index]], *index);
     (*index)++;
 }
 
-void handle_number(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_number(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     LEXER_STATE current = NUMBER;
     while (current == NUMBER) {
         arraylist_add(token, &input[*index]);
@@ -340,7 +336,7 @@ void handle_number(const char* input, int* index, ArrayList* token, LEXER_STATE*
     }
 }
 
-void handle_string_literal(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_string_literal(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     LEXER_STATE current;
     (*index)++;
     
@@ -390,7 +386,7 @@ void handle_start(const char* input, int* index, ArrayList* token, LEXER_STATE* 
     }
 }
 
-void handle_identifier(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_identifier(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     CharClass next_input = get_char_class(input[*index], *index);
     if (next_input == CHAR_INVALID) { (*index)++; return;  }
     LEXER_STATE current = state_table[IDENTIFIER][next_input];
@@ -405,7 +401,6 @@ void handle_identifier(const char* input, int* index, ArrayList* token, LEXER_ST
 	add_token(token, tokens, TOKEN_IDENTIFIER, *index);
 }
 
-// FSM for tokenization
 Queue* tokenize(const char* input) {
     current_line = 1;
     end_reached = false;
@@ -416,6 +411,7 @@ Queue* tokenize(const char* input) {
     tokens = queue_init(sizeof(Token));
 
     init_finder();
+
     int i = 0;
     while (input[i] != '\0' && !end_reached) {
         start_line = current_line;

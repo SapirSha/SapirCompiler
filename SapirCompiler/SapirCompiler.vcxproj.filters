@@ -24,9 +24,6 @@
     <ClCompile Include="HashMap.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Token.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ArrayList.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,19 +42,10 @@
     <ClCompile Include="Parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Matrix.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LexerFSM.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Queue.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SyntaxTree.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ParserTableSymbols.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Sementic.c">

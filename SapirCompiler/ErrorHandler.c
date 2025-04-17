@@ -193,3 +193,10 @@ void handle_sementic_get_type(Token content, Data_Type type) {
 }
 
 
+void handle_out_of_memory_error() {
+	out_put_error("Program run out of memory!\n");
+
+	current_error_state = OTHER_ERROR;
+
+	exit(-1);
+}

@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "HashMap.h"
+#include "ErrorHandler.h"
 
 HashMap* createHashMap(unsigned int default_capacity, unsigned int(*hash)(void* key), int (*equals)(void* key1, void* key2)) {
     if (!hash || !equals) return NULL;
 
     HashMap* map = malloc(sizeof(HashMap));
-    if (!map) return NULL;
+    if (!map) handle_out_of_memory_error();
 
     map->capacity = (default_capacity < MINIMUM_HASHMAP_CAPACITY) ? MINIMUM_HASHMAP_CAPACITY : default_capacity;
     map->size = 0;
@@ -15,6 +16,7 @@ HashMap* createHashMap(unsigned int default_capacity, unsigned int(*hash)(void* 
     map->buckets = calloc(map->capacity, sizeof(HashMapNode*));
     if (!map->buckets) {
         free(map);
+        handle_out_of_memory_error();
         return NULL;
     }
     return map;
@@ -23,6 +25,8 @@ HashMap* createHashMap(unsigned int default_capacity, unsigned int(*hash)(void* 
 static void expand(HashMap* map) {
     unsigned int new_capacity = map->capacity * GROWTH_FACTOR;
     HashMapNode** new_buckets = calloc(new_capacity, sizeof(HashMapNode*));
+    if (!new_buckets)
+        handle_out_of_memory_error();
 
     for (unsigned int i = 0; i < map->capacity; i++) {
         HashMapNode* node = map->buckets[i];
@@ -56,7 +60,7 @@ void hashmap_insert(HashMap* map, void* key, void* value) {
     }
 
     HashMapNode* new_node = malloc(sizeof(HashMapNode));
-    if (!new_node) return;
+    if (!new_node) handle_out_of_memory_error();
     new_node->key = key;
     new_node->value = value;
     new_node->next = map->buckets[index];

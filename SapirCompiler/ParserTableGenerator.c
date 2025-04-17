@@ -9,11 +9,11 @@
 #include "HashMap.h"
 #include "HashSet.h"
 #include "LinkedList.h"
+#include "ErrorHandler.h"
 
 #pragma warning(disable:4996)
 
-static ArrayList* states; // Convert states to hashset (make hashset dynamic)
-
+static ArrayList* states;
 
 /* 
 A function that determines if a symbol is nonterminal:
@@ -76,6 +76,8 @@ static char* get_nth_token(const char* s, int n) {
 
             int len = (p - start) / sizeof(char);
             char* token = malloc(len + 1);
+            if (!token) handle_out_of_memory_error();
+
             strncpy(token, start, len);
             token[len] = '\0';
 
@@ -149,6 +151,7 @@ static void closure(Parser_State* s) {
 */
 static Parser_State* goto_state(Parser_State* s, const char* symbol) {
     Parser_State* newState = malloc(sizeof(Parser_State));
+    if (!newState) handle_out_of_memory_error();
     newState->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
     
     // find all the rules in the previous state that have 'symbol' as an allowed possibility, and add them
@@ -206,6 +209,8 @@ void build_states(const char* startNonterminal) {
 
     int len = strlen(startNonterminal) + 4;
     char* buffer = malloc(len);
+    if (!buffer) handle_out_of_memory_error();
+
     snprintf(buffer, len, "%s $", startNonterminal);
 
     // add an initial rule for the tables to start at, and add startnonterminal as its content
@@ -213,6 +218,8 @@ void build_states(const char* startNonterminal) {
     free(buffer);
 
     Parser_State* State0 = malloc(sizeof(Parser_State));
+    if (!State0) handle_out_of_memory_error();
+
     State0->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
     LRItem startItem = { .rule = ((Rule*)rules->array[rules->size - 1]), .dot = 0 };
     arraylist_add(State0->items, &startItem);
@@ -499,12 +506,19 @@ int getNonterminalIndex(const char* sym) {
 /* Create the action and goto tables*/
 void init_tables() {
     actionTable = malloc(states->size * sizeof(ActionCell*));
+    if (!actionTable) handle_out_of_memory_error();
+
     ActionCell* actionContent = malloc(states->size * terminalsList->size * sizeof(ActionCell));
+    if (!actionContent) handle_out_of_memory_error();
+    
     for (int i = 0; i < states->size; i++)
         actionTable[i] = actionContent + i * terminalsList->size;
 
     gotoTable = malloc(states->size * sizeof(int*));
+    if (!gotoTable) handle_out_of_memory_error();
+
     int* gotoContent = malloc(states->size * nonterminalsList->size * sizeof(int));
+    if (!gotoContent) handle_out_of_memory_error();
     for (unsigned int i = 0; i < states->size; i++)
         gotoTable[i] = gotoContent + i * nonterminalsList->size;
 }

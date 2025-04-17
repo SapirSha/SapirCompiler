@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "ErrorHandler.h"
 
 Queue* queue_init(unsigned int object_size) {
 	Queue* queue = malloc(sizeof(Queue));
+	if (!queue) handle_out_of_memory_error();
+
 	queue->head = NULL;
 	queue->tail = NULL;
 	queue->object_size = object_size;
@@ -13,8 +16,12 @@ Queue* queue_init(unsigned int object_size) {
 
 static QueueNode* init_queue_node(void* value, unsigned int object_size) {
 	QueueNode* node = malloc(sizeof(QueueNode));
+	if (!node) handle_out_of_memory_error();
+
 	node->next = NULL;
 	node->value = malloc(object_size);
+	if (!node->value) handle_out_of_memory_error();
+
 	memcpy(node->value, value, object_size);
 	return node;
 }
