@@ -591,40 +591,32 @@ int find_function_index(const char* name) {
     return -1;
 }
 
-static char* ast_to_string(SyntaxTree* tree) {
-    if (!tree)
-        return strdup("");
-    if (tree->type == TERMINAL_TYPE) {
-        return strdup(tree->info.terminal_info.token.lexeme);
-    }
-    else {
-        char* buffer = calloc(256, sizeof(char));
-        for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
-            char* childStr = ast_to_string(tree->info.nonterminal_info.children[i]);
-            strcat(buffer, childStr);
-            if (i < tree->info.nonterminal_info.num_of_children - 1)
-                strcat(buffer, " ");
-            free(childStr);
-        }
-        return strdup(buffer);
-    }
-}
+
+static HashMap* operatorMap = NULL;
+
 
 IR_Opcode mapComparisonOperator(const char* opStr) {
-    if (strcmp(opStr, "<") == 0) return IR_LT;
-    if (strcmp(opStr, "<=") == 0) return IR_LE;
-    if (strcmp(opStr, ">") == 0) return IR_GT;
-    if (strcmp(opStr, ">=") == 0) return IR_GE;
-    if (strcmp(opStr, "==") == 0) return IR_EQ;
-    if (strcmp(opStr, "!=") == 0) return IR_NE;
-    if (strcmp(opStr, "||") == 0) return IR_OR;
-    if (strcmp(opStr, "&&") == 0) return IR_AND;
-    if (strcmp(opStr, "+") == 0) return IR_ADD;
-    if (strcmp(opStr, "-") == 0) return IR_SUB;
-    if (strcmp(opStr, "*") == 0) return IR_MUL;
-    if (strcmp(opStr, "/") == 0) return IR_DIV;
-    if (strcmp(opStr, "%") == 0) return IR_MOD;
-    return IR_RAW_STRING;
+    if (operatorMap == NULL) {
+        operatorMap = createHashMap(32, string_hash, string_equals);
+
+        hashmap_insert(operatorMap, "<", IR_LT);
+        hashmap_insert(operatorMap, "<=", IR_LE);
+        hashmap_insert(operatorMap, ">", IR_GT);
+        hashmap_insert(operatorMap, ">=", IR_GE);
+        hashmap_insert(operatorMap, "==", IR_EQ);
+        hashmap_insert(operatorMap, "!=", IR_NE);
+        hashmap_insert(operatorMap, "||", IR_OR);
+        hashmap_insert(operatorMap, "&&", IR_AND);
+        hashmap_insert(operatorMap, "+", IR_ADD);
+        hashmap_insert(operatorMap, "-", IR_SUB);
+        hashmap_insert(operatorMap, "*", IR_MUL);
+        hashmap_insert(operatorMap, "/", IR_DIV);
+        hashmap_insert(operatorMap, "%", IR_MOD);
+    }
+
+    IR_Opcode res = (IR_Opcode)hashmap_get(operatorMap, opStr);
+
+    return res ? res : IR_RAW_STRING;
 }
 
 IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current);
@@ -645,7 +637,7 @@ void find_arguments_for_call(SyntaxTree* tree, BasicBlock** current, ArrayList* 
 }
 
 IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
-    char* funcName = ast_to_string(exprTree->info.nonterminal_info.children[1]);
+    char* funcName = exprTree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
 	printf("Function name: %s\n", funcName);
     int found = find_function_index(funcName);
 
@@ -663,8 +655,6 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
             call_arguments, temp);
 
     addIRInstruction(*current, instr);
-
-    free(funcName);
 
     addSuccessor(*current, functionCFGTable[found].entry);
     BasicBlock* cont = createBasicBlock();
@@ -702,9 +692,8 @@ IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
         IR_Value leftValue = lowerExpression(leftChild, current);
         IR_Value rightValue = lowerExpression(rightChild, current);
 
-        char* opStr = ast_to_string(opChild);
+        char* opStr = opChild->info.terminal_info.token.lexeme;
         IR_Opcode opCode = mapComparisonOperator(opStr);
-        free(opStr);
 
         IR_Value temp = newTemp();
 
@@ -1326,6 +1315,8 @@ BasicBlock* mainCFG(SyntaxTree* tree) {
 
     print_all_symbols(symbol_table);
     linkedlist_print(globalVars, printTOKEN3);
+
+    if (operatorMap) freeHashMap(operatorMap);
 
     return mainBlock;
 }

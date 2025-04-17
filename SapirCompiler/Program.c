@@ -3,6 +3,7 @@
 
 int main() {
     char* code =
+        "function pow gets int x returns int y = 11 "
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
         "    int temp = call pow(x, y/2) "
@@ -61,7 +62,12 @@ int main() {
         "else print \"number is not even\"              "
         ;
 
-    compile(code);
+    bool compiler_result = compile(code);
+    if (compiler_result)
+        printf("\n\t ---Compiled successfully\n");
+    else 
+        printf("\n\t ---Failed to compiler code\n");
+
     
     return 0;
 

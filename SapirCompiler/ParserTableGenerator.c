@@ -723,95 +723,49 @@ int find_column_of_terminal_in_table(const char* terminal) {
 }
 
 
-void createAssociationMap() { // to be changed
-    //associationArray[TOKEN_CONTINUE] = find_column_of_terminal_in_table("continue");
-    //printf("TOKEN_CONTINUE = %d\n", associationArray[TOKEN_CONTINUE]);
+void createAssociationMap() {
     associationArray[TOKEN_LBRACES] = find_column_of_terminal_in_table("{");
-    printf("TOKEN_LBRACES = %d\n", associationArray[TOKEN_LBRACES]);
     associationArray[TOKEN_RBRACES] = find_column_of_terminal_in_table("}");
-    printf("TOKEN_RBRACES = %d\n", associationArray[TOKEN_RBRACES]);
     associationArray[TOKEN_OPERATOR_ALSO] = find_column_of_terminal_in_table("&&");
-    printf("TOKEN_ALSO = %d\n", associationArray[TOKEN_OPERATOR_ALSO]);
     associationArray[TOKEN_OPERATOR_EITHER] = find_column_of_terminal_in_table("||");
-    printf("TOKEN_EITHER = %d\n", associationArray[TOKEN_OPERATOR_EITHER]);
     associationArray[TOKEN_LPAREN] = find_column_of_terminal_in_table("(");
-    printf("TOKEN_LPAREN = %d\n", associationArray[TOKEN_LPAREN]);
     associationArray[TOKEN_RPAREN] = find_column_of_terminal_in_table(")");
-    printf("TOKEN_RPAREN = %d\n", associationArray[TOKEN_RPAREN]);
     associationArray[TOKEN_OPERATOR_EQUAL] = find_column_of_terminal_in_table("==");
-    printf("TOKEN_EQUAL = %d\n", associationArray[TOKEN_OPERATOR_EQUAL]);
     associationArray[TOKEN_OPERATOR_NOT_EQUAL] = find_column_of_terminal_in_table("!=");
-    printf("TOKEN_NOT_EQUAL = %d\n", associationArray[TOKEN_OPERATOR_NOT_EQUAL]);
     associationArray[TOKEN_OPERATOR_GREATER] = find_column_of_terminal_in_table(">");
-    printf("TOKEN_REATER = %d\n", associationArray[TOKEN_OPERATOR_GREATER]);
     associationArray[TOKEN_OPERATOR_GREATER_EQUAL] = find_column_of_terminal_in_table(">=");
-    printf("TOKEN_GREATER_EQUAL = %d\n", associationArray[TOKEN_OPERATOR_GREATER_EQUAL]);
     associationArray[TOKEN_OPERATOR_LESS] = find_column_of_terminal_in_table("<");
-    printf("TOKEN_LESS = %d\n", associationArray[TOKEN_OPERATOR_LESS]);
     associationArray[TOKEN_OPERATOR_LESS_EQUAL] = find_column_of_terminal_in_table("<=");
-    printf("TOKEN_LESS_EQUAL= %d\n", associationArray[TOKEN_OPERATOR_LESS_EQUAL]);
     associationArray[TOKEN_OPERATOR_PLUS] = find_column_of_terminal_in_table("+");
-    printf("TOKEN_PLUS = %d\n", associationArray[TOKEN_OPERATOR_PLUS]);
     associationArray[TOKEN_OPERATOR_MINUS] = find_column_of_terminal_in_table("-");
-    printf("TOKEN_MINUS = %d\n", associationArray[TOKEN_OPERATOR_MINUS]);
     associationArray[TOKEN_OPERATOR_MULTIPLY] = find_column_of_terminal_in_table("*");
-    printf("TOKEN_ASTERISK = %d\n", associationArray[TOKEN_OPERATOR_MULTIPLY]);
     associationArray[TOKEN_OPERATOR_DIVIDE] = find_column_of_terminal_in_table("/");
-    printf("TOKEN_SLASH = %d\n", associationArray[TOKEN_OPERATOR_DIVIDE]);
     associationArray[TOKEN_IF] = find_column_of_terminal_in_table("if");
-    printf("TOKEN_IF = %d\n", associationArray[TOKEN_IF]);
-    //associationArray[TOKEN_THEN] = find_column_of_terminal_in_table("then");
-    //printf("TOKEN_THEN = %d\n", associationArray[TOKEN_THEN]);
     associationArray[TOKEN_EOF] = find_column_of_terminal_in_table("$");
-    printf("TOKEN_EOF = %d\n", associationArray[TOKEN_EOF]);
     associationArray[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("identifier");
-    printf("TOKEN_ID = %d\n", associationArray[TOKEN_IDENTIFIER]);
     associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
-    printf("TOKEN_NUM = %d\n", associationArray[TOKEN_NUMBER]);
     associationArray[TOKEN_INT] = find_column_of_terminal_in_table("int");
-    printf("TOKEN_INT = %d\n", associationArray[TOKEN_INT]);
     associationArray[TOKEN_CHAR] = find_column_of_terminal_in_table("char");
-    printf("TOKEN_CHAR = %d\n", associationArray[TOKEN_CHAR]);
     associationArray[TOKEN_ELSE] = find_column_of_terminal_in_table("else");
-    printf("TOKEN_ELSE = %d\n", associationArray[TOKEN_ELSE]);
     associationArray[TOKEN_OPERATOR_ASSIGN] = find_column_of_terminal_in_table("=");
-    printf("TOKEN_ASSIGN = %d\n", associationArray[TOKEN_OPERATOR_ASSIGN]);
     associationArray[TOKEN_DO] = find_column_of_terminal_in_table("do");
-    printf("TOKEN_DO = %d\n", associationArray[TOKEN_DO]);
     associationArray[TOKEN_WHILE] = find_column_of_terminal_in_table("while");
-    printf("TOKEN_WHILE= %d\n", associationArray[TOKEN_WHILE]);
     associationArray[TOKEN_FOR] = find_column_of_terminal_in_table("for");
-    printf("TOKEN_FOR= %d\n", associationArray[TOKEN_FOR]);
     associationArray[TOKEN_CHANGE] = find_column_of_terminal_in_table("change");
-    printf("TOKEN_CHANGE= %d\n", associationArray[TOKEN_CHANGE]);
     associationArray[TOKEN_PRINT] = find_column_of_terminal_in_table("print");
-    printf("TOKEN_PRINT= %d\n", associationArray[TOKEN_PRINT]);
     associationArray[TOKEN_GET] = find_column_of_terminal_in_table("get");
-    printf("TOKEN_GET= %d\n", associationArray[TOKEN_GET]);
     associationArray[TOKEN_RETURNS] = find_column_of_terminal_in_table("returns");
-    printf("TOKEN_RETURNS= %d\n", associationArray[TOKEN_RETURNS]);
     associationArray[TOKEN_GETS] = find_column_of_terminal_in_table("gets");
-    printf("TOKEN_GETS= %d\n", associationArray[TOKEN_GETS]);
     associationArray[TOKEN_FUNCTION] = find_column_of_terminal_in_table("function");
-    printf("TOKEN_FUNCTION= %d\n", associationArray[TOKEN_FUNCTION]);
     associationArray[TOKEN_COMMA] = find_column_of_terminal_in_table(",");
-    printf("TOKEN_COMMA= %d\n", associationArray[TOKEN_COMMA]);
     associationArray[TOKEN_CALL] = find_column_of_terminal_in_table("call");
-    printf("TOKEN_CALL= %d\n", associationArray[TOKEN_CALL]);
     associationArray[TOKEN_RETURN] = find_column_of_terminal_in_table("return");
-    printf("TOKEN_RETURN= %d\n", associationArray[TOKEN_RETURN]);
     associationArray[TOKEN_OPERATOR_MODULO] = find_column_of_terminal_in_table("%");
-    printf("TOKEN_RETURN= %d\n", associationArray[TOKEN_OPERATOR_MODULO]);
     associationArray[TOKEN_BOOL] = find_column_of_terminal_in_table("bool");
-    printf("TOKEN_BOOL= %d\n", associationArray[TOKEN_BOOL]);
     associationArray[TOKEN_STRING_LITERAL] = find_column_of_terminal_in_table("string_literal");
-    printf("TOKEN_BOOL= %d\n", associationArray[TOKEN_STRING_LITERAL]);
     associationArray[TOKEN_TRUE] = find_column_of_terminal_in_table("true");
-    printf("TOKEN_TRUE= %d\n", associationArray[TOKEN_TRUE]);
     associationArray[TOKEN_FALSE] = find_column_of_terminal_in_table("false");
-    printf("TOKEN_FALSE= %d\n", associationArray[TOKEN_FALSE]);
     associationArray[TOKEN_BREAK] = find_column_of_terminal_in_table("break");
-    printf("TOKEN_BREAK= %d\n", associationArray[TOKEN_BREAK]);
 }
 void print_follows() {
     printf("FOLLOWS:\n");
@@ -1006,17 +960,13 @@ int create_parser_tables() {
     collect_symbols();
 
     set_nonterminals_position();
-
     init_tables();
 
     compute_follow();
 
-
     build_parsing_tables();
 
     createAssociationMap();
-
-    arraylist_print(states, print_state);
 
     free_states();
     return 0;

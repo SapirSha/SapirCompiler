@@ -13,123 +13,159 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\DataStructures">
+      <UniqueIdentifier>{4123cf74-1059-4639-bd78-35597ddccb9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\LexerPhase">
+      <UniqueIdentifier>{dbbac0a5-cd4e-49aa-b548-f1434eadc5a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ParserPhase">
+      <UniqueIdentifier>{5a2480b6-f025-4fb6-83b7-0e034cb090a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MultiPhase">
+      <UniqueIdentifier>{1ba9c98e-c1da-46b6-834b-0539cdbac897}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\IntermediatePhase">
+      <UniqueIdentifier>{6034a466-a50b-4bd6-a349-93b605550c47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CodeGenPhase">
+      <UniqueIdentifier>{10883426-9312-4a62-b0f8-8594eee4f13a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\SementicPhase">
+      <UniqueIdentifier>{e4046ed4-e929-46c8-958b-8efd2e2fff42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\LexerPhase_c">
+      <UniqueIdentifier>{3e32d961-48fe-4b41-97fd-2239888fb0cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DataStructures_c">
+      <UniqueIdentifier>{5ce48377-f5c3-483d-8ecb-4f03ceb9ae88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ParserPhase_c">
+      <UniqueIdentifier>{51919ad6-57db-4266-b619-d208de9c04cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SementicPhase_c">
+      <UniqueIdentifier>{fbce871f-6d72-4595-9cdd-e7cc95e8c4b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IntermediatePhase_c">
+      <UniqueIdentifier>{22aa64df-3b8b-4688-a435-15b296035919}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CodeGenPhase_c">
+      <UniqueIdentifier>{c70564ce-f151-4d00-91dc-430611208a43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MultiPhase_c">
+      <UniqueIdentifier>{c71821ff-0ea9-4a06-b96f-e8ea878fa948}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Lexer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HashMap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ArrayList.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StringTrie.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HashSet.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ParserTableGenerator.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LinkedList.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Parser.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Queue.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SyntaxTree.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sementic.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SymbolTable.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="IR_CFG.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="IR_Liveness.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CodeGeneration.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ErrorHandler.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Compiler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ArrayList.c">
+      <Filter>Source Files\DataStructures_c</Filter>
+    </ClCompile>
+    <ClCompile Include="CodeGeneration.c">
+      <Filter>Source Files\CodeGenPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorHandler.c">
+      <Filter>Source Files\MultiPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="HashMap.c">
+      <Filter>Source Files\DataStructures_c</Filter>
+    </ClCompile>
+    <ClCompile Include="HashSet.c">
+      <Filter>Source Files\DataStructures_c</Filter>
+    </ClCompile>
+    <ClCompile Include="IR_CFG.c">
+      <Filter>Source Files\IntermediatePhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="IR_Liveness.c">
+      <Filter>Source Files\IntermediatePhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="Lexer.c">
+      <Filter>Source Files\LexerPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="LinkedList.c">
+      <Filter>Source Files\DataStructures_c</Filter>
+    </ClCompile>
+    <ClCompile Include="Parser.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTableGenerator.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="Queue.c">
+      <Filter>Source Files\DataStructures_c</Filter>
+    </ClCompile>
+    <ClCompile Include="Sementic.c">
+      <Filter>Source Files\SementicPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="StringTrie.c">
+      <Filter>Source Files\DataStructures_c</Filter>
+    </ClCompile>
+    <ClCompile Include="SymbolTable.c">
+      <Filter>Source Files\MultiPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="SyntaxTree.c">
+      <Filter>Source Files\MultiPhase_c</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Lexer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HashMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Tokens.h">
+    <ClInclude Include="Compiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ArrayList.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="StringTrie.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="HashMap.h">
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="HashSet.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="LinkedList.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ParserTableGenerator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Matrix.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="Queue.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="SyntaxTree.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="StringTrie.h">
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="ParserTableSymbols.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Lexer.h">
+      <Filter>Header Files\LexerPhase</Filter>
     </ClInclude>
-    <ClInclude Include="Sementic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SymbolTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IR_CFG.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IR_Liveness.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Parser.h">
+      <Filter>Header Files\ParserPhase</Filter>
     </ClInclude>
     <ClInclude Include="CodeGeneration.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\CodeGenPhase</Filter>
     </ClInclude>
     <ClInclude Include="ErrorHandler.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\MultiPhase</Filter>
     </ClInclude>
-    <ClInclude Include="Compiler.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="IR_CFG.h">
+      <Filter>Header Files\IntermediatePhase</Filter>
+    </ClInclude>
+    <ClInclude Include="IR_Liveness.h">
+      <Filter>Header Files\IntermediatePhase</Filter>
+    </ClInclude>
+    <ClInclude Include="ParserTableGenerator.h">
+      <Filter>Header Files\ParserPhase</Filter>
+    </ClInclude>
+    <ClInclude Include="Sementic.h">
+      <Filter>Header Files\SementicPhase</Filter>
+    </ClInclude>
+    <ClInclude Include="SymbolTable.h">
+      <Filter>Header Files\MultiPhase</Filter>
+    </ClInclude>
+    <ClInclude Include="SyntaxTree.h">
+      <Filter>Header Files\MultiPhase</Filter>
+    </ClInclude>
+    <ClInclude Include="Tokens.h">
+      <Filter>Header Files\MultiPhase</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

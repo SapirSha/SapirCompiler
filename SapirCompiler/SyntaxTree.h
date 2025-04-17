@@ -34,4 +34,6 @@ void print_tree_postorder(SyntaxTree* tree);
 void print_tree_preorder(SyntaxTree* tree);
 
 
+char* ast_to_string(SyntaxTree* tree);
+
 #endif

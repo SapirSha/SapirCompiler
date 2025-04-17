@@ -92,8 +92,6 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 
 	snprintf(info->identifier_new_name, size, "%s%s", code, info->identifier_name);
 
-	printf("ADDING %s\n", info->identifier_name);
-	printf("ADDING %s\n", info->identifier_new_name);
 	hashmap_insert(table->SymbolMap, info->identifier_new_name,
 		create_new_symbol_info(info->identifier_new_name, info->data_type, info->identifier_name));
 

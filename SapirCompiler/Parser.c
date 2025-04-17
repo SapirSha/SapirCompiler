@@ -181,16 +181,23 @@ SyntaxTree* commit_parser(Queue* tokens) {
     bool loop = true;
     while (loop) {
         current_action = GET_NEXT_ACTION;
-        linkedlist_print(States, printINT2);
 
         switch (current_action.type) {
 
         case ERROR_ACTION:
             loop = false;
+
+            Token* temp;
+            if (prev_tokens->size == 0)
+                temp = &(Token) { .row = 0, .col = 0, .lexeme = "START" };
+            else
+                temp = *(Token**)linkedlist_peek(prev_tokens);
+
             error_action(
                 *(int*)linkedlist_peek(States),
-                *(Token**)linkedlist_peek(prev_tokens),
+                temp,
                 ((Token*)queue_peek(tokens)));
+
             break;
         case ACCEPT:
             printf("ACCEPT");
@@ -245,7 +252,6 @@ SyntaxTree* commit_parser(Queue* tokens) {
             }
             break;
         default:
-            printf("INVALID ACTION!");
             exit(-1);
         }
     }
@@ -257,25 +263,9 @@ SyntaxTree* commit_parser(Queue* tokens) {
         }
     }
 
-    printf("\nENDED IN: ");
-    print_actioncell(&current_action);
-
     SyntaxTree* tree = NULL;
     if (linkedlist_peek(prev_nodes))
         tree = *(SyntaxTree**)linkedlist_peek(prev_nodes);
-
-    printf("\n");
-    linkedlist_print(prev_tokens, printTOKEN2);
-    linkedlist_print(prev_nodes, printAST);
-    if (tree)
-        print_tree_with_ranks(tree);
-    printf("\n");
-    if (tree)
-        print_tree_postorder(tree);
-    printf("\n");
-    printf("\nENDED IN: ");
-    print_actioncell(&current_action);
-    printf("\nEND PARSER\n\n");
 
     linkedlist_free(States, &free);
     linkedlist_free(prev_tokens, &free);

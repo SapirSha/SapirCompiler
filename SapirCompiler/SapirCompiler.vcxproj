@@ -157,10 +157,8 @@
     <ClInclude Include="IR_Liveness.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="LinkedList.h" />
-    <ClInclude Include="Matrix.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="ParserTableGenerator.h" />
-    <ClInclude Include="ParserTableSymbols.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Sementic.h" />
     <ClInclude Include="StringTrie.h" />

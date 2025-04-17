@@ -12,28 +12,6 @@
 #pragma warning(disable:4996)
 int string_ids = 0;
 
-static char* ast_to_string(SyntaxTree* tree) {
-	if (!tree)
-		return strdup("");
-	if (tree->type == TERMINAL_TYPE) {
-		return strdup(tree->info.terminal_info.token.lexeme);
-	}
-	else {
-		char *buffer = calloc(256, sizeof(char));
-		if (!buffer) handle_out_of_memory_error();
-
-		for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
-			char* childStr = ast_to_string(tree->info.nonterminal_info.children[i]);
-			strcat(buffer, childStr);
-			if (i < tree->info.nonterminal_info.num_of_children - 1)
-				strcat(buffer, " ");
-			free(childStr);
-		}
-		return buffer;
-	}
-}
-
-
 #pragma warning(disable:4996)
 HashMap* ir_visitor = NULL;
 

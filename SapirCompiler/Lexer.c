@@ -404,7 +404,7 @@ void handle_identifier(char* input, int* index, ArrayList* token, LEXER_STATE* n
 Queue* tokenize(const char* input) {
     current_line = 1;
     end_reached = false;
-    current_line_start_compared_to_index = 0;
+    current_line_start_compared_to_index = 1;
     LEXER_STATE state = START, next_state;
     ArrayList* token = arraylist_init(sizeof(char), DEFAULT_TOKEN_SIZE);
 

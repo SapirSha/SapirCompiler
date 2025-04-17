@@ -4,6 +4,8 @@
 #include "Queue.h"
 #include "ErrorHandler.h"
 
+#pragma warning(disable:4996)
+
 typedef struct {
     SyntaxTree* node;
     int rank;
@@ -64,4 +66,32 @@ void print_tree_preorder(SyntaxTree* tree) {
         printf("TERMINAL: %s\n", tree->info.terminal_info.token.lexeme);
     }
 
+}
+
+
+char* ast_to_string(SyntaxTree* tree) {
+    if (!tree) return strdup("");
+    if (tree->type == TERMINAL_TYPE)
+        return strdup(tree->info.terminal_info.token.lexeme);
+
+    int cap = 128, len = 0;
+    char* buf = malloc(cap);
+    if (!buf) handle_out_of_memory_error();
+
+    int n = tree->info.nonterminal_info.num_of_children;
+    for (int i = 0; i < n; i++) {
+        char* child = ast_to_string(tree->info.nonterminal_info.children[i]);
+        int need = len + strlen(child) + (i < n - 1 ? 1 : 0) + 1;
+        if (need > cap) {
+            while (cap < need) cap *= 2;
+            buf = realloc(buf, cap);
+            if (!buf) handle_out_of_memory_error();
+        }
+        memcpy(buf + len, child, strlen(child));
+        len += strlen(child);
+        if (i < n - 1) buf[len++] = ' ';
+        free(child);
+    }
+    buf[len] = '\0';
+    return buf;
 }
