@@ -2,6 +2,7 @@
 #define LEXER_H
 
 #include "Queue.h"
+#define MAX_TOKEN_LENGTH 48
 
 typedef enum {
     START = 0,

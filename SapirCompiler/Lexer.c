@@ -12,7 +12,6 @@
 #define DEFAULT_TOKEN_SIZE 32
 
 
-
 Queue* tokens = NULL;
 int current_line;
 int current_line_start_compared_to_index;
@@ -40,6 +39,9 @@ void add_token(ArrayList* token, Queue* tokens, Token_Types type, int index) {
     char* str_token = token_to_string(token);
     int line = start_line;
     int col = start_line_col_compared_to_index;
+
+    if (strlen(str_token) > MAX_TOKEN_LENGTH)
+        handle_lexical_above_max_token_length(str_token, start_line, start_line_col_compared_to_index);
 
     queue_enqueue(tokens, &(Token){.lexeme = str_token, .type = type, .row = line, .col = col});
 	arraylist_reset(token);

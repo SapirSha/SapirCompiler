@@ -13,8 +13,7 @@ typedef enum {
 	INT,
 	STRING,
 	BOOL,
-	CHAR,
-	FLOAT,
+	UNKNOWN,
 } Data_Type;
 
 typedef enum {

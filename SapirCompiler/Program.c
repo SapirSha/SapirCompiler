@@ -36,7 +36,6 @@ void printSTR(char** str) {
 
 
 int main() {
-
     
     char* code =
         "function pow gets int x, int y returns int { "
@@ -64,7 +63,7 @@ int main() {
         "get int index "
         "int fibo_res = call fibonachi(index) "
         "print fibo_res "
-        "822w "
+        ""
         "function is_prime gets int number returns bool{ "
         "   if number <= 0 return false "
         "   if number <= 3 return true  "
@@ -73,7 +72,7 @@ int main() {
         "   change index = index + 2    "
         "   return true  "
         "} "
-        "print \"Prime Function: \" wasd = 21 "
+        "print \"Prime Function: \" "
         "print \"Enter Number to find if he is prime: \"    "
         "get int number "
         "bool is_number_prime = call is_prime(number) "
@@ -81,8 +80,10 @@ int main() {
         "   print \"Number Is Prime!\"    "
         "else "
         "   print \"Number Is Not Prime!\"  "
+        "bool is_number_prime2 = call is_prime(number, 7) "
         ;
-        
+
+
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);
 
@@ -98,9 +99,11 @@ int main() {
 
     if (current_error_state != NO_ERROR) exit(0);
 
-    /*
     sementic_analysis(syntax_tree);
 
+    if (current_error_state != NO_ERROR) exit(-1);
+
+    /*
     BasicBlock* mainblock = mainCFG(syntax_tree);
 
     mainblock = computeLiveness(mainblock);

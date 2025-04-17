@@ -17,8 +17,6 @@ int type_to_size(Data_Type type){
 		return 2;
 	case BOOL:
 		return 1;
-	case FLOAT:
-		return 4;
 	default:
 		break;
 	}
@@ -77,11 +75,12 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 		return false;
 	hashmap_insert(scope->identifiers, info->identifier_name, info);
 	
-	char* code = malloc(8);
+	static char* code[8];
 	snprintf(code, strlen(code), "%d", names_id++);
 	info->identifier_new_name = malloc(strlen(info->identifier_name) + strlen(code));
 	strcpy(info->identifier_new_name, info->identifier_name);
 	info->identifier_new_name = strcat(code, info->identifier_new_name);
+
 
 	printf("ADDING %s\n", info->identifier_new_name);
 	hashmap_insert(table->SymbolMap, info->identifier_new_name,
