@@ -191,7 +191,6 @@ void init_finder() {
     stringin_insert_string(token_finder, "for", TOKEN_FOR);
 	stringin_insert_string(token_finder, "else", TOKEN_ELSE);
 	stringin_insert_string(token_finder, "char", TOKEN_CHAR);
-	stringin_insert_string(token_finder, "void", TOKEN_VOID);
     stringin_insert_string(token_finder, "bool", TOKEN_BOOL);
     stringin_insert_string(token_finder, "true", TOKEN_TRUE);
 	stringin_insert_string(token_finder, "false", TOKEN_FALSE);
@@ -205,7 +204,6 @@ void init_finder() {
     stringin_insert_string(token_finder, "function", TOKEN_FUNCTION);
     stringin_insert_string(token_finder, "returns", TOKEN_RETURNS);
     stringin_insert_string(token_finder, "return", TOKEN_RETURN);
-    stringin_insert_string(token_finder, "nothing", TOKEN_NOTHING);
     stringin_insert_string(token_finder, "call", TOKEN_CALL);
     stringin_insert_string(token_finder, "with", TOKEN_WITH);
     stringin_insert_string(token_finder, "break", TOKEN_BREAK);
@@ -294,8 +292,7 @@ void handle_operator(const char* input, int* index, ArrayList* token, LEXER_STAT
 static const Token_Types SEPARATOR_TO_TOKEN_CONVERTER[] = {
     ['('] = TOKEN_LPAREN,[')'] = TOKEN_RPAREN,
     ['{'] = TOKEN_LBRACES,['}'] = TOKEN_RBRACES,
-    ['['] = TOKEN_LBRACKETS,[']'] = TOKEN_RBRACKETS,
-    [';'] = TOKEN_SEMICOLON,[','] = TOKEN_COMMA,
+    [','] = TOKEN_COMMA,
 
 };
 void handle_separator(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {

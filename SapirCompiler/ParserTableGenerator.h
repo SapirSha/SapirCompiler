@@ -4,6 +4,7 @@
 #include "Tokens.h"
 #include "ArrayList.h"
 #include "stdbool.h"
+#include "HashMap.h"
 
 #define DEFAULT_NUMBER_OF_STATES 100
 #define DEFAULT_NUMBER_OF_RULES 100
@@ -45,6 +46,7 @@ int** gotoTable;
 
 ArrayList* nonterminalsList;
 ArrayList* terminalsList;
+HashMap* follow;
 
 int associationArray[NUM_OF_TOKENS];
 ArrayList* rules;

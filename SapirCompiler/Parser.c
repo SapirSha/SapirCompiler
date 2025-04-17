@@ -9,6 +9,9 @@
 #include "SyntaxTree.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include "ErrorHandler.h"
+#include "HashMap.h"
+#include "HashSet.h"
 
 #pragma warning(disable:4996)
 
@@ -102,24 +105,20 @@ void error_action(int state_accured, Token* latest_token, Token* next_token) {
     int terminals_length = terminalsList->size;
     int nonterminals_length = nonterminalsList->size;
 
-    printf("After token '%s' at line %d column %d\n", latest_token->lexeme, latest_token->row, latest_token->col);
+    ArrayList* allowed_tokens = arraylist_init(sizeof(char*), 10);
+    ArrayList* allowed_statements = arraylist_init(sizeof(char*), 10);
 
-    printf("The following tokens can appear: ");
     for (int i = 0; i < terminals_length; i++) {
-        if (actionTable[state_accured][i].type != ERROR_ACTION) {
-            char* can_get = *(char**)terminalsList->array[i];
-            printf("'%s' ", can_get);
-        }
+        if (actionTable[state_accured][i].type != ERROR_ACTION)
+            arraylist_add(allowed_tokens, terminalsList->array[i]);
     }
 
-    printf("\nOr the following statements:");
     for (int i = 0; i < nonterminals_length; i++) {
-        if (gotoTable[state_accured][i] != -1) {
-            char* can_get = *(char**)nonterminalsList->array[i];
-            printf("'%s'  ", can_get);
-        }
+        if (gotoTable[state_accured][i] != -1)
+            arraylist_add(allowed_statements, nonterminalsList->array[i]);
     }
-    printf("\nInstead recieved token '%s' at line %d column %d.\n", next_token->lexeme, next_token->row, next_token->col);
+
+    handle_parser_error(state_accured, latest_token, next_token, allowed_tokens, allowed_statements);
 }
 
 #define GET_CURRENT_STATE *(int*)linkedlist_peek(States)
@@ -132,11 +131,41 @@ void error_action(int state_accured, Token* latest_token, Token* next_token) {
 #define GET_NEXT_GOTO(rule) \
     gotoTable[GET_CURRENT_STATE][GET_NEXT_GOTO_COL(rule)]
 
+bool panic_tokens[] = { TOKEN_EOF, TOKEN_RBRACES };
+
+#define NUM_OF_PANIC_STATES 4
+int panic_states[NUM_OF_PANIC_STATES] = { 0 ,1, 2, 3 };
+
+static bool is_panic_token(Token* tk) {
+    return panic_tokens[tk->type];
+}
+
+static bool is_panic_state(int state_num) {
+    for (int i = 0; i < NUM_OF_PANIC_STATES; i++) {
+        if (panic_states[i] == state_num) return true;
+    }
+    return false;
+}
+
+void free_syntax_tree(SyntaxTree* tree) {
+    if (!tree) return;
+    if (tree->type == TERMINAL_TYPE)
+    {
+        free(tree->info.terminal_info.token.lexeme);
+        free(tree);
+    }
+    else {
+        for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++)
+            free_syntax_tree(tree->info.nonterminal_info.children[i]);
+        free(tree);
+    }
+}
 
 SyntaxTree* commit_parser(Queue* tokens) {
 	LinkedList* States = linkedlist_init(sizeof(unsigned int));
     LinkedList* prev_tokens = linkedlist_init(sizeof(Token*));
     LinkedList* prev_nodes = linkedlist_init(sizeof(SyntaxTree*));
+    char* latest_nonterminal = NULL;
 
     linkedlist_push(States, &ZERO);
     
@@ -150,17 +179,12 @@ SyntaxTree* commit_parser(Queue* tokens) {
         switch (current_action.type) {
 
         case ERROR_ACTION:
-
+            loop = false;
             error_action(
                 *(int*)linkedlist_peek(States),
-                *(Token**)linkedlist_pop(prev_tokens),
+                *(Token**)linkedlist_peek(prev_tokens),
                 ((Token*)queue_peek(tokens)));
-
-            printf("\nERROR");
-            loop = false;
-            exit(-1);
             break;
-
         case ACCEPT:
             printf("ACCEPT");
             loop = false;
@@ -173,6 +197,7 @@ SyntaxTree* commit_parser(Queue* tokens) {
             break;
 
         case REDUCE:
+            printf("");
             Rule* reduce_rule = arraylist_get(rules, current_action.value);
             SyntaxTree* new_node = new_nonterminal_node(reduce_rule);
 
@@ -181,41 +206,53 @@ SyntaxTree* commit_parser(Queue* tokens) {
 
             for (int i = 0; i < reduce_rule->ruleTerminalCount; i++) {
                 free(linkedlist_pop(States));
-
-                if (!isNonterminal(token)) {
-                    Token* temp = *(Token**)linkedlist_pop(prev_tokens);
-                    new_node->info.nonterminal_info.children[i] = new_terminal_node(*temp);
-                    free(temp);
+                if (current_error_state == NO_ERROR) {
+                    if (!isNonterminal(token)) {
+                        Token* temp = *(Token**)linkedlist_pop(prev_tokens);
+                        new_node->info.nonterminal_info.children[i] = new_terminal_node(*temp);
+                        free(temp);
+                    }
+                    else {
+                        new_node->info.nonterminal_info.children[i] = *(SyntaxTree**)linkedlist_pop(prev_nodes);
+                    }
                 }
-                else {
-                    new_node->info.nonterminal_info.children[i] = *(SyntaxTree**)linkedlist_pop(prev_nodes);
-                }
-
                 token = strtok(NULL, " ");
             }
 
+            latest_nonterminal = new_node->info.nonterminal_info.nonterminal;
             free(content);
 
+            if (current_error_state == NO_ERROR) {
+                reverse_type(new_node->info.nonterminal_info.children,
+                    new_node->info.nonterminal_info.num_of_children,
+                    NONTERMINAL_TYPE);
 
-            reverse_type(new_node->info.nonterminal_info.children,
-                new_node->info.nonterminal_info.num_of_children,
-                NONTERMINAL_TYPE);
+                reverse_type(new_node->info.nonterminal_info.children,
+                    new_node->info.nonterminal_info.num_of_children,
+                    TERMINAL_TYPE);
 
-            reverse_type(new_node->info.nonterminal_info.children,
-                new_node->info.nonterminal_info.num_of_children,
-                TERMINAL_TYPE);
+                check_for_single_children(new_node->info.nonterminal_info.children, new_node->info.nonterminal_info.num_of_children);
 
-            check_for_single_children(new_node->info.nonterminal_info.children, new_node->info.nonterminal_info.num_of_children);
-
-
-            linkedlist_push(prev_nodes, &new_node);
-            linkedlist_push(States, &GET_NEXT_GOTO(reduce_rule));
+                linkedlist_push(prev_nodes, &new_node);
+                linkedlist_push(States, &GET_NEXT_GOTO(reduce_rule));
+            }
             break;
         default:
             printf("INVALID ACTION!");
             exit(-1);
         }
     }
+
+    if (current_error_state != NO_ERROR) {
+        while (prev_nodes->size != 0) {
+            free_syntax_tree(*(SyntaxTree**)linkedlist_peek(prev_nodes));
+            free(linkedlist_pop(prev_nodes));
+        }
+    }
+
+    printf("\nENDED IN: ");
+    print_actioncell(&current_action);
+
     SyntaxTree* tree = NULL;
     if (linkedlist_peek(prev_nodes))
         tree = *(SyntaxTree**)linkedlist_peek(prev_nodes);

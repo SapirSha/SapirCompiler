@@ -60,14 +60,12 @@ Data_Type get_type(SyntaxTree* tree) {
 		case TOKEN_INT:
 		case TOKEN_NUMBER:
 			return INT;
-		case TOKEN_STRING:
 		case TOKEN_STRING_LITERAL:
 			return STRING;
 		case TOKEN_BOOL:
 		case TOKEN_TRUE:
 		case TOKEN_FALSE:
 			return BOOL;
-		case TOKEN_FLOAT:
 		case TOKEN_FLOAT_NUMBER:
 			return FLOAT;
 		case TOKEN_IDENTIFIER:

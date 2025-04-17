@@ -36,23 +36,8 @@ void printSTR(char** str) {
 
 
 int main() {
-    char* code =
-        "function pow gets int x, int y returns int { "
-        "    if y <= 0 return 1  "
-        "    int temp = call pow(x, y/2) "
-        "    if y % 2 == 0 return temp * temp "
-        "    return temp * temp * x "
-        "}  "
-        "print \"Power Function:\" "
-        "print \"Number to power: \" "
-        "get int num1 "
-        "print \"Power by: \""
-        "get int num2 "
-        "int result = call pow(num1, num2) "
-        "print \"Result:\" "
-        "print result "
-        ;
-    /*
+
+    
     char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
@@ -79,7 +64,7 @@ int main() {
         "get int index "
         "int fibo_res = call fibonachi(index) "
         "print fibo_res "
-
+        "822w "
         "function is_prime gets int number returns bool{ "
         "   if number <= 0 return false "
         "   if number <= 3 return true  "
@@ -88,17 +73,16 @@ int main() {
         "   change index = index + 2    "
         "   return true  "
         "} "
-
-        "print \"Prime Function: \"    "
+        "print \"Prime Function: \" wasd = 21 "
         "print \"Enter Number to find if he is prime: \"    "
         "get int number "
         "bool is_number_prime = call is_prime(number) "
         "if is_number_prime == true "
         "   print \"Number Is Prime!\"    "
         "else "
-        "   print \"Number Is Not Prime!\"    "
+        "   print \"Number Is Not Prime!\"  "
         ;
-        */
+        
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);
 
@@ -111,6 +95,9 @@ int main() {
 
     SyntaxTree* syntax_tree = commit_parser(tokens);
     free_parser_table();
+
+    if (current_error_state != NO_ERROR) exit(0);
+
     /*
     sementic_analysis(syntax_tree);
 

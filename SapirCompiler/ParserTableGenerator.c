@@ -14,8 +14,6 @@
 
 static ArrayList* states; // Convert states to hashset (make hashset dynamic)
 
-// can maybe make an appeared symbols hashset?
-static HashMap* follow;
 
 /* 
 A function that determines if a symbol is nonterminal:
@@ -1005,6 +1003,7 @@ int create_parser_tables() {
 
     createAssociationMap();
 
+    arraylist_print(states, print_state);
     free_states();
     return 0;
 }
