@@ -56,4 +56,6 @@ int create_parser_tables();
 bool isNonterminal(const char* symbol);
 
 void free_parser_table();
+
+void free_non_and_terminals();
 #endif

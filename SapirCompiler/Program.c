@@ -90,35 +90,12 @@ int main() {
         "print \"Even Function: \"      "
         "print \"enter a number to find if he's even: \" "
         "get int num "
-        "bool is_even_num = call is_even(num) "
+        "bool is_even_num = call is_even(num)           "
         "if is_even_num == true print \"number is even\""
-        "else print \"number is not even\""
+        "else print \"number is not even\"              "
         ;
 
-    Queue* tokens = tokenize(code);
-    queue_print(tokens, printTOKEN);
-
-    if (current_error_state != NO_ERROR) exit(-1);
-    
-    create_parser_tables();
-     
-
-    SyntaxTree* syntax_tree = commit_parser(tokens);
-    free_parser_table(); // remove rules, follow, nonterminals, terminals
-
-    if (current_error_state != NO_ERROR) exit(1);
-
-    sementic_analysis(syntax_tree);
-
-    if (current_error_state != NO_ERROR) exit(2);
-
-    
-    BasicBlock* mainblock = mainCFG(syntax_tree);
-
-    mainblock = computeLiveness(mainblock);
-
-    generate_code(mainblock);
-
+    compile(code);
     
     return 0;
 

@@ -78,6 +78,9 @@
     <ClCompile Include="ErrorHandler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Compiler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lexer.h">

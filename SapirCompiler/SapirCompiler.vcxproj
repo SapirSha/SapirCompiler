@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="ArrayList.c" />
     <ClCompile Include="CodeGeneration.c" />
+    <ClCompile Include="Compiler.c" />
     <ClCompile Include="ErrorHandler.c" />
     <ClCompile Include="HashMap.c" />
     <ClCompile Include="HashSet.c" />

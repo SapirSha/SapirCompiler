@@ -273,5 +273,10 @@ SyntaxTree* commit_parser(Queue* tokens) {
     linkedlist_free(States, &free);
     linkedlist_free(prev_tokens, &free);
 
+    free_parser_table();
+    free_non_and_terminals();
+    free_rules();
+    free_follow();
+
     return tree;
 }

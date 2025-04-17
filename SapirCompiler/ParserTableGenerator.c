@@ -1003,6 +1003,7 @@ int create_parser_tables() {
     createAssociationMap();
 
     arraylist_print(states, print_state);
+
     free_states();
     return 0;
 }
@@ -1015,14 +1016,41 @@ void free_parser_table() {
         free(gotoTable);
 }
 
-void free_follow() {
 
+void free_non_and_terminals() {
+    for (int i = 0; i < terminalsList->size; i++) {
+        free(*(char**)terminalsList->array[i]);
+    }
+    arraylist_free(terminalsList);
+
+    for (int i = 0; i < nonterminalsList->size; i++) {
+        free(*(char**)nonterminalsList->array[i]);
+    }
+    arraylist_free(nonterminalsList);
 }
 
-void free_nonandterminals() {
 
+
+
+
+void free_follow() {
+    for (unsigned int i = 0; i < follow->capacity; i++) {
+        HashMapNode* node = follow->buckets[i];
+        while (node) {
+            HashMapNode* temp = node;
+            node = node->next;
+            hashset_free(temp->value);
+        }
+    }
+    freeHashMap(follow);
 }
 
 void free_rules() {
-
+    Rule* cur;
+    for (int i = 0; i < rules->size; i++) {
+        cur = (Rule*)rules->array[i];
+        //free(cur->nonterminal); <--- dont free nonterminal! used in nodes at parser
+        free(cur->ruleContent);
+    }
+    arraylist_free(rules);
 }
