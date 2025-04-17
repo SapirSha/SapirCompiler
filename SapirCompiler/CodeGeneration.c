@@ -220,7 +220,11 @@ int get_size(IR_Value* value) {
 		TempSymbolInfo* info = hashmap_get(temp_map, &value->data.num);
 		size = info->size;
 	}
-	else {
+	else if (value->type == IR_TOKEN) {
+		if (is_instant_value(value)) {
+			return size;
+		}
+
 		SymbolInfo* info = hashmap_get(symbol_map, value->data.token.lexeme);
 		size = info->size;
 	}

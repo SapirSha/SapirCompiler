@@ -36,7 +36,6 @@ void printSTR(char** str) {
 
 
 int main() {
-    /*
     char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
@@ -80,10 +79,6 @@ int main() {
         "   print \"Number Is Prime!\"    "
         "else "
         "   print \"Number Is Not Prime!\"  "
-        ;
-
-        */
-    char* code = 
         "function is_even gets int num returns bool{ "
         "      bool state = true        "
         "      while num > 0 {          "
@@ -92,6 +87,8 @@ int main() {
         "      }                        "
         "      return state             "
         "}                              "
+        "print \"Even Function: \"      "
+        "print \"enter a number to find if he's even: \" "
         "get int num "
         "bool is_even_num = call is_even(num) "
         "if is_even_num == true print \"number is even\""
@@ -101,7 +98,7 @@ int main() {
     Queue* tokens = tokenize(code);
     queue_print(tokens, printTOKEN);
 
-    if (current_error_state != NO_ERROR) exit(0);
+    if (current_error_state != NO_ERROR) exit(-1);
     
     create_parser_tables();
      

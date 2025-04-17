@@ -1014,3 +1014,15 @@ void free_parser_table() {
         free(*gotoTable); 
         free(gotoTable);
 }
+
+void free_follow() {
+
+}
+
+void free_nonandterminals() {
+
+}
+
+void free_rules() {
+
+}
