@@ -252,7 +252,7 @@ char* get_access_name(IR_Value* val) {
 					snprintf(str, MAX_IDENTIFIER, "%s BP[%s] ", size_pointer, get_number_str(info->offset));
 				}
 				else {
-					snprintf(str, MAX_IDENTIFIER, "%s", info->origin_name);
+					snprintf(str, MAX_IDENTIFIER, "%s %s", size_pointer, info->origin_name);
 				}
 			}
 		}
@@ -404,7 +404,7 @@ void out_put_in_out_functions() {
 		outputcode("MOV SI, 10");
 		outputcode("NUMBER_PRINT_LENGTH_LOOP:");
 		outputcode("CMP AX, BX");
-		outputcode("JAE END_NUMBER_PRINT_LENGTH");
+		outputcode("JA END_NUMBER_PRINT_LENGTH");
 		outputcode("MUL SI");
 		outputcode("INC CX");
 		outputcode("JMP NUMBER_PRINT_LENGTH_LOOP");
@@ -459,7 +459,8 @@ void handle_global_temps(BasicBlock* main) {
 	static char global_temp[25];
 	IR_Instruction* global_temps_instr = *(IR_Instruction**)main->instructions->array[0];
 	outputcode("MOV BP, SP");
-	snprintf(global_temp, 25, "SUB SP, %d", global_temps_instr->arg1.data.num);
+	int space = global_temps_instr->arg1.data.num;
+	snprintf(global_temp, 25, "SUB SP, %d", space * 2);
 
 	outputcode(global_temp);
 }
@@ -923,19 +924,19 @@ void handle_func_start_instr(IR_Instruction* instr) {
 	outputcode("MOV BP, SP");
 
 	int reserve_space = instr->arg2.data.num;
-	snprintf(main_str_buffer, 100, "SUB SP, %d",  reserve_space);
+	snprintf(main_str_buffer, 100, "SUB SP, %d",  reserve_space * 2);
 	outputcode(main_str_buffer);
 
 }
 
 void handle_func_end_instr(IR_Instruction* instr) {
 	int reserve_space = instr->arg2.data.num;
-	snprintf(main_str_buffer, 100, "ADD SP, %d", reserve_space);
+	snprintf(main_str_buffer, 100, "ADD SP, %d", reserve_space * 2);
 	outputcode(main_str_buffer);
 
 	outputcode("POP BP");
 	int params_space = instr->arg3.data.num;
-	snprintf(main_str_buffer, 100, "RET %d", params_space);
+	snprintf(main_str_buffer, 100, "RET %d", params_space * 2);
 	outputcode(main_str_buffer);
 }
 
