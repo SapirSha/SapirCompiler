@@ -8,8 +8,6 @@
 
 int main(int argc, char* argv[]) {
     create_parser_tables();
-
-
     char* code = NULL;
     output_place = NULL;
 
@@ -19,8 +17,9 @@ int main(int argc, char* argv[]) {
         code = get_console_input();
 
     if (current_error_state != NO_ERROR) return 0;
-    
-    printf("\n\n\t---Messeges:\n\n");
+
+    printf("\n\n\n\n\n");
+
     bool compiler_result = compile(code);
 
     if (compiler_result)
@@ -28,9 +27,7 @@ int main(int argc, char* argv[]) {
     else 
         printf("\n\n\t ---Failed to compile code\n");
 
-
-
-
+    free_parser_table();
     free(code);
     return 0;
 

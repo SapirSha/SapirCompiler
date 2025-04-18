@@ -5,9 +5,9 @@
 #include "ErrorHandler.h"
 #include "FileInput.h"
 
-#define MAX_LINE           256   
-#define INITIAL_CAP       1024   
-#define MULTIPLIER_FACTOR   2   
+#define MAX_LINE 256   
+#define INITIAL_CAP 1024   
+#define MULTIPLIER_FACTOR 2   
 
 static char* extend_buffer(char* buffer, int* cap, int add_len)
 {

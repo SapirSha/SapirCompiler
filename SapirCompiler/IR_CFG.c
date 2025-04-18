@@ -50,12 +50,12 @@ int temporary_size(IR_Value v1, IR_Value v2, IR_Opcode opcode) {
         case TOKEN_NUMBER:
             size1 = 2;
             break;
-        case TOKEN_FLOAT_NUMBER:
-            size1 = 4;
-            break;
+        case TOKEN_TRUE:
+        case TOKEN_FALSE:
+            size1 = 1;
         default:
-            printf("%d\n", t1.type);
-            exit(7);
+            handle_other_errors("\n\t---INVALID TEMPORARY SIZE\n");
+            exit(-1);
         }
     } if (v1.type == IR_TEMPORARY_ID) {
         TempSymbolInfo* tempinfo = hashmap_get(symbol_table->TemporaryVarMap, &v1.data.num);
@@ -73,11 +73,12 @@ int temporary_size(IR_Value v1, IR_Value v2, IR_Opcode opcode) {
         case TOKEN_NUMBER:
             size2 = 2;
             break;
-        case TOKEN_FLOAT_NUMBER:
-            size2 = 4;
-            break;
+        case TOKEN_TRUE:
+        case TOKEN_FALSE:
+            size2 = 1;
         default:
-            exit(7);
+            handle_other_errors("\n\t---INVALID TEMPORARY SIZE\n");
+            exit(-1);
         }
     } if (v2.type == IR_TEMPORARY_ID) {
         TempSymbolInfo* tempinfo = hashmap_get(symbol_table->TemporaryVarMap, &v2.data.num);
@@ -176,7 +177,7 @@ IR_Instruction* createRawIRInstruction(const char* text) {
     instr->arg1.type = IR_STR;
     instr->arg1.data.str = strdup(text);
     
-    exit(2025);
+    handle_other_errors("\n\t---INVALID INSTRUCTION DETECTED\n");
     return instr;
 }
 
@@ -746,12 +747,9 @@ IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
 
         return temp;
     }
-    else {
 
-    }
-
-    printf("EXPRESSION ERROR!");
-    exit(-7);
+    handle_other_errors("\t\n---INVALID EXPRESSION STATEMENT");
+    exit(-1);
 }
 
 

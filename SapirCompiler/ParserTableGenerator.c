@@ -725,6 +725,7 @@ int find_row_of_nonterminal_in_table(const char* nonterminal) {
     if (i < nonterminalsList->size)
         return i;
     else {
+        handle_other_errors("\n\t---UNKNOWN NONTERMINAL\n");
         exit(1);
     }
 }
@@ -735,6 +736,7 @@ int find_column_of_terminal_in_table(const char* terminal) {
     if (i < terminalsList->size)
         return i;
     else {
+        handle_other_errors("\n\t---UNKNOWN TERMINAL\n");
         exit(1);
     }
 }

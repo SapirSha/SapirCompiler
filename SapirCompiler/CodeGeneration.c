@@ -990,8 +990,8 @@ void handle_call_instr(IR_Instruction* instr) {
 					outputcode(main_str_buffer);
 				}
 				else {
-					exit(10);
-
+					handle_other_errors("\n\t---INVALID SYMBOL SIZE\n");
+					exit(1);
 				}
 				free(access_name);
 			}
@@ -1000,10 +1000,6 @@ void handle_call_instr(IR_Instruction* instr) {
 				snprintf(main_str_buffer, 100, "PUSH %s ", access_name);
 				outputcode(main_str_buffer);
 				free(access_name);
-			}
-			else {
-				exit(9);
-
 			}
 		}
 		else if (cur->type == IR_TEMPORARY_ID) {
@@ -1021,8 +1017,8 @@ void handle_call_instr(IR_Instruction* instr) {
 				outputcode(main_str_buffer);
 			}
 			else {
-				printf("SIZE: %d", info->size);
-					exit(8);
+				handle_other_errors("\t\n---INVALID SYMBOL SIZE\n\n");
+				exit(1);
 			}
 			free(access_name);
 		}
