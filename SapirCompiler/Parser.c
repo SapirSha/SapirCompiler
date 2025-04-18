@@ -184,6 +184,11 @@ SyntaxTree* commit_parser(Queue* tokens) {
     LinkedList* prev_nodes = linkedlist_init(sizeof(SyntaxTree*));
     char* latest_nonterminal = NULL;
 
+    Token* latest_token = malloc(sizeof(Token));
+    latest_token->row = 0;
+    latest_token->col = 0;
+    latest_token->lexeme = "START";
+
     linkedlist_push(States, &ZERO);
     
     ActionCell current_action;
@@ -197,15 +202,9 @@ SyntaxTree* commit_parser(Queue* tokens) {
         case ERROR_ACTION:
             loop = false;
 
-            Token* temp;
-            if (prev_tokens->size == 0)
-                temp = &(Token) { .row = 0, .col = 0, .lexeme = "START" };
-            else
-                temp = *(Token**)linkedlist_peek(prev_tokens);
-
             error_action(
                 *(int*)linkedlist_peek(States),
-                temp,
+                latest_token,
                 ((Token*)queue_peek(tokens)));
 
             break;
@@ -217,6 +216,7 @@ SyntaxTree* commit_parser(Queue* tokens) {
             linkedlist_push(States, &current_action.value);
             Token* tk = queue_dequeue(tokens);
             linkedlist_push(prev_tokens, &tk);
+            *latest_token = *tk;
             break;
 
         case REDUCE:

@@ -963,6 +963,10 @@ void free_states() {
 }
 
 int create_parser_tables() {
+    if (parser_tables_initialized) return 0;
+
+    parser_tables_initialized = true;
+
     rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
 
     add_rules();
@@ -981,15 +985,17 @@ int create_parser_tables() {
     createAssociationMap();
 
     free_states();
+
     return 0;
 }
 
 void free_parser_table() {
-        free(*actionTable);
-        free(actionTable);
+    free(*actionTable);
+    free(actionTable);
 
-        free(*gotoTable); 
-        free(gotoTable);
+    free(*gotoTable);
+    free(gotoTable);
+    parser_tables_initialized = false;
 }
 
 

@@ -28,7 +28,6 @@ bool compile(char *code) {
 
     if (current_error_state != NO_ERROR) return false;
 
-
     BasicBlock* mainblock = mainCFG(syntax_tree);
 
     mainblock = computeLiveness(mainblock);

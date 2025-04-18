@@ -671,10 +671,12 @@ Data_Type print_sem(SyntaxTree* tree) {
 		}
 	}
 	else {
-		SyntaxTree* pos = tree->info.nonterminal_info.children[1];
-		while (pos->type != TERMINAL_TYPE)
-			pos = tree->info.nonterminal_info.children[0];
-		handle_sementic_invalid_print_type(pos->info.terminal_info.token, type_of_var);
+		if (type_of_var != UNKNOWN) {
+			SyntaxTree* pos = tree->info.nonterminal_info.children[1];
+			while (pos->type != TERMINAL_TYPE)
+				pos = tree->info.nonterminal_info.children[0];
+			handle_sementic_invalid_print_type(pos->info.terminal_info.token, type_of_var);
+		}
 	}
 	return NONE;
 }
@@ -682,7 +684,7 @@ Data_Type print_sem(SyntaxTree* tree) {
 Data_Type print_sem_int(SyntaxTree* tree) {
 	Data_Type type_of_var = accept(tree->info.nonterminal_info.children[1]);
 
-	if (type_of_var != INT) {
+	if (type_of_var != INT && type_of_var != UNKNOWN) {
 		SyntaxTree* pos = tree->info.nonterminal_info.children[1];
 		while (pos->type != TERMINAL_TYPE)
 			pos = tree->info.nonterminal_info.children[0];
@@ -694,7 +696,7 @@ Data_Type print_sem_int(SyntaxTree* tree) {
 
 Data_Type get_decl_sementic(SyntaxTree* tree) {
 	Data_Type type = decl(tree->info.nonterminal_info.children[1]);
-	if (type != INT) {
+	if (type != INT && type != UNKNOWN) {
 		SyntaxTree* pos = tree->info.nonterminal_info.children[1];
 		while (pos->type != TERMINAL_TYPE)
 			pos = tree->info.nonterminal_info.children[0];
@@ -713,7 +715,7 @@ Data_Type get_sementic(SyntaxTree* tree) {
 	}
 	else {
 		Data_Type type = info->data_type;
-		if (type != INT) {
+		if (type != INT && type != UNKNOWN) {
 			SyntaxTree* pos = tree->info.nonterminal_info.children[1];
 			while (pos->type != TERMINAL_TYPE)
 				pos = tree->info.nonterminal_info.children[0];

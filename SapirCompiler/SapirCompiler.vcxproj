@@ -131,8 +131,10 @@
     <ClCompile Include="CodeGeneration.c" />
     <ClCompile Include="Compiler.c" />
     <ClCompile Include="ConsoleInput.c" />
+    <ClCompile Include="ConsoleOutput.c" />
     <ClCompile Include="ErrorHandler.c" />
     <ClCompile Include="FileInput.c" />
+    <ClCompile Include="FileOut.c" />
     <ClCompile Include="HashMap.c" />
     <ClCompile Include="HashSet.c" />
     <ClCompile Include="IR_CFG.c" />
@@ -153,8 +155,10 @@
     <ClInclude Include="CodeGeneration.h" />
     <ClInclude Include="Compiler.h" />
     <ClInclude Include="ConsoleInput.h" />
+    <ClInclude Include="ConsoleOut.h" />
     <ClInclude Include="ErrorHandler.h" />
     <ClInclude Include="FileInput.h" />
+    <ClInclude Include="FileOut.h" />
     <ClInclude Include="HashMap.h" />
     <ClInclude Include="HashSet.h" />
     <ClInclude Include="IR_CFG.h" />

@@ -26,7 +26,7 @@ typedef struct {
 } LRItem;
 
 typedef struct {
-    ArrayList* items; // CHAGNE TO HASHSET?
+    ArrayList* items;
 } Parser_State;
 
 typedef enum {
@@ -50,6 +50,8 @@ HashMap* follow;
 
 int associationArray[NUM_OF_TOKENS];
 ArrayList* rules;
+
+int parser_tables_initialized;
 
 int create_parser_tables();
 

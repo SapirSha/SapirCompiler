@@ -37,6 +37,8 @@ static int is_end_input(const char* line)
 
 char* get_console_input(void)
 {
+    fprintf(stdin, "Please enter code or file path: ");
+
     char cur_line[MAX_LINE];
     int buf_cap = INITIAL_CAP;
     int buf_len = 0;
@@ -51,10 +53,11 @@ char* get_console_input(void)
     while (fgets(cur_line, sizeof(cur_line), stdin)) {
         if (first_line) {
             first_line = false;
-            char* possible_file = try_get_file(cur_line);
+            bool possible_file = looks_like_path(cur_line);
             if (possible_file) {
-                char* code = get_file_input(possible_file);
-                free(possible_file);
+                char* file_name = get_possible_path_name(cur_line);
+                char* code = get_file_input(file_name);
+                free(file_name);
                 return code;
             }
         }

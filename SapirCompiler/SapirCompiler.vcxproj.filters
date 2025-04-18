@@ -61,6 +61,12 @@
     <Filter Include="Header Files\Input">
       <UniqueIdentifier>{e3da5d4b-d1ef-4cdc-82b9-ab29add063a9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Output.c">
+      <UniqueIdentifier>{ff9c8854-e8d3-4732-8c9b-4087b8e90ee8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Output">
+      <UniqueIdentifier>{2b5fa79c-0ae6-45d4-875a-f15b39c42079}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.c">
@@ -123,6 +129,12 @@
     <ClCompile Include="FileInput.c">
       <Filter>Source Files\Input</Filter>
     </ClCompile>
+    <ClCompile Include="ConsoleOutput.c">
+      <Filter>Source Files\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="FileOut.c">
+      <Filter>Source Files\Output</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h">
@@ -184,6 +196,12 @@
     </ClInclude>
     <ClInclude Include="FileInput.h">
       <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsoleOut.h">
+      <Filter>Header Files\Output.c</Filter>
+    </ClInclude>
+    <ClInclude Include="FileOut.h">
+      <Filter>Header Files\Output.c</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

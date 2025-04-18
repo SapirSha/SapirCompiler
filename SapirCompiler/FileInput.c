@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "FileInput.h"
 #include "ErrorHandler.h"
 #include <string.h>
+#include <stdbool.h>
+#include "FileOut.h"
+#include <ctype.h>
 
 #define MAX_PATH_LENGTH 128
 
 #pragma warning(disable:4996)
 
-char* try_get_file(const char* line) {
-    size_t start = 0, end = strlen(line);
+char* get_possible_path_name(const char* line) {
+    unsigned int start = 0, end = strlen(line);
 
     while (start < end && isspace((unsigned char)line[start])) {
         start++;
@@ -17,7 +21,7 @@ char* try_get_file(const char* line) {
     while (end > start && isspace((unsigned char)line[end - 1])) {
         end--;
     }
-    size_t len = end - start;
+    unsigned int len = end - start;
     if (len == 0 || len > MAX_PATH_LENGTH) {
         return 0;
     }
@@ -26,16 +30,30 @@ char* try_get_file(const char* line) {
     memcpy(path, line + start, len);
     path[len] = '\0';
 
-    FILE* f = fopen(path, "r");
-    if (f) {
-        fclose(f);
-        return strdup(path);
-    }
-    return NULL;
+    return strdup(path);
+}
+bool looks_like_path(const char* s) {
+    if (!s || !*s) return false;
+    if (strlen(s) < 3)
+
+    if (s[0] == '/')
+        return true;
+
+    if (isalpha((unsigned char)s[0]) && s[1] == ':' &&
+        (s[2] == '\\' || s[2] == '/'))
+        return true;
+
+    if (strncmp(s, "./", 2) == 0 || strncmp(s, "../", 3) == 0)
+        return true;
+
+    const char* dot = strrchr(s, '.');
+    if (dot && dot != s)
+        return true;
+
+    return false;
 }
 
-
-char* get_file_input(const char* filename) {
+char* get_file_input(char* filename) {
     FILE* f = fopen(filename, "rb");
     if (!f) {
         char msg[256];
@@ -63,7 +81,7 @@ char* get_file_input(const char* filename) {
         handle_other_errors(msg);
         return NULL;
     }
-    size_t size = (size_t)lsize;
+    unsigned int size = (unsigned int)lsize;
     rewind(f);
 
     char* buffer = malloc(size + 1);
@@ -73,7 +91,7 @@ char* get_file_input(const char* filename) {
         return NULL;
     }
 
-    size_t nread = fread(buffer, 1, size, f);
+    unsigned int nread = fread(buffer, 1, size, f);
     if (nread != size || ferror(f)) {
         fclose(f);
         char msg[256];
@@ -87,5 +105,8 @@ char* get_file_input(const char* filename) {
     buffer[size] = '\0';
 
     fclose(f);
+
+    
+    output_place = extract_dir(filename);
     return buffer;
 }

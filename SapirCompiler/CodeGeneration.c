@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include "ErrorHandler.h"
+#include "FileOut.h"
+#include "ConsoleOut.h"
 
 #define DEFAULT_OFFSET -2
 #define SIZE_OF_BOOLEAN 1
@@ -19,6 +21,9 @@ HashMap* temp_map;
 bool used_print_num = false;
 bool used_get_num = false;
 bool used_print_string = false;
+
+#define ONEHUNDRED 256
+static char main_str_buffer[ONEHUNDRED];
 
 void outputcode(char* str) {
 	printf("%s\n", str);
@@ -458,9 +463,6 @@ void handle_global_temps(BasicBlock* main) {
 
 	outputcode(global_temp);
 }
-
-#define ONEHUNDRED 100
-static char main_str_buffer[ONEHUNDRED];
 
 void release_register(int register_id) {
 	int temp_id = available[register_id];

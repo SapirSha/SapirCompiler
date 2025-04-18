@@ -2,96 +2,36 @@
 #include "ConsoleInput.h"
 #include "FileInput.h"
 #include "ErrorHandler.h"
+#include "ParserTableGenerator.h"
+#include "FileOut.h"
 #include <stdio.h>
 
 int main(int argc, char* argv[]) {
+    create_parser_tables();
+
 
     char* code = NULL;
+    output_place = NULL;
 
-    switch (argc)
-    {
-    case 1:
-        code = get_console_input();
-        break;
-    case 2:
+    if (argc == 2)
         code = get_file_input(argv[1]);
-        break;
-    default:
+    else 
         code = get_console_input();
-        break;
-    }
 
     if (current_error_state != NO_ERROR) return 0;
-
-    /*
-    char* code =
-        "function pow gets int x, int y returns int { "
-        "    if y <= 0 return 1  "
-        "    int temp = call pow(x, y/2) "
-        "    if y % 2 == 0 return temp * temp "
-        "    return temp * temp * x "
-        "}  "
-        "print \"Power Function:\" "
-        "print \"Number to power: \" "
-        "get int num1 "
-        "print \"Power by: \""
-        "get int num2 "
-        "int result = call pow(num1, num2) "
-        "print \"Result:\" "
-        "print result "
-        ""
-        "function fibonachi gets int index2 returns int{ "
-        "  if index2 == 0 return 0 "
-        "  if index2 == 1 return 1 "
-        "  return call fibonachi(index2-1) + call fibonachi(index2-2) "
-        "} "
-        "print \"Fibonachi Function: \"    "
-        "print \"Input fibonachi index: \" "
-        "get int index3 "
-        "int fibo_res = call fibonachi(index3) "
-        "print fibo_res "
-        ""
-        "function is_prime gets int number returns bool{ "
-        "   if number <= 0 return false "
-        "   if number <= 3 return true  "
-        "   for int index1 = 3 while index1 < number/2 "
-        "       if number % index1 == 0 return false  "
-        "   change index1 = index1 + 2    "
-        "   return true  "
-        "} "
-        "print \"Prime Function: \" "
-        "print \"Enter Number to find if he is prime: \"    "
-        "get int number "
-        "bool is_number_prime = call is_prime(number) "
-        "if is_number_prime == true "
-        "   print \"Number Is Prime!\"    "
-        "else "
-        "   print \"Number Is Not Prime!\"  "
-        "function is_even gets int num returns bool{ "
-        "      bool state = true        "
-        "      while num > 0 {          "
-        "         state = state != true "
-        "          num = num - 1        "
-        "      }                        "
-        "      return state             "
-        "}                              "
-        "print \"Even Function: \"      "
-        "print \"enter a number to find if he's even: \" "
-        "get int num "
-        "bool is_even_num = call is_even(num)           "
-        "if is_even_num == true print \"number is even\""
-        "else print \"number is not even\"              "
-        ;
-
-        */
-
     
+    printf("\n\n\t---Messeges:\n\n");
     bool compiler_result = compile(code);
-    if (compiler_result)
-        printf("\n\t ---Compiled successfully\n");
-    else 
-        printf("\n\t ---Failed to compiler code\n");
 
+    if (compiler_result)
+        printf("\n\n\t ---Compiled successfully\n");
+    else 
+        printf("\n\n\t ---Failed to compile code\n");
+
+
+
+
+    free(code);
     return 0;
 
 }
