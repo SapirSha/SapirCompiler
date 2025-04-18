@@ -39,7 +39,7 @@ int temporary_size(IR_Value v1, IR_Value v2, IR_Opcode opcode) {
         break;
     }
 
-    int size1;
+    int size1 = 2;
     if (v1.type == IR_TOKEN) {
         Token t1 = v1.data.token;
         switch (t1.type) {
@@ -62,7 +62,7 @@ int temporary_size(IR_Value v1, IR_Value v2, IR_Opcode opcode) {
         size1 = tempinfo->size;
     }
 
-    int size2;
+    int size2 = 2;
     if (v2.type == IR_TOKEN) {
         Token t2 = v2.data.token;
         switch (t2.type) {
@@ -134,7 +134,10 @@ LinkedList* function_exit_blocks = NULL;
 
 IR_Instruction* createIRInstructionBase() {
 	IR_Instruction* instr = (IR_Instruction*)malloc(sizeof(IR_Instruction));
-    if (!instr) handle_out_of_memory_error();
+    if (!instr) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
 	instr->arg1.type = IR_NULL;
 	instr->arg2.type = IR_NULL;
@@ -220,7 +223,10 @@ IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value 
             *(IR_Instruction**)
             ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
         int* pos = malloc(sizeof(int));
-        if (!pos) handle_out_of_memory_error();
+        if (!pos) {
+            handle_out_of_memory_error();
+            return NULL;
+        }
 
         *pos = func_enter->arg2.data.num;
 
@@ -234,7 +240,10 @@ IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value 
 
 
         TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
-        if (!info) handle_out_of_memory_error();
+        if (!info) {
+            handle_out_of_memory_error();
+            return NULL;
+        }
 
         info->id = temp.data.num;
         info->size = size;
@@ -262,7 +271,10 @@ IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value 
         setGlobalTemps(*(IR_Instruction**)mainBlock->instructions->array[0], aligned + temp_size);
 
         TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
-        if (!info) handle_out_of_memory_error();
+        if (!info) {
+            handle_out_of_memory_error();
+            return NULL;
+        }
 
         info->id = id;
         info->size = temp_size;
@@ -295,7 +307,10 @@ IR_Instruction* createDeclareInstruction(Token name) {
             *(IR_Instruction**)
             ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
         int* pos = malloc(sizeof(int));
-        if (!pos) handle_out_of_memory_error();
+        if (!pos) {
+            handle_out_of_memory_error();
+            return NULL;
+        }
 
         *pos = func_enter->arg2.data.num;
 
@@ -390,7 +405,10 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
             *(IR_Instruction**)
             ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
         int* pos = malloc(sizeof(int));
-        if (!pos) handle_out_of_memory_error();
+        if (!pos) {
+            handle_out_of_memory_error();
+            return NULL;
+        }
 
         *pos = func_enter->arg2.data.num;
 
@@ -404,7 +422,10 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
 
 
         TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
-        if (!info) handle_out_of_memory_error();
+        if (!info) {
+            handle_out_of_memory_error();
+            return NULL;
+        }
 
         info->id = dest_temp.data.num;
         info->size = size;
@@ -432,7 +453,10 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
             setGlobalTemps(*(IR_Instruction**)mainBlock->instructions->array[0], aligned + temp_size);
 
             TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
-            if (!info) handle_out_of_memory_error();
+            if (!info) {
+                handle_out_of_memory_error();
+                return NULL;
+            }
 
             info->id = id;
             info->size = temp_size;
@@ -491,7 +515,10 @@ IR_Instruction* createParameterInstruction(Token param, int param_num) {
         *(IR_Instruction**)
         ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
     int* pos = malloc(sizeof(int));
-    if(!pos) handle_out_of_memory_error();
+    if (!pos) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
     *pos = func_enter->arg2.data.num;
 
@@ -525,7 +552,10 @@ static int newTempCounter() {
 
 static IR_Value newTemp() {
     IR_Value* temporary = malloc(sizeof(IR_Value));
-    if (!temporary) handle_out_of_memory_error();
+    if (!temporary) {
+        handle_out_of_memory_error();
+        return (IR_Value) { .type = IR_RAW_STRING, .data.str = "MEMORY ERROR" };
+    }
 
     temporary->type = IR_TEMPORARY_ID;
     temporary->data.num = tempCounter++;
@@ -539,7 +569,10 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current);
 int next_block_id = 0;
 BasicBlock* createBasicBlock(void) {
     BasicBlock* block = (BasicBlock*)malloc(sizeof(BasicBlock));
-    if (!block) handle_out_of_memory_error();
+    if (!block) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
     block->id = next_block_id++;
     block->instructions = arraylist_init(sizeof(IR_Instruction*), 8);
@@ -575,7 +608,13 @@ FunctionCFGEntry* functionCFGTable = NULL;
 int functionCFGCount = 0;
 
 void addFunctionCFG(const char* name, BasicBlock* entry, BasicBlock* exit) {
+    FunctionCFGEntry* temp = functionCFGTable;
     functionCFGTable = realloc(functionCFGTable, sizeof(FunctionCFGEntry) * (functionCFGCount + 1));
+    if (!functionCFGTable) {
+        free(temp);
+        handle_out_of_memory_error();
+        return;
+    }
     functionCFGTable[functionCFGCount].name = strdup(name);
     functionCFGTable[functionCFGCount].entry = entry;
     functionCFGTable[functionCFGCount].exit = exit;
@@ -594,29 +633,35 @@ int find_function_index(const char* name) {
 
 static HashMap* operatorMap = NULL;
 
-
-IR_Opcode mapComparisonOperator(const char* opStr) {
-    if (operatorMap == NULL) {
-        operatorMap = createHashMap(32, string_hash, string_equals);
-
-        hashmap_insert(operatorMap, "<", IR_LT);
-        hashmap_insert(operatorMap, "<=", IR_LE);
-        hashmap_insert(operatorMap, ">", IR_GT);
-        hashmap_insert(operatorMap, ">=", IR_GE);
-        hashmap_insert(operatorMap, "==", IR_EQ);
-        hashmap_insert(operatorMap, "!=", IR_NE);
-        hashmap_insert(operatorMap, "||", IR_OR);
-        hashmap_insert(operatorMap, "&&", IR_AND);
-        hashmap_insert(operatorMap, "+", IR_ADD);
-        hashmap_insert(operatorMap, "-", IR_SUB);
-        hashmap_insert(operatorMap, "*", IR_MUL);
-        hashmap_insert(operatorMap, "/", IR_DIV);
-        hashmap_insert(operatorMap, "%", IR_MOD);
+#define INSERT_OPCODE(op, str)                                         \
+    {                                                                   \
+        IR_Opcode* tmp = (IR_Opcode*)malloc(sizeof(IR_Opcode));          \
+        if (!tmp) { handle_out_of_memory_error(); return IR_RAW_STRING; } \
+        *tmp = (op);                                                       \
+        hashmap_insert(operatorMap, (str), tmp);                            \
     }
 
-    IR_Opcode res = (IR_Opcode)hashmap_get(operatorMap, opStr);
+IR_Opcode mapComparisonOperator(char* opStr) {
+    if (operatorMap == NULL) {
+        operatorMap = createHashMap(32, string_hash, string_equals);
+        INSERT_OPCODE(IR_LT, "<");
+        INSERT_OPCODE(IR_LE, "<=");
+        INSERT_OPCODE(IR_GT, ">");
+        INSERT_OPCODE(IR_GE, ">=");
+        INSERT_OPCODE(IR_EQ, "==");
+        INSERT_OPCODE(IR_NE, "!=");
+        INSERT_OPCODE(IR_OR, "||");
+        INSERT_OPCODE(IR_AND, "&&");
+        INSERT_OPCODE(IR_ADD, "+");
+        INSERT_OPCODE(IR_SUB, "-");
+        INSERT_OPCODE(IR_MUL, "*");
+        INSERT_OPCODE(IR_DIV, "/");
+        INSERT_OPCODE(IR_MOD, "%");
+    }
+    
+    IR_Opcode* res = (IR_Opcode*)hashmap_get(operatorMap, opStr);
 
-    return res ? res : IR_RAW_STRING;
+    return res ? *res : IR_RAW_STRING;
 }
 
 IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current);
@@ -638,7 +683,6 @@ void find_arguments_for_call(SyntaxTree* tree, BasicBlock** current, ArrayList* 
 
 IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     char* funcName = exprTree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
-	printf("Function name: %s\n", funcName);
     int found = find_function_index(funcName);
 
     ArrayList* call_arguments = arraylist_init(sizeof(IR_Value), 3);
@@ -829,7 +873,10 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
 
 
     FunctionCFGEntry* fc = (FunctionCFGEntry*)malloc(sizeof(FunctionCFGEntry));
-    if (!fc) handle_out_of_memory_error();
+    if (!fc) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
     fc->name = strdup(funcName.lexeme);
     if (!fc->name) handle_out_of_memory_error();
@@ -1028,7 +1075,6 @@ BasicBlock* statements_block(SyntaxTree* tree, BasicBlock* current) {
 }
 
 BasicBlock* defualt_block(SyntaxTree* tree, BasicBlock* current) {
-    printf("UNTARGETED NONTERMINAL: %s\n", tree->info.nonterminal_info.nonterminal);
     for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
         current = buildCFG(tree->info.nonterminal_info.children[i], current);
     }
@@ -1306,17 +1352,6 @@ BasicBlock* mainCFG(SyntaxTree* tree) {
     number_of_blocks = last->id + 1;
 
     int maxBlocks = next_block_id;
-    int* visited = calloc(maxBlocks, sizeof(int));
-    if (!visited) handle_out_of_memory_error();
-    printCFG(mainBlock, visited);
-    free(visited);
-    printf("-------------------------------------------------------------\n");
-    printFunctionCFG();
-
-    print_all_symbols(symbol_table);
-    linkedlist_print(globalVars, printTOKEN3);
-
-    if (operatorMap) freeHashMap(operatorMap);
 
     return mainBlock;
 }

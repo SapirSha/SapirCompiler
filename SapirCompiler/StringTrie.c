@@ -98,7 +98,10 @@ void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_ty
         s->is_end = TOKEN_UNKNOWN;
 
 		char* buffer = (char*)malloc(spos - str + 1);
-        if (!buffer) handle_out_of_memory_error();
+        if (!buffer) {
+            handle_out_of_memory_error();
+            return;
+        }
 
         for (int i = 0; i < spos - str; i++)
             buffer[i] = str[i];
@@ -208,7 +211,7 @@ void stringin_print(StringTrie* root) {
         for (int i = 0; i < root->paths->size; i++) {
             HashMapNode* current = root->paths->buckets[i];
             while (current) {
-                printf("%s\n", current->key);
+                printf("%s\n", (char*)current->key);
                 stringin_print((StringTrie*)current->value);
                 current = current->next;
             }

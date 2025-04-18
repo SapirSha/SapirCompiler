@@ -15,11 +15,13 @@ int string_ids = 0;
 #pragma warning(disable:4996)
 HashMap* ir_visitor = NULL;
 
+Data_Type accept(SyntaxTree* tree);
+
 static bool compatible(Data_Type left, Data_Type right) {
 	return left == right || left == UNKNOWN || right == UNKNOWN;
 }
 
-static Data_Type token_to_data_type[NUM_OF_TOKENS] = {
+static Data_Type TOKEN_TO_DATA_TYPE[NUM_OF_TOKENS] = {
 	[TOKEN_INT] = INT, [TOKEN_NUMBER] = INT,
 	[TOKEN_STRING_LITERAL] = STRING,
 	[TOKEN_BOOL] = BOOL, 
@@ -40,7 +42,11 @@ Data_Type get_type(SyntaxTree* tree) {
 			return info->data_type;
 		}
 	}
-	else return type > NUM_OF_TOKENS || type < 0 ? NONE : token_to_data_type[type];
+	else {
+		if (type >= NUM_OF_TOKENS || type < 0) return NONE;
+		Data_Type result = TOKEN_TO_DATA_TYPE[type];
+		return result;
+	}
 }
 
 static Data_Type program(SyntaxTree* tree) {
@@ -88,7 +94,10 @@ static Data_Type condition_must_be_bool(SyntaxTree* tree, Data_Type type) {
 
 static char* create_new_variable(Token id, Data_Type type) {
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	if(!info) handle_out_of_memory_error();
+	if (!info) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	info->data_type = type;
 	info->identifier_name = id.lexeme;
@@ -158,9 +167,6 @@ static Data_Type assign(SyntaxTree* tree) {
 }
 
 static Data_Type decl(SyntaxTree* tree) {
-	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	if (!info) handle_out_of_memory_error();
-
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	Data_Type left = get_type(tree->info.nonterminal_info.children[0]);
 
@@ -281,7 +287,10 @@ static Data_Type parameter_list(SyntaxTree* tree) {
 static Data_Type parameter(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	if (!info) handle_out_of_memory_error();
+	if (!info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	info->data_type = get_type(tree->info.nonterminal_info.children[0]);
 	info->identifier_name = id.lexeme;
@@ -301,7 +310,14 @@ static Data_Type parameter(SyntaxTree* tree) {
 	FunctionInfo* cur_info = ((FunctionInfo*)symbol_table_lookup_symbol(symbol_table, &supposed_name)->info);
 	int cur_number_of_params = cur_info->num_of_params;
 	cur_info->num_of_params++;
+	VariableInfo* temp = cur_info->params;
 	cur_info->params = realloc(cur_info->params, cur_info->num_of_params * sizeof(VariableInfo));
+	if (!cur_info->params) {
+		free(temp);
+		handle_out_of_memory_error();
+		return NONE;
+	}
+
 	cur_info->params[cur_number_of_params].data_type = info->data_type;
 	cur_info->params[cur_number_of_params].identifier_name = info->identifier_name;
 	return NONE;
@@ -310,7 +326,10 @@ static Data_Type parameter(SyntaxTree* tree) {
 
 static Data_Type function_decl(SyntaxTree* tree) {
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	if (!info) handle_out_of_memory_error();
+	if (!info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = get_type(tree->info.nonterminal_info.children[5]);
@@ -321,19 +340,26 @@ static Data_Type function_decl(SyntaxTree* tree) {
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
 		free(info);
-		return;
+		return NONE;
 	}
 
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
-	if (!helper_info) handle_out_of_memory_error();
+	if (!helper_info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
+
 
 	*helper_info = *info;
 	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	helper_info->info = malloc(sizeof(FunctionInfo));
-	if (!helper_info->info) handle_out_of_memory_error();
+	if (!helper_info->info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -352,7 +378,10 @@ static Data_Type function_decl(SyntaxTree* tree) {
 
 static Data_Type function_decl_returns_nothing(SyntaxTree* tree) {
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	if (!info) handle_out_of_memory_error();
+	if (!info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = NONE;
@@ -363,21 +392,27 @@ static Data_Type function_decl_returns_nothing(SyntaxTree* tree) {
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
 		free(info);
-		return;
+		return NONE;
 	}
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
 
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
-	if (!helper_info) handle_out_of_memory_error();
+	if (!helper_info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	*helper_info = *info;
 	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	if (!helper_info->identifier_name) handle_out_of_memory_error();
 
 	helper_info->info = malloc(sizeof(FunctionInfo));
-	if (!helper_info->info) handle_out_of_memory_error();
+	if (!helper_info->info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -397,7 +432,10 @@ static Data_Type function_decl_returns_nothing(SyntaxTree* tree) {
 
 static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	if (!info) handle_out_of_memory_error();
+	if (!info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = get_type(tree->info.nonterminal_info.children[3]);
@@ -408,18 +446,24 @@ static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
 		free(info);
-		return;
+		return NONE;
 	}
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
-	if (!info) handle_out_of_memory_error();
+	if (!helper_info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	*helper_info = *info;
 	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	helper_info->info = malloc(sizeof(FunctionInfo));
-	if (!helper_info->info) handle_out_of_memory_error();
+	if (!helper_info->info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -437,7 +481,10 @@ static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
 
 static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 	IdentifiersInfo* info = malloc(sizeof(IdentifiersInfo));
-	if(!info) handle_out_of_memory_error();
+	if (!info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
  
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = NONE;
@@ -448,19 +495,25 @@ static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
 		free(info);
-		return;
+		return NONE;
 	}
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
 
 
 	symbol_table_add_scope(symbol_table);
 	IdentifiersInfo* helper_info = malloc(sizeof(IdentifiersInfo));
-	if (!helper_info) handle_out_of_memory_error();
+	if (!helper_info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	*helper_info = *info;
 	helper_info->identifier_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	helper_info->info = malloc(sizeof(FunctionInfo));
-	if (!helper_info->info) handle_out_of_memory_error();
+	if (!helper_info->info) {
+		handle_out_of_memory_error();
+		return NONE;
+	}
 
 	((FunctionInfo*)helper_info->info)->num_of_params = 0;
 	((FunctionInfo*)helper_info->info)->params = NULL;
@@ -600,7 +653,10 @@ Data_Type print_sem(SyntaxTree* tree) {
 	}
 	else if (type_of_var == STRING) {
 		StringInfo* info = malloc(sizeof(StringInfo));
-		if (!info) handle_out_of_memory_error();
+		if (!info) {
+			handle_out_of_memory_error();
+			return NONE;
+		}
 
 		info->id = string_ids++;
 		info->tk = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
@@ -723,7 +779,6 @@ void init_visitor() {
 
 
 int sementic_analysis(SyntaxTree* tree) {
-	printf("\n\n\n SEMENTICS: \n");
 	ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT, string_hash, string_equals);
 	init_visitor();
 
@@ -732,8 +787,6 @@ int sementic_analysis(SyntaxTree* tree) {
 
 	accept(tree);
 
-
-	printf("SEMENTICS END: \n");
 
     return 0;
 }

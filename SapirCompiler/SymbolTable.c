@@ -21,6 +21,7 @@ int type_to_size(Data_Type type){
 	default:
 		break;
 	}
+	return 2;
 }
 
 int align_size(int size) {
@@ -30,7 +31,10 @@ int align_size(int size) {
 
 SymbolInfo* create_new_symbol_info(char* name, Data_Type type, char* og_name) {
 	SymbolInfo* info = malloc(sizeof(SymbolInfo));
-	if(!info) handle_out_of_memory_error();
+	if (!info) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	info->name = name;
 	info->type = type;
@@ -44,7 +48,10 @@ SymbolInfo* create_new_symbol_info(char* name, Data_Type type, char* og_name) {
 // ADD SCOPE
 Scope* scope_init() {
 	Scope* scope = malloc(sizeof(Scope));
-	if (!scope) handle_out_of_memory_error();
+	if (!scope) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 	
 	scope->identifiers = createHashMap(DEFUALT_IDENTIFIERS_PER_SCOPE, string_hash, string_equals);
 	return scope;
@@ -57,7 +64,10 @@ void symbol_table_add_scope(SymbolTable* table) {
 // INIT
 SymbolTable* symbol_table_init() {
 	SymbolTable* st = malloc(sizeof(SymbolTable));
-	if (!st) handle_out_of_memory_error();
+	if (!st) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	st->scopes = linkedlist_init(sizeof(Scope));
 	st->SymbolMap = createHashMap(100, string_hash, string_equals);
@@ -99,7 +109,7 @@ bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info) {
 }
 
 // LOOKUP SYMBOL
-IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, const char** name) {
+IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, char** name) {
 	LinkedListNode* pointer = table->scopes->head;
 	while (pointer != NULL) {
 		if (hashmap_get(((Scope*)pointer->value)->identifiers, *name) != NULL) {
@@ -120,6 +130,7 @@ void print_symbolinfo(SymbolInfo* info) {
 	printf("- size %d ", info->size);
 	printf("- offset %d ", info->offset);
 	printf("- align %d ", info->alignment);
+	printf("- hash %d ", string_hash(info->name));
 	printf("- local %d \n", info->local);
 }
 
@@ -134,7 +145,6 @@ void print_symbolinfotemp(TempSymbolInfo* info) {
 
 void print_all_symbols(SymbolTable* table) {
 	printf("START OF SYMBOLS\n");
-
 
 	HashMapNode* cur;
 	for (int i = 0; i < table->SymbolMap->capacity; i++) {

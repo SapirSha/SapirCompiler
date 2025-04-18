@@ -6,20 +6,33 @@
 
 Queue* queue_init(unsigned int object_size) {
 	Queue* queue = malloc(sizeof(Queue));
-	if (!queue) handle_out_of_memory_error();
+	if (!queue) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	queue->head = NULL;
 	queue->tail = NULL;
 	queue->object_size = object_size;
 	queue->size = 0;
+
+	return queue;
 }
 
 static QueueNode* init_queue_node(void* value, unsigned int object_size) {
 	QueueNode* node = malloc(sizeof(QueueNode));
-	if (!node) handle_out_of_memory_error();
+	if (!node) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	node->next = NULL;
 	node->value = malloc(object_size);
+	if (!node->value) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
+
 	if (!node->value) handle_out_of_memory_error();
 
 	memcpy(node->value, value, object_size);

@@ -9,6 +9,7 @@
 #include "LinkedList.h"
 #include "Queue.h"
 #include <stdbool.h>
+#include "ErrorHandler.h"
 
 
 Queue* Blocks = NULL;
@@ -39,10 +40,10 @@ bool matters(IR_Value* value) {
 		return true;
 	}
 	else if (value->type == IR_BLOCK_ID) {
-		return false; // what
+		return true;
 	}
 	else if (value->type == IR_STR) {
-		return true; // another what?
+		return true; 
 	}
 	return false;
 }
@@ -54,7 +55,6 @@ bool matters(IR_Value* value) {
 
 void handle_instruction(BasicBlock* block, int* index_of_instr) {
 	IR_Instruction* instr = *(IR_Instruction**)block->instructions->array[*index_of_instr];
-	LinkedList* variables;
 	switch (instr->opcode)
 	{
 	case IR_RAW_STRING:
@@ -87,11 +87,8 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 	case IR_NE:
 	case IR_AND:
 	case IR_OR:
-		// if live
 		if (hashset_contains(current_live, &instr->arg1)) {
-			// remove assign
 			hashset_remove(current_live, &instr->arg1);
-			// insert use
 			if (matters(&instr->arg2)) {
 				insert_ir_value_to_live(&instr->arg2);
 			}
@@ -143,10 +140,6 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		break;
 	case IR_GET_INT:
 		instr->is_live = true;
-
-		//if ((hashset_contains(current_live, &instr->arg1))) {
-		//	instr->is_live = true;
-		//}
 	case IR_PARAMETER:
 		if (hashset_contains(used_at_all, &instr->arg2)) {
 			instr->is_live = true;
@@ -159,6 +152,7 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 		instr->is_live = true;
 		break;
 	default:
+		
 		printf("WRONG %d: \n", instr->opcode);
 		break;
 	}
@@ -185,13 +179,11 @@ void remove_dead_code(BasicBlock* block) {
 	if (hashset_contains(seen, &block->id)) {
 		return;
 	}
-	printf("Removing dead code in block %d\n", block->id);
 
 	hashset_insert(seen, &block->id);
 	for (int i = 0; i < block->instructions->size; i++) {
 		IR_Instruction* instr = *(IR_Instruction**)block->instructions->array[i];
 		if (!instr->is_live) {
-			printf("Removing instruction %d index %d \n", instr->opcode, i);
 			remove_instruction(block, &i);
 		}
 	}
@@ -205,7 +197,6 @@ void remove_dead_code(BasicBlock* block) {
 void liveness() {
 	while (Blocks->size != 0) {
 		BasicBlock* block = *(BasicBlock**)queue_dequeue(Blocks);
-		printf("Block ID: %d\n", block->id);
 		for (int i = 0; i < block->successors->size; i++) {
 			BasicBlock* succ = *(BasicBlock**)block->successors->array[i];
 			hashset_union(block->live_out, succ->live_in);
@@ -238,19 +229,9 @@ BasicBlock* computeLiveness(BasicBlock* entry) {
 	liveness();
 
 
-
-	printf("\n\n\nBEFORE LIVENESS RESULT\n");
-	int* visited = calloc(sizeof(int), 100);
-	printCFG(entry, visited);
-	free(visited);
-
 	hashset_clear(seen);
 	remove_dead_code(entry);
 
-	printf("\n\n\nAFTER LIVENESS RESULT\n");
-	visited = calloc(sizeof(int), 100);
-	printCFG(entry, visited);
-	free(visited);
 
 
 	return entry;

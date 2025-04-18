@@ -16,7 +16,7 @@
 #pragma warning(disable:4996)
 
 
-static const int ZERO = 0;
+static int ZERO = 0;
 
 char* actiontypetostring2(int action) {
     switch (action)
@@ -86,10 +86,17 @@ void check_for_single_children(SyntaxTree** arr, int n) {
 
 static SyntaxTree* new_nonterminal_node(Rule* reduce_rule) {
     SyntaxTree* node = malloc(sizeof(SyntaxTree));
-    if (!node) handle_out_of_memory_error();
+    if (!node) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
-    SyntaxTree* children = calloc(reduce_rule->ruleTerminalCount, sizeof(SyntaxTree*));
-    if (!children) handle_out_of_memory_error();
+    SyntaxTree** children = calloc(reduce_rule->ruleTerminalCount, sizeof(SyntaxTree*));
+    if (!children) {
+        free(node);
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
     node->type = NONTERMINAL_TYPE;
     node->info.nonterminal_info = (struct NonterminalType){
@@ -101,7 +108,10 @@ static SyntaxTree* new_nonterminal_node(Rule* reduce_rule) {
 
 static SyntaxTree* new_terminal_node(Token token) {
     SyntaxTree* node = malloc(sizeof(SyntaxTree));
-    if (!node) handle_out_of_memory_error();
+    if (!node) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
     node->type = TERMINAL_TYPE;
     node->info.terminal_info.token = token;
@@ -200,7 +210,6 @@ SyntaxTree* commit_parser(Queue* tokens) {
 
             break;
         case ACCEPT:
-            printf("ACCEPT");
             loop = false;
             break;
 

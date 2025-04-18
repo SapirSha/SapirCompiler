@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_LOAD_FACTOR 0.7
+#define MAX_LOAD_FACTOR_SET 0.7
 #define MINIMUM_HASHSET_CAPACITY 5
 #define GROWTH_FACTOR 2
 

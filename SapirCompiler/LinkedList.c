@@ -6,7 +6,10 @@
 
 LinkedList* linkedlist_init(unsigned int object_byte_size) {
 	LinkedList* lst = (LinkedList*) malloc(sizeof(LinkedList));
-	if(!lst) handle_out_of_memory_error();
+	if (!lst) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	lst->object_byte_size = object_byte_size;
 	lst->size = 0;
@@ -29,11 +32,17 @@ bool linkedlist_contains(LinkedList* lst, void* value, unsigned int compare_func
 
 LinkedListNode* linkedlistnode_init(LinkedList* lst, void* value) {
 	LinkedListNode* node = malloc(sizeof(LinkedListNode));
-	if (!node) handle_out_of_memory_error();
+	if (!node) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	node->next = NULL;
 	node->value = malloc(sizeof(lst->object_byte_size));
-	if (!node->value) handle_out_of_memory_error();
+	if (!node->value) {
+		handle_out_of_memory_error();
+		return NULL;
+	}
 
 	memcpy(node->value, value, lst->object_byte_size);
 	return node;

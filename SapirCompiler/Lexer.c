@@ -29,7 +29,10 @@ char* token_to_string(ArrayList* token) {
     static char ZERO = '\0';
     arraylist_add(token, &ZERO);
     char* string = malloc(token->size * sizeof(char));
-    if (!string) handle_out_of_memory_error();
+    if (!string) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
 
     for (int i = 0; i < token->size; i++) {
         string[i] = *(char*)token->array[i];
@@ -51,18 +54,18 @@ void add_token(ArrayList* token, Queue* tokens, Token_Types type, int index) {
 
 
 
-void handle_start(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_number(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_keyword(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_operator(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_string_literal(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_comment(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_separator(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_error(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
-void handle_identifier(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_start(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_number(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_keyword(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_operator(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_string_literal(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_comment(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_separator(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_error(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
+void handle_identifier(char* input, int* index, ArrayList* token, LEXER_STATE* next_state);
 
 
-void(*states_functions[])(const char*, int*, ArrayList*, LEXER_STATE*) = {
+void(*states_functions[])(char*, int*, ArrayList*, LEXER_STATE*) = {
     [START] = handle_start,
     [NUMBER] = handle_number,
     [OPERATOR] = handle_operator,
@@ -73,7 +76,7 @@ void(*states_functions[])(const char*, int*, ArrayList*, LEXER_STATE*) = {
     [ERROR] = handle_error,
     [IDENTIFIER] = handle_identifier,
 };
-void call_state_function(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void call_state_function(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     states_functions[*next_state](input, index, token, next_state);
 }
 
@@ -155,7 +158,7 @@ static const CharClass classifier_lookup[] = {
 
 
     //Spaces
-    ['\n'] = CHAR_WHITESPACE,[' '] = CHAR_WHITESPACE,['\t'] = CHAR_WHITESPACE,
+    ['\n'] = CHAR_WHITESPACE,[' '] = CHAR_WHITESPACE,['\t'] = CHAR_WHITESPACE,['\r'] = CHAR_WHITESPACE,
 
     //Comments
     ['#'] = CHAR_COMMENT,
@@ -193,7 +196,6 @@ void init_finder() {
     stringin_insert_string(token_finder, "while", TOKEN_WHILE);
     stringin_insert_string(token_finder, "for", TOKEN_FOR);
 	stringin_insert_string(token_finder, "else", TOKEN_ELSE);
-	stringin_insert_string(token_finder, "char", TOKEN_CHAR);
     stringin_insert_string(token_finder, "bool", TOKEN_BOOL);
     stringin_insert_string(token_finder, "true", TOKEN_TRUE);
 	stringin_insert_string(token_finder, "false", TOKEN_FALSE);
@@ -232,7 +234,7 @@ void init_finder() {
     stringin_insert_string(token_finder, "==", TOKEN_OPERATOR_EQUAL);
 }
 
-void handle_error(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_error(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     handle_lexical_error(*next_state, input[*index], current_line, *index - current_line_start_compared_to_index);
     arraylist_reset(token);
     *next_state = START;
@@ -358,7 +360,7 @@ void handle_string_literal(char* input, int* index, ArrayList* token, LEXER_STAT
 	}
 }
 
-void handle_comment(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_comment(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     LEXER_STATE current = COMMENT;
     while (current == COMMENT) {
         (*index)++;
@@ -371,7 +373,7 @@ void handle_comment(const char* input, int* index, ArrayList* token, LEXER_STATE
 }
 
 
-void handle_start(const char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
+void handle_start(char* input, int* index, ArrayList* token, LEXER_STATE* next_state) {
     LEXER_STATE current = START;
     while (current == START) {
         if (input[*index] == '\n') {
@@ -401,7 +403,7 @@ void handle_identifier(char* input, int* index, ArrayList* token, LEXER_STATE* n
 	add_token(token, tokens, TOKEN_IDENTIFIER, *index);
 }
 
-Queue* tokenize(const char* input) {
+Queue* tokenize(char* input) {
     current_line = 1;
     end_reached = false;
     current_line_start_compared_to_index = 1;

@@ -2,8 +2,7 @@
 #define SYNTAXTREE_H
 
 #include "Tokens.h"
-typedef struct SyntaxTree;
-
+struct SyntaxTree;
 
 typedef enum {
 	NONTERMINAL_TYPE,

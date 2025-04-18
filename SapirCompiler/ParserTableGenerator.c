@@ -60,7 +60,7 @@ void add_rule(const char* nonterminal, const char* content) {
 A function that returns the token in position n in the input
  * Position is the number of symbols passed, and not character position in the string
 */
-static char* get_nth_token(const char* s, int n) {
+static char* get_nth_token(char* s, int n) {
     int currentToken = 0;
     char* p = s;
     while (*p) {
@@ -76,7 +76,11 @@ static char* get_nth_token(const char* s, int n) {
 
             int len = (p - start) / sizeof(char);
             char* token = malloc(len + 1);
-            if (!token) handle_out_of_memory_error();
+            if (!token) {
+                free(token);
+                handle_out_of_memory_error();
+                return NULL;
+            }
 
             strncpy(token, start, len);
             token[len] = '\0';
@@ -151,7 +155,10 @@ static void closure(Parser_State* s) {
 */
 static Parser_State* goto_state(Parser_State* s, const char* symbol) {
     Parser_State* newState = malloc(sizeof(Parser_State));
-    if (!newState) handle_out_of_memory_error();
+    if (!newState) {
+        handle_out_of_memory_error();
+        return NULL; 
+    }
     newState->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
     
     // find all the rules in the previous state that have 'symbol' as an allowed possibility, and add them
@@ -506,20 +513,32 @@ int getNonterminalIndex(const char* sym) {
 /* Create the action and goto tables*/
 void init_tables() {
     actionTable = malloc(states->size * sizeof(ActionCell*));
-    if (!actionTable) handle_out_of_memory_error();
+    if (!actionTable) {
+        handle_out_of_memory_error();
+        return;
+    }
 
     ActionCell* actionContent = malloc(states->size * terminalsList->size * sizeof(ActionCell));
-    if (!actionContent) handle_out_of_memory_error();
+    if (!actionContent) {
+        handle_out_of_memory_error();
+        return;
+    }
     
     for (int i = 0; i < states->size; i++)
         actionTable[i] = actionContent + i * terminalsList->size;
 
     gotoTable = malloc(states->size * sizeof(int*));
-    if (!gotoTable) handle_out_of_memory_error();
+    if (!gotoTable) {
+        handle_out_of_memory_error();
+        return;
+    }
 
     int* gotoContent = malloc(states->size * nonterminalsList->size * sizeof(int));
-    if (!gotoContent) handle_out_of_memory_error();
-    for (unsigned int i = 0; i < states->size; i++)
+    if (!gotoContent) {
+        handle_out_of_memory_error();
+        return;
+    }
+    for (int i = 0; i < states->size; i++)
         gotoTable[i] = gotoContent + i * nonterminalsList->size;
 }
 
@@ -706,7 +725,6 @@ int find_row_of_nonterminal_in_table(const char* nonterminal) {
     if (i < nonterminalsList->size)
         return i;
     else {
-        printf("ERROR");
         exit(1);
     }
 }
@@ -717,7 +735,6 @@ int find_column_of_terminal_in_table(const char* terminal) {
     if (i < terminalsList->size)
         return i;
     else {
-        printf("ERROR");
         exit(1);
     }
 }
@@ -745,7 +762,6 @@ void createAssociationMap() {
     associationArray[TOKEN_IDENTIFIER] = find_column_of_terminal_in_table("identifier");
     associationArray[TOKEN_NUMBER] = find_column_of_terminal_in_table("number");
     associationArray[TOKEN_INT] = find_column_of_terminal_in_table("int");
-    associationArray[TOKEN_CHAR] = find_column_of_terminal_in_table("char");
     associationArray[TOKEN_ELSE] = find_column_of_terminal_in_table("else");
     associationArray[TOKEN_OPERATOR_ASSIGN] = find_column_of_terminal_in_table("=");
     associationArray[TOKEN_DO] = find_column_of_terminal_in_table("do");
@@ -844,13 +860,9 @@ void add_rules() {
     add_rule("FACTOR", "FUNCTION_CALL_STATEMENT");
     add_rule("FACTOR", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
 
-    
-
     add_rule("VARIABLE_TYPE", "int");
-    add_rule("VARIABLE_TYPE", "char");
     add_rule("VARIABLE_TYPE", "bool");
 
-    
     add_rule("BLOCK", "{ STATEMENTS }"); //
     add_rule("BLOCK", "{ }"); //
 
@@ -998,7 +1010,7 @@ void free_non_and_terminals() {
 
 
 void free_follow() {
-    for (unsigned int i = 0; i < follow->capacity; i++) {
+    for (int i = 0; i < follow->capacity; i++) {
         HashMapNode* node = follow->buckets[i];
         while (node) {
             HashMapNode* temp = node;

@@ -20,7 +20,7 @@ bool used_print_num = false;
 bool used_get_num = false;
 bool used_print_string = false;
 
-char* outputcode(char* str) {
+void outputcode(char* str) {
 	printf("%s\n", str);
 }
 
@@ -293,7 +293,7 @@ void handle_global_vars() {
 	while (globalStrings->size != 0) {
 		cur = (Token*)linkedlist_pop(globalStrings);
 		StringInfo* info = hashmap_get(symbol_table->GlobalStrings, cur->lexeme);
-		char* name = info->id;
+		int name = info->id;
 		char* size_name = "DB";
 		char* content = cur->lexeme;
 		snprintf(declaration, 100, "GLOBAL_STRING_%d %s '%s', 0DH, 0AH, '$'", name, size_name, content);
@@ -371,7 +371,7 @@ void out_put_in_out_functions() {
 		outputcode("GETNUM ENDP");
 	}
 
-	if (used_get_num) {
+	if (used_print_num) {
 		outputcode("PRINTNUM PROC");
 		outputcode("PUSH AX");
 		outputcode("PUSH BX");
@@ -411,6 +411,7 @@ void out_put_in_out_functions() {
 		outputcode("ADD DI, CX");
 		outputcode("MOV BX, DI");
 		outputcode("DEC DI");
+		outputcode("XOR DX, DX");
 		outputcode("NUMBER_PRINT_LOOP:");
 		outputcode("DIV SI");
 		outputcode("ADD DL, '0'");
@@ -436,6 +437,7 @@ void out_put_in_out_functions() {
 		outputcode("RET");
 		outputcode("PRINTNUM ENDP");
 	}
+
 	if (used_print_string) {
 		outputcode("PRINTSTRING PROC");
 		outputcode("PUSH DX");
@@ -473,13 +475,14 @@ void release_register(int register_id) {
 int appoint_register(int register_id, int temp_id) {
 	if (available[register_id] != -1) release_register(register_id);
 	available[register_id] = temp_id;
+	return register_id;
 }
 
 void handle_assign_instr(IR_Instruction* instr) {
 	char* dest = get_access_name(&instr->arg1);
 	char* src = get_access_name(&instr->arg2);
 
-	if (appoint_name(dest) != -1 || appoint_name(src) != -1) {
+	if (appoint_name(instr->arg1.data.num) != -1 || appoint_name(instr->arg2.data.num) != -1) {
 		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", dest, src);
 		outputcode(main_str_buffer);
 
@@ -491,12 +494,14 @@ void handle_assign_instr(IR_Instruction* instr) {
 		int size1 = 2;
 		int size2 = 2;
 		if (instr->arg1.type == IR_TEMPORARY_ID) {
-			TempSymbolInfo* info = hashmap_get(temp_map, instr->arg1.data.num);
+			TempSymbolInfo* info = (TempSymbolInfo*)hashmap_get(temp_map, &instr->arg1.data.num);
 			size1 = info->size;
 		}
 		else {
-			SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
-			size1 = info->size;
+			if (!is_instant_value(&instr->arg1)) {
+				SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
+				size1 = info->size;
+			}
 		}
 
 		if (!is_instant_value(&instr->arg2)) {
@@ -810,10 +815,10 @@ void handle_condition_instr(IR_Instruction* instr) {
 		need_to_free_temp = 1;
 
 	}
-	if ((!is_instant_value(&instr->arg2.type) &&
+	if ((!is_instant_value(&instr->arg2) &&
 		(instr->arg2.type == IR_TEMPORARY_ID && appoint_name(instr->arg2.data.num) == -1 ||
 		instr->arg2.type == IR_TOKEN)) &&
-		(!is_instant_value(&instr->arg3.type) &&
+		(!is_instant_value(&instr->arg3) &&
 			(instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) == -1 ||
 			instr->arg3.type == IR_TOKEN)))
 	{
@@ -907,10 +912,8 @@ void release_all_registers() {
 		if (available[i] != -1) {
 			release_register(i);
 			available[i] = -1;
-			return i;
 		}
 	}
-	return -1;
 }
 
 void handle_func_start_instr(IR_Instruction* instr) {
@@ -1045,12 +1048,14 @@ void handle_print(IR_Instruction* instr) {
 void handle_print_int(IR_Instruction* instr) {
 	int size = 2;
 	if (instr->arg1.type == IR_TEMPORARY_ID) {
-		TempSymbolInfo* info = hashmap_get(temp_map, instr->arg1.data.num);
+		TempSymbolInfo* info = (TempSymbolInfo*)hashmap_get(temp_map, &instr->arg1.data.num);
 		size = info->size;
 	}
 	else {
-		SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
-		size = info->size;
+		if (!is_instant_value(&instr->arg1)) {
+			SymbolInfo* info = (SymbolInfo*)hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
+			size = info->size;
+		}
 	}
 	char* src_access = get_access_name(&instr->arg1);
 	if (size == 1)
@@ -1069,11 +1074,11 @@ void handle_get_int(IR_Instruction* instr) {
 	
 	int size = 2;
 	if (instr->arg1.type == IR_TEMPORARY_ID) {
-		TempSymbolInfo* info = hashmap_get(temp_map, instr->arg1.data.num);
+		TempSymbolInfo* info = (TempSymbolInfo*)hashmap_get(temp_map, &instr->arg1.data.num);
 		size = info->size;
 	}
 	else {
-		SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
+		SymbolInfo* info = (SymbolInfo*)hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
 		size = info->size;
 	}
 	char* src_access = get_access_name(&instr->arg1);
@@ -1172,9 +1177,6 @@ void traverse_cfg(BasicBlock* entry, int* visitor) {
 	if (visitor[entry->id] == 1) return;
 	else visitor[entry->id] = 1;
 
-	if (temp_map == -1)
-		printf("%d --------------------<\n", entry->id);
-
 	char* block_label;
 	block_label = create_label(entry->id);
 
@@ -1212,7 +1214,6 @@ void assume() {
 }
 
 void generate_code(BasicBlock* entry) {
-	printf("\n\n\n\n");
 	symbol_map = symbol_table->SymbolMap;
 	temp_map = symbol_table->TemporaryVarMap;
 

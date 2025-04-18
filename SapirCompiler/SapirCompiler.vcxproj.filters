@@ -55,6 +55,12 @@
     <Filter Include="Source Files\MultiPhase_c">
       <UniqueIdentifier>{c71821ff-0ea9-4a06-b96f-e8ea878fa948}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Input">
+      <UniqueIdentifier>{79032462-5c34-4d0f-b5ec-071b45cd9266}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Input">
+      <UniqueIdentifier>{e3da5d4b-d1ef-4cdc-82b9-ab29add063a9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.c">
@@ -111,6 +117,12 @@
     <ClCompile Include="SyntaxTree.c">
       <Filter>Source Files\MultiPhase_c</Filter>
     </ClCompile>
+    <ClCompile Include="ConsoleInput.c">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="FileInput.c">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h">
@@ -166,6 +178,12 @@
     </ClInclude>
     <ClInclude Include="Tokens.h">
       <Filter>Header Files\MultiPhase</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsoleInput.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="FileInput.h">
+      <Filter>Header Files\Input</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

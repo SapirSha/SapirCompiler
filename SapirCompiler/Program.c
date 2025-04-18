@@ -1,7 +1,29 @@
 #include "Compiler.h"
+#include "ConsoleInput.h"
+#include "FileInput.h"
+#include "ErrorHandler.h"
 #include <stdio.h>
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    char* code = NULL;
+
+    switch (argc)
+    {
+    case 1:
+        code = get_console_input();
+        break;
+    case 2:
+        code = get_file_input(argv[1]);
+        break;
+    default:
+        code = get_console_input();
+        break;
+    }
+
+    if (current_error_state != NO_ERROR) return 0;
+
+    /*
     char* code =
         "function pow gets int x, int y returns int { "
         "    if y <= 0 return 1  "
@@ -61,13 +83,15 @@ int main() {
         "else print \"number is not even\"              "
         ;
 
+        */
+
+    
     bool compiler_result = compile(code);
     if (compiler_result)
         printf("\n\t ---Compiled successfully\n");
     else 
         printf("\n\t ---Failed to compiler code\n");
 
-    
     return 0;
 
 }

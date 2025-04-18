@@ -33,4 +33,5 @@ void handle_sementic_invalid_print_type(Token content, Data_Type type);
 void handle_sementic_get_type(Token content, Data_Type type);
 
 void handle_out_of_memory_error();
+void handle_other_errors(char* msg);
 #endif

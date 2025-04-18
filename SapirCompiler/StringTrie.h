@@ -20,7 +20,7 @@ typedef struct StringTrie {
 
 StringTrie* stringin_init(void);
 void stringin_insert_string(StringTrie* s, const char* str, Token_Types token_type);
-Token_Types stringin_search_string(const StringTrie* root, const char* str);
+Token_Types stringin_search_string(StringTrie* root, const char* str);
 int stringin_next(StringTrie** pos, char** remaining_clearance, char next_letter);
 void stringin_free(StringTrie* root);
 void stringin_print(StringTrie* root);

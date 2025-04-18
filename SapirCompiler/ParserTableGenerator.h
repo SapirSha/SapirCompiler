@@ -58,4 +58,7 @@ bool isNonterminal(const char* symbol);
 void free_parser_table();
 
 void free_non_and_terminals();
+void free_rules();
+void free_follow();
+
 #endif

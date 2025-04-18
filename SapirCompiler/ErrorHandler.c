@@ -17,7 +17,7 @@ void handle_unkown_character_error(char character, int row, int col) {
 	current_error_state = LEXICAL_ERROR;
 }
 
-static const char* STATES_TO_STRING[NUM_STATES] = {
+static char* STATES_TO_STRING[NUM_STATES] = {
 	[KEYWORD] = "Keyword",
 	[IDENTIFIER] = "Identifier",
 	[STRING_LITERAL] = "String Literal",
@@ -199,4 +199,10 @@ void handle_out_of_memory_error() {
 	current_error_state = OTHER_ERROR;
 
 	exit(-1);
+}
+
+void handle_other_errors(char* msg) {
+	out_put_error(msg);
+
+	current_error_state = OTHER_ERROR;
 }
