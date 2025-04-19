@@ -8,6 +8,9 @@
 #include "ErrorHandler.h"
 #include "FileOut.h"
 #include "ConsoleOut.h"
+#include "string.h"
+
+#pragma warning(disable:4996)
 
 #define DEFAULT_OFFSET -2
 #define SIZE_OF_BOOLEAN 1
@@ -26,7 +29,22 @@ bool used_print_string = false;
 static char main_str_buffer[ONEHUNDRED];
 
 void outputcode(char* str) {
-	printf("%s\n", str);
+	unsigned int len = strlen(str);
+	char* temp = malloc((len + 5) * sizeof(char));
+	if (temp == NULL) {
+		handle_out_of_memory_error();
+		return;
+	}
+
+	
+	strncpy(temp, str, len * sizeof(char));
+	temp[len] = '\n';
+	temp[len + 1] = '\0';
+
+	console_out(temp);
+	if (outputcode != NULL) file_out(temp);
+
+	free(temp);
 }
 
 char* get_number_str(int num) {
@@ -936,7 +954,7 @@ void handle_func_end_instr(IR_Instruction* instr) {
 
 	outputcode("POP BP");
 	int params_space = instr->arg3.data.num;
-	snprintf(main_str_buffer, 100, "RET %d", params_space * 2);
+	snprintf(main_str_buffer, 100, "RET %d", params_space);
 	outputcode(main_str_buffer);
 }
 
@@ -1204,7 +1222,7 @@ void do_the_thing_with_ds_and_ax() {
 
 void init_stack() {
 	outputcode("STACK_SEG SEGMENT STACK");
-	outputcode("DW 1000h");
+	outputcode("DW 1000H DUP(?)");
 	outputcode("STACK_SEG ENDS");
 }
 

@@ -343,8 +343,9 @@ void handle_string_literal(char* input, int* index, ArrayList* token, LEXER_STAT
     (*index)++;
     
     while ((current = state_table[STRING_LITERAL][classifier_lookup[input[*index]]]) == STRING_LITERAL) {
-        if (input[*index] != '\n' && input[*index] != '\'')
-            arraylist_add(token, &input[*index]);
+        if (input[*index] != '\n')
+            if (input[*index] != '\'')
+                arraylist_add(token, &input[*index]);
         else
             new_line(*index);
 

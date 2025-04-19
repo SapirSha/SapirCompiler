@@ -43,7 +43,7 @@ void file_out(char* msg) {
 
     FILE* f = fopen(full_path, is_first_call ? "w" : "a");
     if (!f) {
-        fprintf(stderr, "Unable to create Output file at %s\n", full_path);
+        fprintf(stdout, "Unable to create Output file at %s\n", full_path);
         return;
     }
 

@@ -7,6 +7,8 @@
 #include <stdio.h>
 
 int main(int argc, char* argv[]) {
+    create_parser_tables();
+
     char* code = NULL;
     output_place = NULL;
 
@@ -28,5 +30,4 @@ int main(int argc, char* argv[]) {
 
     free(code);
     return 0;
-
 }
