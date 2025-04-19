@@ -532,13 +532,25 @@ static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 static Data_Type return_statement(SyntaxTree* tree) {
 	Data_Type info = accept(tree->info.nonterminal_info.children[1]);
 	char* supposed_name = strdup(CURRENT_FUNCTION_SYMBOL);
-	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, &supposed_name)->data_type;
+	IdentifiersInfo* func_info = symbol_table_lookup_symbol(symbol_table, &supposed_name);
+	if (!func_info) {
+		handle_sementic_no_function(tree->info.nonterminal_info.children[0]->info.terminal_info.token);
+		return UNKNOWN;
+	}
+
+	Data_Type supposed = func_info->data_type;
+
 	// fix return outside function
 	return handle_incompatability(tree, info, supposed);
 }
 static Data_Type return_none_statement(SyntaxTree* tree) {
 	char* supposed_name = strdup(CURRENT_FUNCTION_SYMBOL);
-	Data_Type supposed = symbol_table_lookup_symbol(symbol_table, &supposed_name)->data_type;
+	IdentifiersInfo* func_info = symbol_table_lookup_symbol(symbol_table, &supposed_name);
+	if (!func_info) {
+		handle_sementic_no_function(tree->info.terminal_info.token);
+		return UNKNOWN;
+	}
+	Data_Type supposed = func_info->data_type;
 	
 	return handle_incompatability(tree, NONE, supposed);
 }

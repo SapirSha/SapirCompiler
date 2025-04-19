@@ -7,7 +7,6 @@
 #include <stdio.h>
 
 int main(int argc, char* argv[]) {
-    create_parser_tables();
     char* code = NULL;
     output_place = NULL;
 
@@ -27,7 +26,6 @@ int main(int argc, char* argv[]) {
     else 
         printf("\n\n\t ---Failed to compile code\n");
 
-    free_parser_table();
     free(code);
     return 0;
 

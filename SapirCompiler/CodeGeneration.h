@@ -3,7 +3,7 @@
 #include "IR_CFG.h"
 
 
-void generate_code(BasicBlock* entry);
+void generate_code(CodeBlock* entry);
 
 
 

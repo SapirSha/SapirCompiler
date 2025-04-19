@@ -31,6 +31,7 @@ void handle_sementic_function_call_arguments_miscount(Token func_call, int call_
 void handle_sementic_function_call_arguments_mismatch(Token func_call, int argument_index, Data_Type arg, Data_Type param);
 void handle_sementic_invalid_print_type(Token content, Data_Type type);
 void handle_sementic_get_type(Token content, Data_Type type);
+void handle_sementic_no_function(Token return_token);
 
 void handle_out_of_memory_error();
 void handle_other_errors(char* msg);

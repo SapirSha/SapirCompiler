@@ -222,7 +222,7 @@ IR_Instruction* createBinaryOpInstruction(IR_Opcode op, IR_Value temp, IR_Value 
     if (function_entry_blocks->size != 0) {
         IR_Instruction* func_enter =
             *(IR_Instruction**)
-            ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+            ((*(CodeBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
         int* pos = malloc(sizeof(int));
         if (!pos) {
             handle_out_of_memory_error();
@@ -306,7 +306,7 @@ IR_Instruction* createDeclareInstruction(Token name) {
 
         IR_Instruction* func_enter =
             *(IR_Instruction**)
-            ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+            ((*(CodeBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
         int* pos = malloc(sizeof(int));
         if (!pos) {
             handle_out_of_memory_error();
@@ -404,7 +404,7 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
     if (function_entry_blocks->size != 0) {
         IR_Instruction* func_enter =
             *(IR_Instruction**)
-            ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+            ((*(CodeBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
         int* pos = malloc(sizeof(int));
         if (!pos) {
             handle_out_of_memory_error();
@@ -514,7 +514,7 @@ IR_Instruction* createParameterInstruction(Token param, int param_num) {
 
     IR_Instruction* func_enter =
         *(IR_Instruction**)
-        ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+        ((*(CodeBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
     int* pos = malloc(sizeof(int));
     if (!pos) {
         handle_out_of_memory_error();
@@ -565,11 +565,11 @@ static IR_Value newTemp() {
 
 
 
-BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current);
+CodeBlock* buildCFG(SyntaxTree* tree, CodeBlock* current);
 
 int next_block_id = 0;
-BasicBlock* createBasicBlock(void) {
-    BasicBlock* block = (BasicBlock*)malloc(sizeof(BasicBlock));
+CodeBlock* createBasicBlock(void) {
+    CodeBlock* block = (CodeBlock*)malloc(sizeof(CodeBlock));
     if (!block) {
         handle_out_of_memory_error();
         return NULL;
@@ -577,38 +577,38 @@ BasicBlock* createBasicBlock(void) {
 
     block->id = next_block_id++;
     block->instructions = arraylist_init(sizeof(IR_Instruction*), 8);
-    block->successors = arraylist_init(sizeof(BasicBlock*), 4);
-    block->predecessors = arraylist_init(sizeof(BasicBlock*), 4);
+    block->successors = arraylist_init(sizeof(CodeBlock*), 4);
+    block->predecessors = arraylist_init(sizeof(CodeBlock*), 4);
 	block->live_in = hashset_create(16, ir_value_hash, ir_value_equals);
     block->live_out = hashset_create(16, ir_value_hash, ir_value_equals);
 
     return block;
 }
 
-void addIRInstruction(BasicBlock* block, IR_Instruction* instr) {
+void addIRInstruction(CodeBlock* block, IR_Instruction* instr) {
     arraylist_add(block->instructions, &instr);
 }
 
-void addPredecessor(BasicBlock* block, BasicBlock* pred) {
+void addPredecessor(CodeBlock* block, CodeBlock* pred) {
     arraylist_add(block->predecessors, &pred);
 }
 
-void addSuccessor(BasicBlock* block, BasicBlock* succ) {
+void addSuccessor(CodeBlock* block, CodeBlock* succ) {
     arraylist_add(block->successors, &succ);
     addPredecessor(succ, block);
 }
 
 typedef struct {
     char* name;
-    BasicBlock* entry;
-    BasicBlock* exit;
+    CodeBlock* entry;
+    CodeBlock* exit;
     int num_of_params;
 } FunctionCFGEntry;
 
 FunctionCFGEntry* functionCFGTable = NULL;
 int functionCFGCount = 0;
 
-void addFunctionCFG(const char* name, BasicBlock* entry, BasicBlock* exit) {
+void addFunctionCFG(const char* name, CodeBlock* entry, CodeBlock* exit) {
     FunctionCFGEntry* temp = functionCFGTable;
     functionCFGTable = realloc(functionCFGTable, sizeof(FunctionCFGEntry) * (functionCFGCount + 1));
     if (!functionCFGTable) {
@@ -665,9 +665,9 @@ IR_Opcode mapComparisonOperator(char* opStr) {
     return res ? *res : IR_RAW_STRING;
 }
 
-IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current);
+IR_Value lowerExpression(SyntaxTree* exprTree, CodeBlock** current);
 
-void find_arguments_for_call(SyntaxTree* tree, BasicBlock** current, ArrayList* list) {
+void find_arguments_for_call(SyntaxTree* tree, CodeBlock** current, ArrayList* list) {
     if (strcmp(tree->info.nonterminal_info.nonterminal, "ARGUMENT_LIST") == 0) {
         find_arguments_for_call(tree->info.nonterminal_info.children[0], current, list);
 
@@ -682,7 +682,7 @@ void find_arguments_for_call(SyntaxTree* tree, BasicBlock** current, ArrayList* 
     arraylist_add(list, &arg);
 }
 
-IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
+IR_Value lowerFunctionCall(SyntaxTree* exprTree, CodeBlock** current) {
     char* funcName = exprTree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme;
     int found = find_function_index(funcName);
 
@@ -702,7 +702,7 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     addIRInstruction(*current, instr);
 
     addSuccessor(*current, functionCFGTable[found].entry);
-    BasicBlock* cont = createBasicBlock();
+    CodeBlock* cont = createBasicBlock();
     addSuccessor(functionCFGTable[found].exit, cont);
 
     addIRInstruction(*current, createJumpInstruction(cont->id));
@@ -712,7 +712,7 @@ IR_Value lowerFunctionCall(SyntaxTree* exprTree, BasicBlock** current) {
     return temp;
 }
 
-IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
+IR_Value lowerExpression(SyntaxTree* exprTree, CodeBlock** current) {
     if (exprTree->type == TERMINAL_TYPE) {
         IR_Value return_value;
         return_value.type = IR_TOKEN;
@@ -753,7 +753,7 @@ IR_Value lowerExpression(SyntaxTree* exprTree, BasicBlock** current) {
 }
 
 
-BasicBlock* return_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* return_block(SyntaxTree* tree, CodeBlock* current) {
     IR_Value retVal;
     if (tree->info.nonterminal_info.num_of_children > 1) {
         retVal = lowerExpression(tree->info.nonterminal_info.children[1], &current);
@@ -762,7 +762,7 @@ BasicBlock* return_block(SyntaxTree* tree, BasicBlock* current) {
         retVal.type = IR_NULL;
     }
 
-    BasicBlock* exitBlock = *(BasicBlock**)(linkedlist_peek(function_exit_blocks));
+    CodeBlock* exitBlock = *(CodeBlock**)(linkedlist_peek(function_exit_blocks));
     IR_Instruction* retInstr = createReturnInstruction(retVal, exitBlock->id);
     addIRInstruction(current, retInstr);
 
@@ -770,7 +770,7 @@ BasicBlock* return_block(SyntaxTree* tree, BasicBlock* current) {
     return current;
 }
 
-BasicBlock* assignment_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* assignment_block(SyntaxTree* tree, CodeBlock* current) {
     Token dest = tree->info.nonterminal_info.children[0]->info.terminal_info.token;
     IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[2], &current);
 
@@ -780,14 +780,14 @@ BasicBlock* assignment_block(SyntaxTree* tree, BasicBlock* current) {
     return current;
 }
 
-BasicBlock* decl_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* decl_block(SyntaxTree* tree, CodeBlock* current) {
     Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     addIRInstruction(current, createDeclareInstruction(name));
 
     return current;
 }
 
-BasicBlock* decl_assignment_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* decl_assignment_block(SyntaxTree* tree, CodeBlock* current) {
     Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     addIRInstruction(current, createDeclareInstruction(name));
 
@@ -805,13 +805,13 @@ BasicBlock* decl_assignment_block(SyntaxTree* tree, BasicBlock* current) {
     return current;
 }
 
-void lower_parameter(SyntaxTree* tree, BasicBlock* block, int index) {
+void lower_parameter(SyntaxTree* tree, CodeBlock* block, int index) {
 	SyntaxTree* param = tree->info.nonterminal_info.children[1];
 	IR_Instruction* ir = createParameterInstruction(param->info.terminal_info.token, index);
 	addIRInstruction(block, ir);
 }
 
-void lower_parameter_list(SyntaxTree* tree, BasicBlock* block, int* param_index) {
+void lower_parameter_list(SyntaxTree* tree, CodeBlock* block, int* param_index) {
     if (strcmp(tree->info.nonterminal_info.nonterminal, "PARAMETER_LIST") == 0) {
         lower_parameter_list(tree->info.nonterminal_info.children[0], block, param_index);
         (*param_index)++;
@@ -826,7 +826,7 @@ void lower_parameter_list(SyntaxTree* tree, BasicBlock* block, int* param_index)
 
 FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
     Token funcName = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
-    BasicBlock* entry = createBasicBlock();
+    CodeBlock* entry = createBasicBlock();
     linkedlist_push(function_entry_blocks, &entry);
 
     IR_Instruction* entry_instr = createFunctionLimitsInstruction(IR_FUNC_START, funcName);
@@ -839,21 +839,21 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
         lower_parameter_list(tree->info.nonterminal_info.children[3], entry, &num_of_params);
     }
     
-    BasicBlock* exit = createBasicBlock();
+    CodeBlock* exit = createBasicBlock();
     linkedlist_push(function_exit_blocks, &exit);
     int function_index = functionCFGCount;
     addFunctionCFG(funcName.lexeme, entry, exit);
 
     
 
-    BasicBlock* bodyEnd = buildCFG(tree->info.nonterminal_info.children[tree->info.nonterminal_info.num_of_children - 1], entry);
+    CodeBlock* bodyEnd = buildCFG(tree->info.nonterminal_info.children[tree->info.nonterminal_info.num_of_children - 1], entry);
     addSuccessor(bodyEnd, exit);
     addIRInstruction(bodyEnd, createJumpInstruction(exit->id));
 
 
     IR_Instruction* func_enter =
         *(IR_Instruction**)
-        ((*(BasicBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
+        ((*(CodeBlock**)linkedlist_peek(function_entry_blocks))->instructions->array[0]);
     int space = func_enter->arg2.data.num;
     int params_space = func_enter->arg3.data.num;
 
@@ -884,12 +884,12 @@ FunctionCFGEntry* buildFunctionCFG(SyntaxTree* tree) {
     return fc;
 }
 
-BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
-    BasicBlock* thenBlock = createBasicBlock();
-    BasicBlock* then_start = thenBlock;
+CodeBlock* if_block(SyntaxTree* tree, CodeBlock* current) {
+    CodeBlock* thenBlock = createBasicBlock();
+    CodeBlock* then_start = thenBlock;
     thenBlock = buildCFG(tree->info.nonterminal_info.children[2], thenBlock);
 
-    BasicBlock* mergeBlock = createBasicBlock();
+    CodeBlock* mergeBlock = createBasicBlock();
 
     addSuccessor(current, then_start);
     addSuccessor(current, mergeBlock);
@@ -908,17 +908,17 @@ BasicBlock* if_block(SyntaxTree* tree, BasicBlock* current) {
     return mergeBlock;
 }
 
-BasicBlock* if_else_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* if_else_block(SyntaxTree* tree, CodeBlock* current) {
 
-    BasicBlock* thenBlock = createBasicBlock();
-    BasicBlock* then_start = thenBlock;
+    CodeBlock* thenBlock = createBasicBlock();
+    CodeBlock* then_start = thenBlock;
 
     thenBlock = buildCFG(tree->info.nonterminal_info.children[2], thenBlock);
-    BasicBlock* elseBlock = createBasicBlock();
-    BasicBlock* else_start = elseBlock;
+    CodeBlock* elseBlock = createBasicBlock();
+    CodeBlock* else_start = elseBlock;
 
     elseBlock = buildCFG(tree->info.nonterminal_info.children[4], elseBlock);
-    BasicBlock* mergeBlock = createBasicBlock();
+    CodeBlock* mergeBlock = createBasicBlock();
 
     addSuccessor(current, then_start);
     addSuccessor(current, else_start);
@@ -937,20 +937,20 @@ BasicBlock* if_else_block(SyntaxTree* tree, BasicBlock* current) {
     return mergeBlock;
 }
 
-BasicBlock* while_block(SyntaxTree* tree, BasicBlock* current) {
-    BasicBlock* loopHeader = createBasicBlock();
+CodeBlock* while_block(SyntaxTree* tree, CodeBlock* current) {
+    CodeBlock* loopHeader = createBasicBlock();
     addSuccessor(current, loopHeader);
     addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
 
-    BasicBlock* loopBody = createBasicBlock();
-    BasicBlock* body_start = loopBody;
+    CodeBlock* loopBody = createBasicBlock();
+    CodeBlock* body_start = loopBody;
 
     loopBody = buildCFG(tree->info.nonterminal_info.children[2], loopBody);
 
     addSuccessor(loopHeader, body_start);
     addSuccessor(loopBody, loopHeader);
-    BasicBlock* exitBlock = createBasicBlock();
+    CodeBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[1], &loopHeader);
@@ -964,19 +964,19 @@ BasicBlock* while_block(SyntaxTree* tree, BasicBlock* current) {
     return exitBlock;
 }
 
-BasicBlock* do_while_block(SyntaxTree* tree, BasicBlock* current) {
-    BasicBlock* loopBody = createBasicBlock();
-    BasicBlock* body_start = loopBody;
+CodeBlock* do_while_block(SyntaxTree* tree, CodeBlock* current) {
+    CodeBlock* loopBody = createBasicBlock();
+    CodeBlock* body_start = loopBody;
 
     loopBody = buildCFG(tree->info.nonterminal_info.children[1], loopBody);
     addSuccessor(current, body_start);
 
     addIRInstruction(current, createJumpInstruction(body_start->id));
 
-    BasicBlock* loopHeader = createBasicBlock();
+    CodeBlock* loopHeader = createBasicBlock();
     addSuccessor(loopBody, loopHeader);
     addSuccessor(loopHeader, body_start);
-    BasicBlock* exitBlock = createBasicBlock();
+    CodeBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
@@ -990,26 +990,26 @@ BasicBlock* do_while_block(SyntaxTree* tree, BasicBlock* current) {
     return exitBlock;
 }
 
-BasicBlock* block_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* block_block(SyntaxTree* tree, CodeBlock* current) {
     if (tree->info.nonterminal_info.num_of_children > 1)
         return buildCFG(tree->info.nonterminal_info.children[1], current);
 
     return current;
 }
 
-BasicBlock* for_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* for_block(SyntaxTree* tree, CodeBlock* current) {
     current = buildCFG(tree->info.nonterminal_info.children[1], current);
-    BasicBlock* loopHeader = createBasicBlock();
+    CodeBlock* loopHeader = createBasicBlock();
     addSuccessor(current, loopHeader);
     addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
-    BasicBlock* loopBody = createBasicBlock();
-    BasicBlock* body_start = loopBody;
+    CodeBlock* loopBody = createBasicBlock();
+    CodeBlock* body_start = loopBody;
 
     loopBody = buildCFG(tree->info.nonterminal_info.children[4], loopBody);
     addSuccessor(loopHeader, body_start);
     addSuccessor(loopBody, loopHeader);
-    BasicBlock* exitBlock = createBasicBlock();
+    CodeBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
@@ -1023,22 +1023,22 @@ BasicBlock* for_block(SyntaxTree* tree, BasicBlock* current) {
     return exitBlock;
 }
 
-BasicBlock* for_change_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* for_change_block(SyntaxTree* tree, CodeBlock* current) {
     current = buildCFG(tree->info.nonterminal_info.children[1], current);
-    BasicBlock* loopHeader = createBasicBlock();
+    CodeBlock* loopHeader = createBasicBlock();
     addSuccessor(current, loopHeader);
     addIRInstruction(current, createJumpInstruction(loopHeader->id));
 
-    BasicBlock* loopBody = createBasicBlock();
-    BasicBlock* body_start = loopBody;
+    CodeBlock* loopBody = createBasicBlock();
+    CodeBlock* body_start = loopBody;
 
     loopBody = buildCFG(tree->info.nonterminal_info.children[4], loopBody);
-    BasicBlock* changeBlock = createBasicBlock();
+    CodeBlock* changeBlock = createBasicBlock();
     changeBlock = buildCFG(tree->info.nonterminal_info.children[6], changeBlock);
     addSuccessor(loopHeader, body_start);
     addSuccessor(loopBody, changeBlock);
     addSuccessor(changeBlock, loopHeader);
-    BasicBlock* exitBlock = createBasicBlock();
+    CodeBlock* exitBlock = createBasicBlock();
     addSuccessor(loopHeader, exitBlock);
 
     IR_Value condTemp = lowerExpression(tree->info.nonterminal_info.children[3], &loopHeader);
@@ -1053,34 +1053,34 @@ BasicBlock* for_change_block(SyntaxTree* tree, BasicBlock* current) {
     return exitBlock;
 }
 
-BasicBlock* function_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* function_block(SyntaxTree* tree, CodeBlock* current) {
     FunctionCFGEntry* fc = buildFunctionCFG(tree);
     free(fc->name);
     free(fc);
     return current;
 }
 
-BasicBlock* call_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* call_block(SyntaxTree* tree, CodeBlock* current) {
     lowerFunctionCall(tree, &current);
     return current;
 }
 
-BasicBlock* statements_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* statements_block(SyntaxTree* tree, CodeBlock* current) {
     for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
         current = buildCFG(tree->info.nonterminal_info.children[i], current);
     }
     return current;
 }
 
-BasicBlock* defualt_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* defualt_block(SyntaxTree* tree, CodeBlock* current) {
     for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++) {
         current = buildCFG(tree->info.nonterminal_info.children[i], current);
     }
     return current;
 }
 
-BasicBlock* (*get_block_fun(char* str))(SyntaxTree*, BasicBlock*) {
-    BasicBlock* (*pointer)(SyntaxTree*, BasicBlock*) = hashmap_get(ir_visitor, str);
+CodeBlock* (*get_block_fun(char* str))(SyntaxTree*, CodeBlock*) {
+    CodeBlock* (*pointer)(SyntaxTree*, CodeBlock*) = hashmap_get(ir_visitor, str);
     if (pointer == NULL) {
         return &defualt_block;
     }
@@ -1089,7 +1089,7 @@ BasicBlock* (*get_block_fun(char* str))(SyntaxTree*, BasicBlock*) {
     }
 }
 
-BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* buildCFG(SyntaxTree* tree, CodeBlock* current) {
     if (!tree)
         return current;
 
@@ -1098,7 +1098,7 @@ BasicBlock* buildCFG(SyntaxTree* tree, BasicBlock* current) {
     return (*get_block_fun(nonterminal))(tree, current);
 }
 
-BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) { // string
+CodeBlock* print_block(SyntaxTree* tree, CodeBlock* current) { // string
     Token src = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     linkedlist_add(globalStrings, &src);
     
@@ -1110,14 +1110,14 @@ BasicBlock* print_block(SyntaxTree* tree, BasicBlock* current) { // string
 	return current; 
 }
 
-BasicBlock* print_int_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* print_int_block(SyntaxTree* tree, CodeBlock* current) {
     IR_Value exprResult = lowerExpression(tree->info.nonterminal_info.children[1], &current);
     IR_Instruction* printInstr = createPrintIntInstruction(exprResult);
     addIRInstruction(current, printInstr);
     return current; 
 }
 
-BasicBlock* get_decl_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* get_decl_block(SyntaxTree* tree, CodeBlock* current) {
     SyntaxTree* var_decl = tree->info.nonterminal_info.children[1];
     decl_block(var_decl, current);
     Token name = var_decl->info.nonterminal_info.children[1]->info.terminal_info.token;
@@ -1126,7 +1126,7 @@ BasicBlock* get_decl_block(SyntaxTree* tree, BasicBlock* current) {
     return current;
 }
 
-BasicBlock* get_block(SyntaxTree* tree, BasicBlock* current) {
+CodeBlock* get_block(SyntaxTree* tree, CodeBlock* current) {
     Token name = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
     addIRInstruction(current, createGetIntInstruction(name));
 	return current;
@@ -1276,7 +1276,7 @@ void printInstruction(IR_Instruction* instr) {
 }
 
 
-void printCFG(BasicBlock* block, int* visited) {
+void printCFG(CodeBlock* block, int* visited) {
     if (visited[block->id])
         return;
     visited[block->id] = 1;
@@ -1291,14 +1291,14 @@ void printCFG(BasicBlock* block, int* visited) {
     
     printf("  Predecessors: ");
     for (int i = 0; i < block->predecessors->size; i++) {
-        printf("%d ", (*(BasicBlock**)block->predecessors->array[i])->id);
+        printf("%d ", (*(CodeBlock**)block->predecessors->array[i])->id);
     }
     printf("\n");
 
     
     printf("  Successors: ");
     for (int i = 0; i < block->successors->size; i++) {
-        printf("%d ", (*(BasicBlock**)block->successors->array[i])->id);
+        printf("%d ", (*(CodeBlock**)block->successors->array[i])->id);
     }
     printf("\n");
 
@@ -1310,7 +1310,7 @@ void printCFG(BasicBlock* block, int* visited) {
     printf("\n\n");
 
     for (int i = 0; i < block->successors->size; i++) {
-        printCFG((*(BasicBlock**)block->successors->array[i]), visited);
+        printCFG((*(CodeBlock**)block->successors->array[i]), visited);
     }
 
 
@@ -1332,20 +1332,20 @@ void printTOKEN3(Token* token) {
     printf("T%d:L%s", token->type, token->lexeme);
 }
 
-BasicBlock* mainCFG(SyntaxTree* tree) {
+CodeBlock* mainCFG(SyntaxTree* tree) {
     number_of_blocks = 0;
     ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT2, string_hash, string_equals);
     init_ir_visitor();
     globalVars = linkedlist_init(sizeof(Token));
     globalStrings = linkedlist_init(sizeof(Token));
 
-    function_exit_blocks = linkedlist_init(sizeof(BasicBlock*));
-    function_entry_blocks = linkedlist_init(sizeof(BasicBlock*));
+    function_exit_blocks = linkedlist_init(sizeof(CodeBlock*));
+    function_entry_blocks = linkedlist_init(sizeof(CodeBlock*));
     mainBlock = createBasicBlock();
     addIRInstruction(mainBlock, createGlobalTemps());
 
 
-    BasicBlock* last = buildCFG(tree, mainBlock);
+    CodeBlock* last = buildCFG(tree, mainBlock);
     addIRInstruction(last, createEndInstruction());
     number_of_blocks = last->id + 1;
 

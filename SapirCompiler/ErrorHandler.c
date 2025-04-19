@@ -192,6 +192,17 @@ void handle_sementic_get_type(Token content, Data_Type type) {
 	current_error_state = SEMENTIC_ERROR;
 }
 
+void handle_sementic_no_function(Token return_token) {
+	snprintf(ErrorMsg, MAX_ERROR_MSG_LENGTH,
+		"Sementic error in line %d column %d, cannot return from global placement\n"
+		, return_token.row, return_token.col
+	);
+	out_put_error(ErrorMsg);
+
+	current_error_state = SEMENTIC_ERROR;
+
+}
+
 
 void handle_out_of_memory_error() {
 	out_put_error("Program run out of memory!\n");
@@ -206,3 +217,4 @@ void handle_other_errors(char* msg) {
 
 	current_error_state = OTHER_ERROR;
 }
+

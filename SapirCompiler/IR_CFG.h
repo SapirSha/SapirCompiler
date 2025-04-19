@@ -72,15 +72,15 @@ typedef struct IR_Instruction {
 }
 IR_Instruction;
 
-typedef struct BasicBlock {
+typedef struct CodeBlock {
     int id;
     ArrayList* instructions;
     ArrayList* successors;
     ArrayList* predecessors;
     HashSet* live_in;
     HashSet* live_out;
-} BasicBlock;
-BasicBlock* mainBlock;
+} CodeBlock;
+CodeBlock* mainBlock;
 
 LinkedList* globalVars;
 LinkedList* globalStrings;
@@ -91,8 +91,8 @@ unsigned int ir_value_hash(IR_Value* key);
 int ir_value_equals(IR_Value* key1, IR_Value* key2);
 void printIRValuePointer(IR_Value* val);
 
-void printCFG(BasicBlock* block, int* visited);
-BasicBlock* mainCFG(SyntaxTree* tree);
+void printCFG(CodeBlock* block, int* visited);
+CodeBlock* mainCFG(SyntaxTree* tree);
 
 
 #endif

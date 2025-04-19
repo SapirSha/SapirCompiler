@@ -17,7 +17,7 @@ static HashSet* seen = NULL;
 HashSet* current_live = NULL;
 HashSet* used_at_all = NULL;
 
-void fill_liveness_queue(BasicBlock* entry) {
+void fill_liveness_queue(CodeBlock* entry) {
 
 	if (hashset_contains(seen, &entry->id)) {
 		return;
@@ -25,7 +25,7 @@ void fill_liveness_queue(BasicBlock* entry) {
 
 	hashset_insert(seen, &entry->id);
 	for (int i = 0; i < entry->successors->size; i++) {
-		BasicBlock* succ = *(BasicBlock**)entry->successors->array[i];
+		CodeBlock* succ = *(CodeBlock**)entry->successors->array[i];
 		fill_liveness_queue(succ);
 	}
 	
@@ -53,7 +53,7 @@ bool matters(IR_Value* value) {
 	hashset_insert(current_live, ir_value_pointer);  \
 	hashset_insert(used_at_all, ir_value_pointer); }
 
-void handle_instruction(BasicBlock* block, int* index_of_instr) {
+void handle_instruction(CodeBlock* block, int* index_of_instr) {
 	IR_Instruction* instr = *(IR_Instruction**)block->instructions->array[*index_of_instr];
 	switch (instr->opcode)
 	{
@@ -158,7 +158,7 @@ void handle_instruction(BasicBlock* block, int* index_of_instr) {
 	}
 
 }
-void remove_instruction(BasicBlock* block, int* i) {
+void remove_instruction(CodeBlock* block, int* i) {
 	if (*i < 0 || *i >= block->instructions->size) {
 		return;
 	}
@@ -175,7 +175,7 @@ void remove_instruction(BasicBlock* block, int* i) {
 	free(instr);
 }
 
-void remove_dead_code(BasicBlock* block) {
+void remove_dead_code(CodeBlock* block) {
 	if (hashset_contains(seen, &block->id)) {
 		return;
 	}
@@ -189,16 +189,16 @@ void remove_dead_code(BasicBlock* block) {
 	}
 
 	for (int i = 0; i < block->successors->size; i++) {
-		BasicBlock* succ = *(BasicBlock**)block->successors->array[i];
+		CodeBlock* succ = *(CodeBlock**)block->successors->array[i];
 		remove_dead_code(succ);
 	}
 }
 
 void liveness() {
 	while (Blocks->size != 0) {
-		BasicBlock* block = *(BasicBlock**)queue_dequeue(Blocks);
+		CodeBlock* block = *(CodeBlock**)queue_dequeue(Blocks);
 		for (int i = 0; i < block->successors->size; i++) {
-			BasicBlock* succ = *(BasicBlock**)block->successors->array[i];
+			CodeBlock* succ = *(CodeBlock**)block->successors->array[i];
 			hashset_union(block->live_out, succ->live_in);
 		}
 
@@ -211,7 +211,7 @@ void liveness() {
 
 		if (changed) {
 			for (int i = 0; i < block->predecessors->size; i++) {
-				BasicBlock* pred = *(BasicBlock**)block->predecessors->array[i];
+				CodeBlock* pred = *(CodeBlock**)block->predecessors->array[i];
 				queue_enqueue(Blocks, &pred);
 			}
 		}
@@ -219,8 +219,8 @@ void liveness() {
 }
 
 
-BasicBlock* computeLiveness(BasicBlock* entry) {
-	Blocks = queue_init(sizeof(BasicBlock*));
+CodeBlock* computeLiveness(CodeBlock* entry) {
+	Blocks = queue_init(sizeof(CodeBlock*));
 	seen = hashset_create(32, int_hash, int_equals);
 	current_live = hashset_create(32, ir_value_hash, ir_value_equals);
 	used_at_all = hashset_create(32, ir_value_hash, ir_value_equals);

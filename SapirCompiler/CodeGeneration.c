@@ -455,7 +455,7 @@ void out_put_in_out_functions() {
 	}
 }
 
-void handle_global_temps(BasicBlock* main) {
+void handle_global_temps(CodeBlock* main) {
 	static char global_temp[25];
 	IR_Instruction* global_temps_instr = *(IR_Instruction**)main->instructions->array[0];
 	outputcode("MOV BP, SP");
@@ -1160,7 +1160,7 @@ int handle_block_instruction(IR_Instruction* instr) {
 	return CONTINUE_BLOCK;
 }
 
-void traverse_instructions(BasicBlock* block) {
+void traverse_instructions(CodeBlock* block) {
 	for (int i = 0; i < block->instructions->size; i++) {
 		IR_Instruction* instr = *(IR_Instruction**)block->instructions->array[i];
 		int special_action = handle_block_instruction(instr);
@@ -1172,7 +1172,7 @@ void print_label_start(char* block_label) {
 	snprintf(main_str_buffer, ONEHUNDRED, "%s:", block_label);
 	outputcode(main_str_buffer);
 }
-void traverse_cfg(BasicBlock* entry, int* visitor) {
+void traverse_cfg(CodeBlock* entry, int* visitor) {
 	if (visitor[entry->id] == 1) return;
 	else visitor[entry->id] = 1;
 
@@ -1185,7 +1185,7 @@ void traverse_cfg(BasicBlock* entry, int* visitor) {
 	traverse_instructions(entry);
 
 	for (int i = 0; i < entry->successors->size; i++) {
-		traverse_cfg(*(BasicBlock**)entry->successors->array[i], visitor);
+		traverse_cfg(*(CodeBlock**)entry->successors->array[i], visitor);
 	}
 }
 
@@ -1212,7 +1212,7 @@ void assume() {
 	outputcode("ASSUME CS : CODE, DS : DATA, SS : STACK_SEG");
 }
 
-void generate_code(BasicBlock* entry) {
+void generate_code(CodeBlock* entry) {
 	symbol_map = symbol_table->SymbolMap;
 	temp_map = symbol_table->TemporaryVarMap;
 
