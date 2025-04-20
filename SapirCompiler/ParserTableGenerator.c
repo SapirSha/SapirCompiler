@@ -913,7 +913,6 @@ void add_rules() {
     add_rule("PARAMETER", "VARIABLE_TYPE identifier");
 
     add_rule("FUNCTION_BLOCK", "{ FUNCTION_STATEMENTS }");
-    add_rule("FUNCTION_BLOCK", "{ }");
 
     add_rule("FUNCTION_STATEMENTS", "FUNCTION_STATEMENTS FUNCTION_STATEMENT");
     add_rule("FUNCTION_STATEMENTS", "FUNCTION_STATEMENT");
