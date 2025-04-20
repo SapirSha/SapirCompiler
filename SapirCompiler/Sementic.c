@@ -190,8 +190,7 @@ static Data_Type condition(SyntaxTree* tree) {
 static Data_Type condition_list(SyntaxTree* tree) {
 	Data_Type left = accept(tree->info.nonterminal_info.children[0]);
 	Data_Type right = accept(tree->info.nonterminal_info.children[2]);
-	condition_must_be_bool(tree, left);
-	condition_must_be_bool(tree, right);
+
 	return BOOL;
 }
 

@@ -880,13 +880,10 @@ void add_rules() {
     add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION"); //
 
     add_rule("WHILE_STATEMENT", "while CONDITION_LIST WHILE_BLOCK"); //
+    add_rule("DO_WHILE_STATEMENT", "do WHILE_BLOCK while CONDITION_LIST"); //
 
     add_rule("WHILE_BLOCK", "{ STATEMENT }"); //
     add_rule("WHILE_BLOCK", "STATEMENT"); //
-
-
-    add_rule("DO_WHILE_STATEMENT", "do WHILE_BLOCK while CONDITION_LIST"); //
-    add_rule("DO_WHILE_STATEMENT", "do STATEMENT while CONDITION_LIST"); //
 
 
     add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST FOR_BLOCK"); //
