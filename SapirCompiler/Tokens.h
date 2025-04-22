@@ -59,7 +59,7 @@ typedef enum {
     TOKEN_BREAK,
     TOKEN_EOF,
 
-    NUM_OF_TOKENS
+    NUM_OF_TOKENS = 100
 }Token_Types;
 
 typedef struct  {
@@ -69,4 +69,7 @@ typedef struct  {
     int col;
 }Token;
 
+Token* create_new_token(int type, const char* lexeme, int row, int col);
+
 #endif
+

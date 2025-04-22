@@ -92,9 +92,9 @@ void handle_parser_error(int state_accured, Token* latest_token, Token* next_tok
 
 char* DATA_TYPE_TO_STRING[] = {
 	[NONE] = "NONE",
-	[INT] = "INT",
+	[INT_TYPE] = "INT",
 	[STRING] = "STRING",
-	[BOOL] = "BOOL",
+	[BOOL_TYPE] = "BOOL",
 	[UNKNOWN] = "UNKNOWN",
 };
 

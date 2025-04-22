@@ -21,11 +21,11 @@ static bool compatible(Data_Type left, Data_Type right) {
 	return left == right || left == UNKNOWN || right == UNKNOWN;
 }
 
-static Data_Type TOKEN_TO_DATA_TYPE[NUM_OF_TOKENS] = {
-	[TOKEN_INT] = INT, [TOKEN_NUMBER] = INT,
+static Data_Type TOKEN_TO_DATA_TYPE[100] = {
+	[TOKEN_INT] = INT_TYPE, [TOKEN_NUMBER] = INT_TYPE,
 	[TOKEN_STRING_LITERAL] = STRING,
-	[TOKEN_BOOL] = BOOL, 
-	[TOKEN_FALSE] = BOOL, [TOKEN_TRUE] = BOOL,
+	[TOKEN_BOOL] = BOOL_TYPE, 
+	[TOKEN_FALSE] = BOOL_TYPE, [TOKEN_TRUE] = BOOL_TYPE,
 };
 
 Data_Type get_type(SyntaxTree* tree) {
@@ -79,7 +79,7 @@ static Data_Type handle_incompatability(SyntaxTree* tree, Data_Type left, Data_T
 }
 
 static Data_Type condition_must_be_bool(SyntaxTree* tree, Data_Type type) {
-	if (type != BOOL && type != UNKNOWN) {
+	if (type != BOOL_TYPE && type != UNKNOWN) {
 		SyntaxTree* pos = tree;
 		while (pos->type == NONTERMINAL_TYPE)
 			pos = pos->info.nonterminal_info.children[0];
@@ -89,7 +89,7 @@ static Data_Type condition_must_be_bool(SyntaxTree* tree, Data_Type type) {
 		return UNKNOWN;
 	}
 
-	return BOOL;
+	return BOOL_TYPE;
 }
 
 static char* create_new_variable(Token id, Data_Type type) {
@@ -191,7 +191,7 @@ static Data_Type condition_list(SyntaxTree* tree) {
 	Data_Type left = accept(tree->info.nonterminal_info.children[0]);
 	Data_Type right = accept(tree->info.nonterminal_info.children[2]);
 
-	return BOOL;
+	return BOOL_TYPE;
 }
 
 
@@ -333,7 +333,7 @@ static Data_Type function_decl(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = get_type(tree->info.nonterminal_info.children[5]);
 	info->identifier_name = id.lexeme;
-	info->identifier_type = FUNCTION;
+	info->identifier_type = FUNCTION_TYPE;
 	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
@@ -385,7 +385,7 @@ static Data_Type function_decl_returns_nothing(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = NONE;
 	info->identifier_name = id.lexeme;
-	info->identifier_type = FUNCTION;
+	info->identifier_type = FUNCTION_TYPE;
 	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
@@ -439,7 +439,7 @@ static Data_Type function_decl_gets_nothing(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = get_type(tree->info.nonterminal_info.children[3]);
 	info->identifier_name = id.lexeme;
-	info->identifier_type = FUNCTION;
+	info->identifier_type = FUNCTION_TYPE;
 	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
@@ -488,7 +488,7 @@ static Data_Type function_decl_gets_returns_nothing(SyntaxTree* tree) {
 	Token id = tree->info.nonterminal_info.children[1]->info.terminal_info.token;
 	info->data_type = NONE;
 	info->identifier_name = id.lexeme;
-	info->identifier_type = FUNCTION;
+	info->identifier_type = FUNCTION_TYPE;
 	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
 	if (!added) {
@@ -563,7 +563,7 @@ static Data_Type function_call(SyntaxTree* tree) {
 		handle_sementic_function_doesnt_exist(id);
 		return NONE;
 	}
-	else if (funcSymbol->identifier_type != FUNCTION) {
+	else if (funcSymbol->identifier_type != FUNCTION_TYPE) {
 		handle_sementic_function_doesnt_exist(id);
 		return NONE;
 	}
@@ -617,7 +617,7 @@ static Data_Type function_call_with_nothing(SyntaxTree* tree) {
 		return NONE;
 	}
 
-	if (funcSymbol->identifier_type != FUNCTION) {
+	if (funcSymbol->identifier_type != FUNCTION_TYPE) {
 		handle_sementic_function_doesnt_exist(id);
 		return NONE;
 	}
@@ -659,7 +659,7 @@ static Data_Type block(SyntaxTree* tree) {
 static char* PRINT_INT_EXPRESSION_CHANGER = "PRINT_INT_EXPRESSION";
 Data_Type print_sem(SyntaxTree* tree) {
 	Data_Type type_of_var = accept(tree->info.nonterminal_info.children[1]);
-	if (type_of_var == INT) {
+	if (type_of_var == INT_TYPE) {
 		tree->info.nonterminal_info.nonterminal = PRINT_INT_EXPRESSION_CHANGER;
 	}
 	else if (type_of_var == STRING) {
@@ -695,7 +695,7 @@ Data_Type print_sem(SyntaxTree* tree) {
 Data_Type print_sem_int(SyntaxTree* tree) {
 	Data_Type type_of_var = accept(tree->info.nonterminal_info.children[1]);
 
-	if (type_of_var != INT && type_of_var != UNKNOWN) {
+	if (type_of_var != INT_TYPE && type_of_var != UNKNOWN) {
 		SyntaxTree* pos = tree->info.nonterminal_info.children[1];
 		while (pos->type != TERMINAL_TYPE)
 			pos = tree->info.nonterminal_info.children[0];
@@ -707,7 +707,7 @@ Data_Type print_sem_int(SyntaxTree* tree) {
 
 Data_Type get_decl_sementic(SyntaxTree* tree) {
 	Data_Type type = decl(tree->info.nonterminal_info.children[1]);
-	if (type != INT && type != UNKNOWN) {
+	if (type != INT_TYPE && type != UNKNOWN) {
 		SyntaxTree* pos = tree->info.nonterminal_info.children[1];
 		while (pos->type != TERMINAL_TYPE)
 			pos = tree->info.nonterminal_info.children[0];
@@ -726,7 +726,7 @@ Data_Type get_sementic(SyntaxTree* tree) {
 	}
 	else {
 		Data_Type type = info->data_type;
-		if (type != INT && type != UNKNOWN) {
+		if (type != INT_TYPE && type != UNKNOWN) {
 			SyntaxTree* pos = tree->info.nonterminal_info.children[1];
 			while (pos->type != TERMINAL_TYPE)
 				pos = tree->info.nonterminal_info.children[0];

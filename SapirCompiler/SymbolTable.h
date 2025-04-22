@@ -10,15 +10,15 @@
 
 typedef enum {
 	NONE = 0,
-	INT,
+	INT_TYPE,
 	STRING,
-	BOOL,
+	BOOL_TYPE,
 	UNKNOWN,
 } Data_Type;
 
 typedef enum {
 	VARIABLE,
-	FUNCTION
+	FUNCTION_TYPE
 } IdentifierType;
 
 typedef struct {

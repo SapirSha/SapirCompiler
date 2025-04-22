@@ -12,11 +12,11 @@ int names_id = 1;
 int type_to_size(Data_Type type){
 	switch (type)
 	{
-	case INT:
+	case INT_TYPE:
 		return 2;
 	case STRING:
 		return 2;
-	case BOOL:
+	case BOOL_TYPE:
 		return 1;
 	default:
 		break;

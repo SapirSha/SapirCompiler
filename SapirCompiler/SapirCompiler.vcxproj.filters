@@ -135,6 +135,15 @@
     <ClCompile Include="FileOut.c">
       <Filter>Source Files\Output</Filter>
     </ClCompile>
+    <ClCompile Include="LexerFSM.c">
+      <Filter>Source Files\LexerPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="LexerFsmHelper.c">
+      <Filter>Source Files\LexerPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="Token.c">
+      <Filter>Source Files\MultiPhase_c</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h">
@@ -202,6 +211,12 @@
     </ClInclude>
     <ClInclude Include="FileOut.h">
       <Filter>Header Files\Output.c</Filter>
+    </ClInclude>
+    <ClInclude Include="LexerFsm.h">
+      <Filter>Header Files\LexerPhase</Filter>
+    </ClInclude>
+    <ClInclude Include="Boolean.h">
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

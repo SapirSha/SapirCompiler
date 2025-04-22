@@ -140,6 +140,8 @@
     <ClCompile Include="IR_CFG.c" />
     <ClCompile Include="IR_Liveness.c" />
     <ClCompile Include="Lexer.c" />
+    <ClCompile Include="LexerFSM.c" />
+    <ClCompile Include="LexerFsmHelper.c" />
     <ClCompile Include="LinkedList.c" />
     <ClCompile Include="Parser.c" />
     <ClCompile Include="ParserTableGenerator.c" />
@@ -149,9 +151,11 @@
     <ClCompile Include="StringTrie.c" />
     <ClCompile Include="SymbolTable.c" />
     <ClCompile Include="SyntaxTree.c" />
+    <ClCompile Include="Token.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayList.h" />
+    <ClInclude Include="Boolean.h" />
     <ClInclude Include="CodeGeneration.h" />
     <ClInclude Include="Compiler.h" />
     <ClInclude Include="ConsoleInput.h" />
@@ -164,6 +168,7 @@
     <ClInclude Include="IR_CFG.h" />
     <ClInclude Include="IR_Liveness.h" />
     <ClInclude Include="Lexer.h" />
+    <ClInclude Include="LexerFsm.h" />
     <ClInclude Include="LinkedList.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="ParserTableGenerator.h" />
