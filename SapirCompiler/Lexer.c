@@ -7,6 +7,8 @@
 #include "Tokens.h"
 #include "Boolean.h"
 
+#pragma warning(disable:4996)
+
 #define MAX_TOKEN_LENGTH 48
 #define NEW_LINE '\n'
 
@@ -41,6 +43,26 @@ static void handle_new_line(int* current_line, int* latest_line_start, int curre
 	(*latest_line_start) = current_index_in_text + 1;
 }
 
+static int handle_above_maximum_token_length(char* got_until_now, int current_length,
+	char* code_pointer, int token_start_line, int token_start_column) {
+	int remaining_length = strcspn(code_pointer, "\t\n\r \0");
+	int gotten_token_length = current_length + remaining_length;
+	char* gotten_token = malloc(gotten_token_length + 1);
+	if (gotten_token) {
+		strncpy(gotten_token, got_until_now, current_length);
+		strncpy(gotten_token + current_length, code_pointer, gotten_token_length - current_length);
+
+		handle_lexical_above_max_token_length(gotten_token, token_start_line, token_start_column);
+		free(gotten_token);
+		
+		return remaining_length - 1;
+	}
+	else {
+		handle_out_of_memory_error();
+		return remaining_length;
+	}
+}
+
 #define INSER_END_OF_FILE_TOKEN(tokens_queue, current_line, current_col) {\
     Token* end_of_file = create_new_token(TOKEN_EOF, "$", current_line, current_col);\
     queue_enqueue(tokens, end_of_file);\
@@ -52,6 +74,9 @@ static void handle_new_line(int* current_line, int* latest_line_start, int curre
 
 #define CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, code_pointer, code)\
 				current_line, pos - code - current_token_start_pos + 1
+
+#define HANDLE_CURRENT_TOKEN_LENGTH_ABOVE_MAXIMUM \
+    
 
 Queue* tokenize(const char* code) {
 	enum State current_state = START_STATE;
@@ -67,7 +92,6 @@ Queue* tokenize(const char* code) {
 	int current_token_start_pos = 0;
 
 	while (*pos) {
-
 		current_state = get_next_state(current_state, *pos);
 		if (current_state == START_STATE) {
 			if (!is_ignored_state(former_state)) {
@@ -77,6 +101,7 @@ Queue* tokenize(const char* code) {
 				pos--;
 			}
 			current_token_length = 0;
+			current_token_start_pos = pos - code + 1;
 		} 
 		else if (current_state == ERROR_STATE) {
 			handle_error(pos, CURRENT_POSITION(current_line, current_line_start_pos, pos, code));
@@ -84,9 +109,16 @@ Queue* tokenize(const char* code) {
 			current_state = START_STATE;
 		}
 		else {
-			if (current_token_length == 0) current_token_start_pos = pos - code + 1;
-			current_token[current_token_length] = *pos;
-			current_token_length++;
+			if (current_token_length > MAX_TOKEN_LENGTH) {
+				pos += handle_above_maximum_token_length(current_token, current_token_length,
+					pos, CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, pos, code) - 1);
+				current_token_length = 0;
+				current_state = START_STATE;
+			}
+			else {
+				current_token[current_token_length] = *pos;
+				current_token_length++;
+			}
 		}
 		former_state = current_state;
 		if (*pos == NEW_LINE) handle_new_line(&current_line, &current_line_start_pos, pos - code);
@@ -99,6 +131,7 @@ Queue* tokenize(const char* code) {
 			CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, pos, code));
 		current_token_length = 0;
 	}
+
 	INSER_END_OF_FILE_TOKEN(tokens, current_line, pos - code - current_line_start_pos + 1);
 	queue_print(tokens, printTokem);
 
