@@ -113,8 +113,12 @@ static enum {
     ALSO,
     EITHER,
 
-    STRING_LITERAL,
     COMMENT,
+    COMMENT_SINGLE_LINE,
+    COMMENT_END,
+    STRING_LITERAL,
+    STRING_LITERAL_END,
+
 
     ERROR,
 

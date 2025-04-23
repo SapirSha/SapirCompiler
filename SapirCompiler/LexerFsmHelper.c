@@ -12,7 +12,6 @@ enum State get_next_state(enum State current_state, char c) {
 		return ERROR_STATE;
 }
 
-
 static Token_Types state_to_token_lookup[NUM_OF_STATES] = {
     [STATE0] = TOKEN_UNKNOWN,
     [NUMBER] = TOKEN_NUMBER,
@@ -110,10 +109,13 @@ static Token_Types state_to_token_lookup[NUM_OF_STATES] = {
     [EITHER] = TOKEN_OPERATOR_EITHER,
 
     [STRING_LITERAL] = TOKEN_STRING_LITERAL,
+    [STRING_LITERAL_END] = TOKEN_STRING_LITERAL,
     [COMMENT] = TOKEN_UNKNOWN,
+    [COMMENT_END] = TOKEN_UNKNOWN,
 
     [ERROR] = TOKEN_UNKNOWN,
 };
+
 Token_Types convert_state_to_token_type(enum State state) {
 	return state_to_token_lookup[state];
 }

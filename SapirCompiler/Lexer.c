@@ -8,6 +8,7 @@
 #include "Boolean.h"
 
 #define MAX_TOKEN_LENGTH 48
+#define NEW_LINE '\n'
 
 #include <stdio.h>
 void printTokem(Token* token) {
@@ -28,11 +29,29 @@ static void add_token(Queue* tokens, enum State state, const char* lexeme, int r
 	}
 
 	queue_enqueue(tokens, token);
+	free(token);
 }
 
 static void handle_error(char* code_pointer, int row, int col) {
 	handle_unkown_character_error(*code_pointer, row, col);
 }
+
+static void handle_new_line(int* current_line, int* latest_line_start, int current_index_in_text) {
+	(*current_line)++;
+	(*latest_line_start) = current_index_in_text + 1;
+}
+
+#define INSER_END_OF_FILE_TOKEN(tokens_queue, current_line, current_col) {\
+    Token* end_of_file = create_new_token(TOKEN_EOF, "$", current_line, current_col);\
+    queue_enqueue(tokens, end_of_file);\
+    queue_enqueue(tokens, end_of_file);\
+    free(end_of_file); }
+
+#define CURRENT_POSITION(current_line, current_line_start_pos, code_pointer, code)\
+                current_line, pos - code - current_line_start_pos + 1
+
+#define CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, code_pointer, code)\
+				current_line, pos - code - current_token_start_pos + 1
 
 Queue* tokenize(const char* code) {
 	enum State current_state = START_STATE;
@@ -42,36 +61,46 @@ Queue* tokenize(const char* code) {
 
 	char current_token[MAX_TOKEN_LENGTH + 1];
 	int current_token_length = 0;
+	
+	int current_line = 1;
+	int current_line_start_pos = 0;
+	int current_token_start_pos = 0;
 
 	while (*pos) {
+
 		current_state = get_next_state(current_state, *pos);
 		if (current_state == START_STATE) {
 			if (!is_ignored_state(former_state)) {
 				current_token[current_token_length] = '\0';
-				add_token(tokens, former_state, current_token, 0, 0);
-				current_token_length = 0;
+				add_token(tokens, former_state, current_token, 
+					CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, pos, code));
 				pos--;
 			}
+			current_token_length = 0;
 		} 
 		else if (current_state == ERROR_STATE) {
-			handle_error(pos, 0, 0);
+			handle_error(pos, CURRENT_POSITION(current_line, current_line_start_pos, pos, code));
 			current_token_length = 0;
 			current_state = START_STATE;
 		}
 		else {
+			if (current_token_length == 0) current_token_start_pos = pos - code + 1;
 			current_token[current_token_length] = *pos;
 			current_token_length++;
 		}
 		former_state = current_state;
+		if (*pos == NEW_LINE) handle_new_line(&current_line, &current_line_start_pos, pos - code);
 		pos++;
 	}
 
-	if (current_token_length > 0) {
+	if (!is_ignored_state(current_state)) {
 		current_token[current_token_length] = '\0';
-		add_token(tokens, current_state, current_token, 0, 0);
+		add_token(tokens, current_state, current_token, 
+			CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, pos, code));
 		current_token_length = 0;
 	}
-
+	INSER_END_OF_FILE_TOKEN(tokens, current_line, pos - code - current_line_start_pos + 1);
 	queue_print(tokens, printTokem);
+
 	return tokens;
 }
