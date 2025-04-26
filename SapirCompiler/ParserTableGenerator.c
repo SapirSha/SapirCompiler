@@ -77,7 +77,6 @@ static char* get_nth_token(char* s, int n) {
             int len = (p - start) / sizeof(char);
             char* token = malloc(len + 1);
             if (!token) {
-                free(token);
                 handle_out_of_memory_error();
                 return NULL;
             }
@@ -229,9 +228,8 @@ void build_states(const char* startNonterminal) {
 
     State0->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
     LRItem startItem = { .rule = ((Rule*)rules->array[rules->size - 1]), .dot = 0 };
+
     arraylist_add(State0->items, &startItem);
-
-
     closure(State0);
 
     arraylist_add(states, State0);
@@ -609,7 +607,7 @@ void build_parsing_tables() {
                     * col: the index of the terminal
                     * j: the row where the state appears
                     */
-                    actionTable[i][col] = (ActionCell){ .type = SHIFT, .value = j };
+                    actionTable[i][col] = (ActionCell){ .type = SHIFT_ACTION, .value = j };
                 }
             }
             else {
@@ -652,7 +650,7 @@ void build_parsing_tables() {
                 if (strcmp(item->rule->nonterminal, "START'") == 0) {
                     int dollarIdx = getTerminalIndex("$");
                     if (dollarIdx != -1) {
-                        actionTable[i][dollarIdx] = (ActionCell){ .type = ACCEPT };
+                        actionTable[i][dollarIdx] = (ActionCell){ .type = ACCEPT_ACTION };
                     }
                 }
                 else {
@@ -663,7 +661,7 @@ void build_parsing_tables() {
                         // if current item can be followed by the terminal, reduce by the rule
                         if (hashset_contains(hashmap_get(follow, item->rule->nonterminal), term)) {
                             if (actionTable[i][k].type == ERROR_ACTION)
-                                actionTable[i][k] = (ActionCell){ .type = REDUCE, .value = item->rule->ruleID };
+                                actionTable[i][k] = (ActionCell){ .type = REDUCE_ACTION, .value = item->rule->ruleID };
                         }
                     }
                 }
@@ -676,9 +674,9 @@ void build_parsing_tables() {
 char* actiontypetostring(int action) {
     switch (action)
     {
-    case ACCEPT: return "A";
-    case REDUCE: return "R";
-    case SHIFT:  return "S";
+    case ACCEPT_ACTION: return "A";
+    case REDUCE_ACTION: return "R";
+    case SHIFT_ACTION:  return "S";
     case ERROR_ACTION:  return "E";
 
     default:
@@ -736,7 +734,8 @@ int find_column_of_terminal_in_table(const char* terminal) {
     if (i < terminalsList->size)
         return i;
     else {
-        handle_other_errors("\n\t---UNKNOWN TERMINAL\n");
+        printf("\n\t---UNKNOWN TERMINAL %s\n", terminal);
+        handle_other_errors("\n\t---UNKNOWN TERMINAL \n");
         exit(1);
     }
 }
@@ -802,6 +801,144 @@ void print_rules() {
 }
 
 void add_rules() {
+    /*
+    add_rule("PROGRAM", "STATEMENTS");
+    add_rule("STATEMENTS", "STATEMENTS STATEMENT");
+    add_rule("STATEMENTS", "STATEMENT");
+
+    add_rule("STATEMENT", "FUNCTION_DECLARATION");
+    add_rule("STATEMENT", "VARIABLE_CHANGES");
+    add_rule("STATEMENT", "IF_STATEMENTS");
+    add_rule("STATEMENT", "WHILE_STATEMENTS");
+    add_rule("STATEMENT", "FOR_STATEMENTS");
+    add_rule("STATEMENT", "PRINT_STATEMENT");
+    add_rule("STATEMENT", "GET_STATEMENTS");
+    add_rule("STATEMENT", "FUNCTION_CALL_STATEMENTS");
+	add_rule("STATEMENT", "RETURN_STATEMENTS");
+    add_rule("STATEMENT", "BLOCK");
+
+    add_rule("BLOCK", "{ STATEMENTS }");
+    add_rule("SCOPED_BLOCK", "{ STATEMENTS }");
+
+
+    add_rule("VARIABLE_TYPE", "int");
+    add_rule("VARIABLE_TYPE", "bool");
+
+    add_rule("FUNCTION_BASE", "function identifier");
+    add_rule("FUNCTION_GETS_BASE", "gets PARAMETER_LIST");
+    add_rule("FUNCTION_RETURNS_BASE", "returns VARIABLE_TYPE");
+
+    add_rule("PARAMETER_LIST", "PARAMETER_LIST , PARAMETER");
+    add_rule("PARAMETER_LIST", "PARAMETER");
+    add_rule("PARAMETER", "VARIABLE_TYPE identifier");
+
+    add_rule("FUNCTION_DECLARATION", "FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT");
+    add_rule("FUNCTION_DECLARATION_NO_RETURN_NO_ARGUMENTS_STATEMENT", "FUNCTION_BASE SCOPED_BLOCK");
+
+    add_rule("FUNCTION_DECLARATION", "FUNCTION_DECLARATION_NO_RETURN_STATEMENT");
+    add_rule("FUNCTION_DECLARATION_NO_RETURN_STATEMENT", "FUNCTION_BASE FUNCTION_GETS_BASE SCOPED_BLOCK");
+
+    add_rule("FUNCTION_DECLARATION", "FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT");
+    add_rule("FUNCTION_DECLARATION_NO_ARGUMENTS_STATEMENT", "FUNCTION_BASE FUNCTION_RETURNS_BASE SCOPED_BLOCK");
+
+    add_rule("FUNCTION_DECLARATION", "FUNCTION_DECLARATION_STATEMENT");
+    add_rule("FUNCTION_DECLARATION_STATEMENT", "FUNCTION_BASE FUNCTION_GETS_BASE FUNCTION_RETURNS_BASE SCOPED_BLOCK");
+
+
+    add_rule("VARIABLE_CHANGES", "VARIABLE_DECLARATION_STATEMENT");
+    add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier");
+
+    add_rule("VARIABLE_CHANGES", "VARIABLE_ASSIGNMENT_STATEMENT");
+    add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION");
+
+    add_rule("VARIABLE_CHANGES", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
+    add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_DECLARATION_STATEMENT = EXPRESSION");
+
+    add_rule("IF_STATEMENTS", "IF_STATEMENT");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK");
+    add_rule("IF_STATEMENT", "if CONDITION_LIST STATEMENT");
+
+    add_rule("IF_STATEMENTS", "IF_ELSE_STATEMENT");
+    add_rule("IF_ELSE_STATEMENT", "IF_STATEMENT else BLOCK");
+    add_rule("IF_ELSE_STATEMENT", "IF_STATEMENT else STATEMENT");
+
+    add_rule("WHILE_STATEMENTS", "WHILE_STATEMENT");
+    add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK");
+    add_rule("WHILE_STATEMENT", "while CONDITION_LIST STATEMENT");
+
+    add_rule("WHILE_STATEMENTS", "DO_WHILE_STATEMENT");
+    add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST");
+    add_rule("DO_WHILE_STATEMENT", "do STATEMENT while CONDITION_LIST");
+
+    add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
+    add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
+
+    add_rule("FOR_STATEMENTS", "FOR_STATEMENT");
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST SCOPED_BLOCK");
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST STATEMENT");
+
+
+    add_rule("FOR_STATEMENTS", "FOR_CHANGE_STATEMENT");
+    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST SCOPED_BLOCK change VARIABLE_ASSIGNMENT_STATEMENT");
+    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST STATEMENT change VARIABLE_ASSIGNMENT_STATEMENT");
+
+    add_rule("GET_STATEMENTS", "GET_STATEMENT");
+    add_rule("GET_STATEMENT", "get identifier");
+
+    add_rule("GET_STATEMENTS", "GET_DECLARE_STATEMENT");
+    add_rule("GET_DECLARE_STATEMENT", "get VARIABLE_DECLARATION_STATEMENT");
+
+    add_rule("PRINT_STATEMENT", "print EXPRESSION");
+    add_rule("PRINT_STATEMENT", "print string_literal");
+
+    add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
+    add_rule("ARGUMENT_LIST", "EXPRESSION");
+
+    add_rule("FUNCTION_CALL_STATEMENTS", "FUNCTION_CALL_STATEMENT");
+    add_rule("FUNCTION_CALL_STATEMENT", "call identifier ( ARGUMENT_LIST )");
+
+    add_rule("FUNCTION_CALL_STATEMENTS", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
+    add_rule("FUNCTION_CALL_WITH_NOTHING_STATEMENT", "call identifier");
+    add_rule("FUNCTION_CALL_WITH_NOTHING_STATEMENT", "call identifier ( )");
+
+    add_rule("RETURN_STATEMENTS", "RETURN_STATEMENT");
+    add_rule("RETURN_STATEMENT", "return EXPRESSION");
+
+    add_rule("RETURN_STATEMENTS", "RETURN_NONE_STATEMENT");
+    add_rule("RETURN_NONE_STATEMENT", "break");
+
+    add_rule("CONDITION_LIST", "CONDITION");
+    add_rule("CONDITION_LIST", "CONDITION_LIST && CONDITION");
+    add_rule("CONDITION_LIST", "CONDITION_LIST || CONDITION");
+
+    add_rule("CONDITION", "( CONDITION_LIST )");
+    add_rule("CONDITION", "EXPRESSION == EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION != EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION > EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION >= EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION < EXPRESSION");
+    add_rule("CONDITION", "EXPRESSION <= EXPRESSION");
+    add_rule("CONDITION", "FUNCTION_CALL_STATEMENT");
+    add_rule("CONDITION", "FUNCTION_CALL_WITH_NOTHING_STATEMENT");
+    add_rule("CONDITION", "true");
+    add_rule("CONDITION", "false");
+
+    add_rule("EXPRESSION", "EXPRESSION + TERM");
+    add_rule("EXPRESSION", "EXPRESSION - TERM");
+    add_rule("EXPRESSION", "TERM");
+
+    add_rule("TERM", "TERM % FACTOR");
+    add_rule("TERM", "TERM * FACTOR");
+    add_rule("TERM", "TERM / FACTOR");
+    add_rule("TERM", "FACTOR");
+
+    add_rule("FACTOR", "( EXPRESSION )");
+    add_rule("FACTOR", "identifier");
+    add_rule("FACTOR", "number");
+    add_rule("FACTOR", "FUNCTION_CALL_STATEMENTS");
+    */
+
+    ///*
     add_rule("PROGRAM", "STATEMENTS"); //
     add_rule("STATEMENTS", "STATEMENTS STATEMENT");
     add_rule("STATEMENTS", "STATEMENT"); 
@@ -846,16 +983,16 @@ void add_rules() {
     add_rule("CONDITION", "true");
     add_rule("CONDITION", "false");
 
-    add_rule("EXPRESSION", "EXPRESSION + TERM"); //
+    add_rule("EXPRESSION", "EXPRESSION + TERM");
     add_rule("EXPRESSION", "EXPRESSION - TERM");
     add_rule("EXPRESSION", "TERM");
 
-    add_rule("TERM", "TERM % FACTOR"); //
+    add_rule("TERM", "TERM % FACTOR");
     add_rule("TERM", "TERM * FACTOR");
     add_rule("TERM", "TERM / FACTOR");
     add_rule("TERM", "FACTOR");
 
-    add_rule("FACTOR", "( EXPRESSION )"); //
+    add_rule("FACTOR", "( EXPRESSION )");
     add_rule("FACTOR", "identifier");
     add_rule("FACTOR", "number");
     add_rule("FACTOR", "CONDITION_LIST");
@@ -943,6 +1080,7 @@ void add_rules() {
 
     add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
     add_rule("ARGUMENT_LIST", "EXPRESSION");
+    //*/
 }
 
 void set_nonterminals_position() {

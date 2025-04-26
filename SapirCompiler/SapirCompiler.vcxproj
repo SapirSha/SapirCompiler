@@ -148,6 +148,7 @@
     <ClCompile Include="Program.c" />
     <ClCompile Include="Queue.c" />
     <ClCompile Include="Sementic.c" />
+    <ClCompile Include="Stack.c" />
     <ClCompile Include="StringTrie.c" />
     <ClCompile Include="SymbolTable.c" />
     <ClCompile Include="SyntaxTree.c" />
@@ -174,6 +175,7 @@
     <ClInclude Include="ParserTableGenerator.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Sementic.h" />
+    <ClInclude Include="Stack.h" />
     <ClInclude Include="StringTrie.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="SyntaxTree.h" />

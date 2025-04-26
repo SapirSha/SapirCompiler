@@ -17,17 +17,20 @@ int main(int argc, char* argv[]) {
     else 
         code = get_console_input();
 
-    if (current_error_state != NO_ERROR) return 0;
+    if (current_error_state != NO_ERROR) return 1;
 
     printf("\n\n\n\n\n");
 
     bool compiler_result = compile(code);
 
-    if (compiler_result)
-        printf("\n\n\t ---Compiled successfully\n");
-    else 
-        printf("\n\n\t ---Failed to compile code\n");
 
     free(code);
-    return 0;
+    if (compiler_result) {
+        printf("\n\n\t ---Compiled successfully\n");
+        return 0;
+    }
+    else {
+        printf("\n\n\t ---Failed to compile code\n");
+        return 1;
+    }
 }

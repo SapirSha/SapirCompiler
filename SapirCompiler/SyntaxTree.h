@@ -28,6 +28,11 @@ typedef struct SyntaxTree {
 } SyntaxTree;
 
 
+SyntaxTree* create_terminal_node(Token token);
+SyntaxTree* create_nonterminal_node(char* nonterminal, int num_of_children);
+void free_Syntax_tree(SyntaxTree* tree);
+
+
 void print_tree_with_ranks(SyntaxTree* tree);
 void print_tree_postorder(SyntaxTree* tree);
 void print_tree_preorder(SyntaxTree* tree);

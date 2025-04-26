@@ -144,6 +144,9 @@
     <ClCompile Include="Token.c">
       <Filter>Source Files\MultiPhase_c</Filter>
     </ClCompile>
+    <ClCompile Include="Stack.c">
+      <Filter>Source Files\DataStructures_c</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h">
@@ -216,6 +219,9 @@
       <Filter>Header Files\LexerPhase</Filter>
     </ClInclude>
     <ClInclude Include="Boolean.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="Stack.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>

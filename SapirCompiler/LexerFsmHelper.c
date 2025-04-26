@@ -6,10 +6,7 @@ BOOLEAN is_valid_char(char c) {
 }
 
 enum State get_next_state(enum State current_state, char c) {
-	if (is_valid_char(c))
-		return Lexer_FSM[current_state][c];
-	else
-		return ERROR_STATE;
+	return is_valid_char(c) ? Lexer_FSM[current_state][c] : ERROR_STATE;
 }
 
 static Token_Types state_to_token_lookup[NUM_OF_STATES] = {

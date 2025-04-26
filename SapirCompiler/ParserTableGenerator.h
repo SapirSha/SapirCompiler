@@ -31,9 +31,10 @@ typedef struct {
 
 typedef enum {
     ERROR_ACTION,
-    SHIFT,
-    REDUCE,
-    ACCEPT
+    SHIFT_ACTION,
+    REDUCE_ACTION,
+    ACCEPT_ACTION,
+    GOTO_ACTION,
 } ACTION_TYPE;
 
 typedef struct {
