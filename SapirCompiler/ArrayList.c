@@ -100,6 +100,14 @@ void arraylist_print(ArrayList* list, void printfunc(void*)) {
     printf("\n");
 }
 
+bool arraylist_contains(ArrayList* list, void* value,  int cmp(void*, void*)) {
+    if (!list || !value) return false;
+    for (int i = 0; i < list->size; i++) {
+        if (cmp(list->array[i], value) == 0)
+            return true;
+    }
+    return false;
+}
 
 bool arraylist_equals(ArrayList* a1, ArrayList* a2) {
     if (a1->object_size != a2->object_size) return false;

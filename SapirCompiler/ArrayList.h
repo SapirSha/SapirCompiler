@@ -31,4 +31,5 @@ bool arraylist_equals(ArrayList* a1, ArrayList* a2);
 
 void arraylist_print(ArrayList*, void printfunc(void*));
 
+bool arraylist_contains(ArrayList*, void*, int cmp(void*, void*));
 #endif

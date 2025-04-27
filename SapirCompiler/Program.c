@@ -23,7 +23,6 @@ int main(int argc, char* argv[]) {
 
     bool compiler_result = compile(code);
 
-
     free(code);
     if (compiler_result) {
         printf("\n\n\t ---Compiled successfully\n");

@@ -74,6 +74,12 @@ int count_symbols(const char* ruleContent);
 char* get_next_symbol(LRItem* item);
 char* get_nth_token(char* s, int n);
 void build_states(const char* startNonterminal);
-Parser_State* goto_state(Parser_State* s, const char* symbol);
+Parser_State* goto_state(Parser_State* s, char* symbol);
+void collect_symbols();
+void free_states();
+void set_nonterminals_position();
+int find_row_of_nonterminal_in_table(const char* nonterminal);
+int find_column_of_terminal_in_table(const char* terminal);
+int find_state(Parser_State* s);
 
 #endif

@@ -67,6 +67,9 @@
     <Filter Include="Source Files\Output">
       <UniqueIdentifier>{2b5fa79c-0ae6-45d4-875a-f15b39c42079}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ParserPhase_c\ParserTables">
+      <UniqueIdentifier>{015634ca-0d27-4a1f-aae2-f6e41bd0d770}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.c">
@@ -103,9 +106,6 @@
       <Filter>Source Files\DataStructures_c</Filter>
     </ClCompile>
     <ClCompile Include="Parser.c">
-      <Filter>Source Files\ParserPhase_c</Filter>
-    </ClCompile>
-    <ClCompile Include="ParserTableGenerator.c">
       <Filter>Source Files\ParserPhase_c</Filter>
     </ClCompile>
     <ClCompile Include="Queue.c">
@@ -148,22 +148,25 @@
       <Filter>Source Files\DataStructures_c</Filter>
     </ClCompile>
     <ClCompile Include="ParserTableBNFRules.c">
-      <Filter>Source Files\ParserPhase_c</Filter>
-    </ClCompile>
-    <ClCompile Include="ParserTablesHelper.c">
-      <Filter>Source Files\ParserPhase_c</Filter>
+      <Filter>Source Files\ParserPhase_c\ParserTables</Filter>
     </ClCompile>
     <ClCompile Include="ParserTableFollow.c">
-      <Filter>Source Files\ParserPhase_c</Filter>
+      <Filter>Source Files\ParserPhase_c\ParserTables</Filter>
     </ClCompile>
-    <ClCompile Include="ParserTableStates.c">
-      <Filter>Source Files\ParserPhase_c</Filter>
+    <ClCompile Include="ParserTableGenerator.c">
+      <Filter>Source Files\ParserPhase_c\ParserTables</Filter>
     </ClCompile>
     <ClCompile Include="ParserTablesTables.c">
-      <Filter>Source Files\ParserPhase_c</Filter>
+      <Filter>Source Files\ParserPhase_c\ParserTables</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTablesHelper.c">
+      <Filter>Source Files\ParserPhase_c\ParserTables</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTableStates.c">
+      <Filter>Source Files\ParserPhase_c\ParserTables</Filter>
     </ClCompile>
     <ClCompile Include="ParserTableSymbols.c">
-      <Filter>Source Files\ParserPhase_c</Filter>
+      <Filter>Source Files\ParserPhase_c\ParserTables</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

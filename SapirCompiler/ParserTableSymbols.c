@@ -3,9 +3,6 @@
 ArrayList* nonterminalsList;
 ArrayList* terminalsList;
 
-
-
-
 static bool symbol_exists(ArrayList* list, const char* sym) {
     for (int i = 0; i < list->size; i++) {
         if (strcmp(*(char**)arraylist_get(list, i), sym) == 0)

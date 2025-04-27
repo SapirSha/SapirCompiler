@@ -99,7 +99,6 @@ void print_tree_with_ranks(SyntaxTree* root) {
 
 void print_tree_postorder(SyntaxTree* tree) {
     if (tree == NULL) return;
-    printf("\POST:\n");
 
     if (tree->type == NONTERMINAL_TYPE) {
         for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++)
@@ -109,14 +108,11 @@ void print_tree_postorder(SyntaxTree* tree) {
     else {
         printf("TERMINAL: %s\n", tree->info.terminal_info.token.lexeme);
     }
-    printf("\n");
-
 }
 
 
 
 void print_tree_preorder(SyntaxTree* tree) {
-    printf("\nPRE:\n");
 
     if (tree == NULL) return;
     if (tree->type == NONTERMINAL_TYPE) {

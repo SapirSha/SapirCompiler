@@ -15,10 +15,7 @@
 
 int create_parser_tables() {
     if (parser_tables_initialized) return 0;
-
-    parser_tables_initialized = true;
-
-    rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
+    parser_tables_initialized = 1;
 
     add_rules();
 

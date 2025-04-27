@@ -3,6 +3,7 @@
 #include "HashMap.h"
 #include "HashSet.h"
 #include <ctype.h>
+#include "ErrorHandler.h"
 
 char* actiontypetostring(int action) {
     switch (action)

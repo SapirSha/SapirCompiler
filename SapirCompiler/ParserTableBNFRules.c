@@ -7,9 +7,9 @@ int associationArray[NUM_OF_TOKENS];
 A function that adds a rule into the rules array list, that represents the BNF
  * Nonterminals first letter is uppercase
 */
-void add_rule(const char* nonterminal, const char* content) {
+void add_rule(char* nonterminal, const char* content) {
     Rule rule;
-    rule.nonterminal = strdup(nonterminal);
+    rule.nonterminal = nonterminal;
     rule.ruleContent = strdup(content);
     rule.ruleTerminalCount = count_symbols(content);
     rule.ruleID = rules->size;
@@ -17,6 +17,8 @@ void add_rule(const char* nonterminal, const char* content) {
 }
 
 void add_rules() {
+    rules = arraylist_init(sizeof(Rule), DEFAULT_NUMBER_OF_RULES);
+
     /*
     add_rule("PROGRAM", "STATEMENTS");
     add_rule("STATEMENTS", "STATEMENTS STATEMENT");

@@ -74,7 +74,7 @@ static BOOLEAN handle_error(ActionCell* action, Queue* tokens, Stack* nodes, Sta
 	ArrayList* allowed_terminals = get_allowed_terminals_in_state(*current_state);
 	ArrayList* allowed_nonterminals = get_allowed_nonterminals_in_state(*current_state);
 
-	handle_parser_error(current_state, latest_passed_token, next_token, allowed_terminals, allowed_nonterminals);
+	handle_parser_error(*current_state, latest_passed_token, next_token, allowed_terminals, allowed_nonterminals);
 	return False;
 }
 
@@ -99,7 +99,6 @@ static void add_latest_nodes_to_tree(SyntaxTree* tree, Stack* nodes, Stack* stat
 		SyntaxTree* child = stack_pop(nodes);
 		tree->info.nonterminal_info.children[rule_length - i - 1] = child;
 	}
-	return tree;
 }
 
 static inline void parent_is_unneccessary_to_save(Stack* states) {

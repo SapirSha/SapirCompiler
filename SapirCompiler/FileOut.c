@@ -6,6 +6,8 @@
 
 #define MAXIMUM_FILE_PATH 128
 
+char* output_place;
+
 char* extract_dir(const char* fullpath) {
     const char* last_bs = strrchr(fullpath, '\\');
     const char* last_sl = strrchr(fullpath, '/');

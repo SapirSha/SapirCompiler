@@ -1,4 +1,6 @@
 #include "ParserTableGenerator.h"
+#include "HashSet.h"
+#include "ErrorHandler.h"
 
 ActionCell** actionTable;
 int** gotoTable;
