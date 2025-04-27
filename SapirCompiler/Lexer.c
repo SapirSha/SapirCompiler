@@ -15,14 +15,6 @@
 #define MAX_TOKEN_LENGTH 64
 #define NEW_LINE '\n'
 
-static void printToken(Token* token) {
-	if (token == NULL) {
-		printf("NULL\n");
-		return;
-	}
-	printf("Token Type: %d, Lexeme: %s, Row: %d, Col: %d\n", token->type, token->lexeme, token->row, token->col);
-}
-
 static void add_token(Queue* tokens, enum State state, const char* lexeme, int row, int col) {
 	Token_Types type = convert_state_to_token_type(state);
 	Token token = {
@@ -67,7 +59,7 @@ static int handle_above_maximum_token_length(char* got_until_now, int current_le
 static inline void insert_eof_token(Queue* q, int row, int col) {
 	Token eof = {
 		.type = TOKEN_EOF,
-		.lexeme = strdup("$"),
+		.lexeme = strdup("End Of Program"),
 		.row = row,
 		.col = col
 	};

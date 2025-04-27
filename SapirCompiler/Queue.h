@@ -20,6 +20,7 @@ void queue_enqueue(Queue* queue, void* value);
 void* queue_dequeue(Queue* queue);
 void queue_print(Queue* queue, void print(void*));
 void* queue_peek(Queue* queue);
+void queue_free(Queue* queue);
 
 
 #endif

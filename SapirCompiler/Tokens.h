@@ -70,6 +70,7 @@ typedef struct  {
 }Token;
 
 Token* create_new_token(int type, const char* lexeme, int row, int col);
+void printToken(Token* token);
 
 #endif
 

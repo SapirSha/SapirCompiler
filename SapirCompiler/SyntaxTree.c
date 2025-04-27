@@ -68,6 +68,7 @@ typedef struct {
 
 void print_tree_with_ranks(SyntaxTree* root) {
     if (root == NULL) return;
+    printf("\nRANKS:\n");
 
     Queue* q = queue_init(sizeof(RankedNode));
 
@@ -91,12 +92,15 @@ void print_tree_with_ranks(SyntaxTree* root) {
             printf("Rank %d TERMINAL: %s\n", current.rank, current.node->info.terminal_info.token.lexeme);
         }
     }
+    printf("\n");
 
 }
 
 
 void print_tree_postorder(SyntaxTree* tree) {
     if (tree == NULL) return;
+    printf("\POST:\n");
+
     if (tree->type == NONTERMINAL_TYPE) {
         for (int i = 0; i < tree->info.nonterminal_info.num_of_children; i++)
             print_tree_postorder(tree->info.nonterminal_info.children[i]);
@@ -105,12 +109,15 @@ void print_tree_postorder(SyntaxTree* tree) {
     else {
         printf("TERMINAL: %s\n", tree->info.terminal_info.token.lexeme);
     }
+    printf("\n");
 
 }
 
 
 
 void print_tree_preorder(SyntaxTree* tree) {
+    printf("\nPRE:\n");
+
     if (tree == NULL) return;
     if (tree->type == NONTERMINAL_TYPE) {
         printf("NONTERMINAL: %s\n", tree->info.nonterminal_info.nonterminal);
@@ -120,5 +127,6 @@ void print_tree_preorder(SyntaxTree* tree) {
     else {
         printf("TERMINAL: %s\n", tree->info.terminal_info.token.lexeme);
     }
+    printf("\n");
 
 }

@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,29 +68,23 @@ static char* get_nth_token(char* s, int n) {
         while (*p && isspace((char)*p))
             p++;
         if (*p == '\0') break;
-        
         if (currentToken == n) {
             char* start = p;
-
             while (*p != '\0' && !isspace((char)*p))
                 p++;
-
             int len = (p - start) / sizeof(char);
             char* token = malloc(len + 1);
             if (!token) {
                 handle_out_of_memory_error();
                 return NULL;
             }
-
             strncpy(token, start, len);
             token[len] = '\0';
-
             return token;
         }
         else {
             while (*p && !isspace((char)*p))
                 p++;
-            
             currentToken++;
         }
     }
@@ -129,7 +124,6 @@ static void closure(Parser_State* s) {
     for (int i = 0; i < s->items->size; i++) {
         LRItem* item = arraylist_get(s->items, i);
         char* symbol = get_next_symbol(item);
-
         // if the lr item indicates that a nonterminal can be gotten
         if (symbol != NULL && isNonterminal(symbol)) {
             // search for all the rules where the nonterminal is the left item, and add them to the state
@@ -159,7 +153,6 @@ static Parser_State* goto_state(Parser_State* s, const char* symbol) {
         return NULL; 
     }
     newState->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
-    
     // find all the rules in the previous state that have 'symbol' as an allowed possibility, and add them
     for (int i = 0; i < s->items->size; i++) {
         LRItem item = *(LRItem*)arraylist_get(s->items, i);
@@ -175,7 +168,6 @@ static Parser_State* goto_state(Parser_State* s, const char* symbol) {
         }
         free(next);
     }
-
     closure(newState);
     return newState;
 }
@@ -216,37 +208,27 @@ void build_states(const char* startNonterminal) {
     int len = strlen(startNonterminal) + 4;
     char* buffer = malloc(len);
     if (!buffer) handle_out_of_memory_error();
-
     snprintf(buffer, len, "%s $", startNonterminal);
-
     // add an initial rule for the tables to start at, and add startnonterminal as its content
     add_rule("START'", buffer);
     free(buffer);
-
     Parser_State* State0 = malloc(sizeof(Parser_State));
     if (!State0) handle_out_of_memory_error();
-
     State0->items = arraylist_init(sizeof(LRItem), DEFAULT_AMOUNT_OF_LR_ITEMS);
     LRItem startItem = { .rule = ((Rule*)rules->array[rules->size - 1]), .dot = 0 };
-
     arraylist_add(State0->items, &startItem);
     closure(State0);
-
     arraylist_add(states, State0);
     free(State0);
-
     // go through all the states (states size increases)
     for (int i = 0; i < states->size; i++) {
         Parser_State* s = arraylist_get(states, i);
-
         // list of possible symbols to get in the state
         ArrayList* symbolList = arraylist_init(sizeof(char*), 25);
         for (int j = 0; j < s->items->size; j++) {
             char* sym = get_next_symbol(arraylist_get(s->items, j));
-
             if (sym != NULL) {
                 bool exists = false;
-
                 // check if symbol already exists
                 for (int k = 0; k < symbolList->size; k++) {
                     if (strcmp(sym, *(char**)arraylist_get(symbolList, k)) == 0) {
@@ -261,7 +243,6 @@ void build_states(const char* startNonterminal) {
                 free(sym);
             }
         }
-
         // go through all the possible symbols that can be got in the current state
         for (int k = 0; k < symbolList->size; k++) {
             char* symbol = *(char**)arraylist_get(symbolList, k);
@@ -272,8 +253,6 @@ void build_states(const char* startNonterminal) {
                 free(g);
                 continue;
             }
-
-
             int idx = find_state(g);
             // if states doesnt already exist add to list of states
             if (idx == -1) {
@@ -289,9 +268,8 @@ void build_states(const char* startNonterminal) {
     }
 }
 
-int counter = 0;
 void print_state(Parser_State* s) {
-    printf("State %d:\n", counter++);
+    printf("State:\n");
     for (int i = 0; i < s->items->size; i++) {
         LRItem* item = arraylist_get(s->items, i);
         printf("  %s -> ", item->rule->nonterminal);
@@ -316,6 +294,7 @@ void print_state(Parser_State* s) {
 void print_string_arraylist(char** sym) {
     printf("%s ", *sym);
 }
+
 void print_string(char* sym) {
     printf("%s ", sym);
 }
@@ -1108,18 +1087,12 @@ int create_parser_tables() {
     add_rules();
 
     build_states("PROGRAM");
-
     collect_symbols();
-
     set_nonterminals_position();
     init_tables();
-
     compute_follow();
-
     build_parsing_tables();
-
     createAssociationMap();
-
     free_states();
 
     return 0;
@@ -1167,7 +1140,7 @@ void free_rules() {
     Rule* cur;
     for (int i = 0; i < rules->size; i++) {
         cur = (Rule*)rules->array[i];
-        //free(cur->nonterminal); <--- dont free nonterminal! used in nodes at parser
+        //free(cur->nonterminal); <--- dont free nonterminal! used in nodes at syntax tree
         free(cur->ruleContent);
     }
     arraylist_free(rules);

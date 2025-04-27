@@ -17,3 +17,11 @@ Token* create_new_token(int type, const char* lexeme, int row, int col) {
 	token->col = col;
 	return token;
 }
+
+void printToken(Token* token) {
+	if (token == NULL) {
+		printf("NULL\n");
+		return;
+	}
+	printf("Token Type: %d, Lexeme: %s, Row: %d, Col: %d\n", token->type, token->lexeme, token->row, token->col);
+}

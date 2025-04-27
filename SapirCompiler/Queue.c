@@ -81,3 +81,16 @@ void* queue_peek(Queue* queue) {
 void* queue_peek_last(Queue* queue) {
 	return queue->tail ? queue->tail->value : NULL;
 }
+
+void queue_free(Queue* queue) {
+	if (queue == NULL) return;
+	QueueNode* node = queue->head;
+	QueueNode* next;
+	while (node) {
+		next = node->next;
+		free(node->value);
+		free(node);
+		node = next;
+	}
+	free(queue);
+}

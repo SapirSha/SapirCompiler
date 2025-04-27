@@ -48,14 +48,15 @@ void handle_parser_error(int state_accured, Token* latest_token, Token* next_tok
 		if (i + 1 < allowed_tokens->size) 
 			out_put_error(", ");
 	}
-	out_put_error("\nOr the following statements: ");
-	for (int i = 0; i < allowed_statements->size; i++) {
-		str_pointer = *(char**)allowed_statements->array[i];
-		out_put_error(str_pointer);
-		if (i + 1 < allowed_statements->size)
-			out_put_error(", ");
+	if (allowed_statements->size > 0) {
+		out_put_error("\nOr the following statements: ");
+		for (int i = 0; i < allowed_statements->size; i++) {
+			str_pointer = *(char**)allowed_statements->array[i];
+			out_put_error(str_pointer);
+			if (i + 1 < allowed_statements->size)
+				out_put_error(", ");
+		}
 	}
-
 	snprintf(ErrorMsg, MAX_ERROR_MSG_LENGTH,
 		"\nBut instead Got Token '%s' in line %d column %d.\n"
 		, next_token->lexeme, next_token->row, next_token->col
