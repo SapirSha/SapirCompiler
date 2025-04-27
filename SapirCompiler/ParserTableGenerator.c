@@ -780,7 +780,7 @@ void print_rules() {
 }
 
 void add_rules() {
-    /*
+    
     add_rule("PROGRAM", "STATEMENTS");
     add_rule("STATEMENTS", "STATEMENTS STATEMENT");
     add_rule("STATEMENTS", "STATEMENT");
@@ -798,7 +798,8 @@ void add_rules() {
 
     add_rule("BLOCK", "{ STATEMENTS }");
     add_rule("SCOPED_BLOCK", "{ STATEMENTS }");
-
+    add_rule("BLOCK_OR_STATEMENT", "SCOPED_BLOCK");
+    add_rule("BLOCK_OR_STATEMENT", "STATEMENT");
 
     add_rule("VARIABLE_TYPE", "int");
     add_rule("VARIABLE_TYPE", "bool");
@@ -823,7 +824,6 @@ void add_rules() {
     add_rule("FUNCTION_DECLARATION", "FUNCTION_DECLARATION_STATEMENT");
     add_rule("FUNCTION_DECLARATION_STATEMENT", "FUNCTION_BASE FUNCTION_GETS_BASE FUNCTION_RETURNS_BASE SCOPED_BLOCK");
 
-
     add_rule("VARIABLE_CHANGES", "VARIABLE_DECLARATION_STATEMENT");
     add_rule("VARIABLE_DECLARATION_STATEMENT", "VARIABLE_TYPE identifier");
 
@@ -831,35 +831,29 @@ void add_rules() {
     add_rule("VARIABLE_ASSIGNMENT_STATEMENT", "identifier = EXPRESSION");
 
     add_rule("VARIABLE_CHANGES", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
-    add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_DECLARATION_STATEMENT = EXPRESSION");
-
-    add_rule("IF_STATEMENTS", "IF_STATEMENT");
-    add_rule("IF_STATEMENT", "if CONDITION_LIST BLOCK");
-    add_rule("IF_STATEMENT", "if CONDITION_LIST STATEMENT");
+    add_rule("VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT", "VARIABLE_TYPE identifier = EXPRESSION");
 
     add_rule("IF_STATEMENTS", "IF_ELSE_STATEMENT");
-    add_rule("IF_ELSE_STATEMENT", "IF_STATEMENT else BLOCK");
-    add_rule("IF_ELSE_STATEMENT", "IF_STATEMENT else STATEMENT");
+    add_rule("IF_ELSE_STATEMENT", "if EXPRESSION BLOCK_OR_STATEMENT else BLOCK_OR_STATEMENT");
+
+    add_rule("IF_STATEMENTS", "IF_STATEMENT");
+    add_rule("IF_STATEMENT", "if EXPRESSION BLOCK_OR_STATEMENT");
+
 
     add_rule("WHILE_STATEMENTS", "WHILE_STATEMENT");
-    add_rule("WHILE_STATEMENT", "while CONDITION_LIST BLOCK");
-    add_rule("WHILE_STATEMENT", "while CONDITION_LIST STATEMENT");
+    add_rule("WHILE_STATEMENT", "while EXPRESSION BLOCK_OR_STATEMENT");
 
     add_rule("WHILE_STATEMENTS", "DO_WHILE_STATEMENT");
-    add_rule("DO_WHILE_STATEMENT", "do BLOCK while CONDITION_LIST");
-    add_rule("DO_WHILE_STATEMENT", "do STATEMENT while CONDITION_LIST");
+    add_rule("DO_WHILE_STATEMENT", "do BLOCK_OR_STATEMENT while EXPRESSION");
 
     add_rule("FOR_ASSIGNMENT", "VARIABLE_ASSIGNMENT_STATEMENT");
     add_rule("FOR_ASSIGNMENT", "VARIABLE_DECLARATION_WITH_ASSIGNMENT_STATEMENT");
 
     add_rule("FOR_STATEMENTS", "FOR_STATEMENT");
-    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST SCOPED_BLOCK");
-    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST STATEMENT");
-
+    add_rule("FOR_STATEMENT", "for FOR_ASSIGNMENT while EXPRESSION BLOCK_OR_STATEMENT");
 
     add_rule("FOR_STATEMENTS", "FOR_CHANGE_STATEMENT");
-    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST SCOPED_BLOCK change VARIABLE_ASSIGNMENT_STATEMENT");
-    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while CONDITION_LIST STATEMENT change VARIABLE_ASSIGNMENT_STATEMENT");
+    add_rule("FOR_CHANGE_STATEMENT", "for FOR_ASSIGNMENT while EXPRESSION BLOCK_OR_STATEMENT change VARIABLE_ASSIGNMENT_STATEMENT");
 
     add_rule("GET_STATEMENTS", "GET_STATEMENT");
     add_rule("GET_STATEMENT", "get identifier");
@@ -890,7 +884,7 @@ void add_rules() {
     add_rule("CONDITION_LIST", "CONDITION_LIST && CONDITION");
     add_rule("CONDITION_LIST", "CONDITION_LIST || CONDITION");
 
-    add_rule("CONDITION", "( CONDITION_LIST )");
+    add_rule("CONDITION", "CONDITION_PRIORITY");
     add_rule("CONDITION", "EXPRESSION == EXPRESSION");
     add_rule("CONDITION", "EXPRESSION != EXPRESSION");
     add_rule("CONDITION", "EXPRESSION > EXPRESSION");
@@ -902,6 +896,8 @@ void add_rules() {
     add_rule("CONDITION", "true");
     add_rule("CONDITION", "false");
 
+    add_rule("CONDITION_PRIORITY", "( CONDITION_LIST )");
+
     add_rule("EXPRESSION", "EXPRESSION + TERM");
     add_rule("EXPRESSION", "EXPRESSION - TERM");
     add_rule("EXPRESSION", "TERM");
@@ -911,13 +907,17 @@ void add_rules() {
     add_rule("TERM", "TERM / FACTOR");
     add_rule("TERM", "FACTOR");
 
+    add_rule("FACTOR", "NEGATIVE_FACTOR");
     add_rule("FACTOR", "( EXPRESSION )");
     add_rule("FACTOR", "identifier");
     add_rule("FACTOR", "number");
+    add_rule("FACTOR", "CONDITION_LIST");
     add_rule("FACTOR", "FUNCTION_CALL_STATEMENTS");
-    */
+    
+    add_rule("NEGATIVE_FACTOR", "- FACTOR");
+    
 
-    ///*
+    /*
     add_rule("PROGRAM", "STATEMENTS"); //
     add_rule("STATEMENTS", "STATEMENTS STATEMENT");
     add_rule("STATEMENTS", "STATEMENT"); 
@@ -1059,7 +1059,7 @@ void add_rules() {
 
     add_rule("ARGUMENT_LIST", "ARGUMENT_LIST , EXPRESSION");
     add_rule("ARGUMENT_LIST", "EXPRESSION");
-    //*/
+    */
 }
 
 void set_nonterminals_position() {

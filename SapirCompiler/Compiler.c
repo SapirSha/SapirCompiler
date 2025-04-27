@@ -23,6 +23,8 @@ bool compile(char *code) {
     SyntaxTree* syntax_tree = commit_parser(tokens);
 
     if (current_error_state != NO_ERROR) return false;
+    return true;
+
 
     sementic_analysis(syntax_tree);
 
