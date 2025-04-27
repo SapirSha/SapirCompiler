@@ -70,8 +70,8 @@ static inline void insert_eof_token(Queue* q, int row, int col) {
 #define CURRENT_POSITION(current_line, current_line_start_pos, code_pointer, code)\
                 current_line, pos - code - current_line_start_pos + 1
 
-#define CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, code_pointer, code)\
-				current_line, pos - code - current_token_start_pos + 1
+#define CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos)\
+				current_line, current_token_start_pos - current_line_start_pos + 1
 
 Queue* tokenize(const char* code) {
 	enum State state = START_STATE;
@@ -94,7 +94,7 @@ Queue* tokenize(const char* code) {
 			if (!is_ignored_state(prev_state)) {
 				current_token[current_token_length] = '\0';
 				add_token(tokens, prev_state, current_token, 
-					CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, pos, code));
+					CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos));
 			}
 			current_token_length = 0;
 			current_token_start_pos = pos - code + 1;
@@ -109,7 +109,7 @@ Queue* tokenize(const char* code) {
 		else {
 			if (current_token_length > MAX_TOKEN_LENGTH) {
 				pos += handle_above_maximum_token_length(current_token, current_token_length,
-					pos, CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, pos, code) - 1);
+					pos, CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos) - 1);
 				current_token_length = 0;
 				state = START_STATE;
 			}
@@ -125,7 +125,7 @@ Queue* tokenize(const char* code) {
 	if (!is_ignored_state(state)) {
 		current_token[current_token_length] = '\0';
 		add_token(tokens, state, current_token, 
-			CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, pos, code));
+			CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos));
 	}
 
 	insert_eof_token(tokens, CURRENT_POSITION(current_line, current_line_start_pos, pos, code));

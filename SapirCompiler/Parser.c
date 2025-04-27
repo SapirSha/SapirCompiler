@@ -8,7 +8,7 @@
 #include "Boolean.h"
 #include "ErrorHandler.h"
 
-static int* new_int_with_allocation(int integer) {
+int* new_int_with_allocation(int integer) {
 	int* pointer = malloc(sizeof(int));
 	if (pointer) {
 		*pointer = integer;

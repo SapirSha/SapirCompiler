@@ -5,37 +5,10 @@
 ActionCell** actionTable;
 int** gotoTable;
 
-
 /* Create the action and goto tables*/
 void init_tables() {
-    actionTable = malloc(states->size * sizeof(ActionCell*));
-    if (!actionTable) {
-        handle_out_of_memory_error();
-        return;
-    }
-
-    ActionCell* actionContent = malloc(states->size * terminalsList->size * sizeof(ActionCell));
-    if (!actionContent) {
-        handle_out_of_memory_error();
-        return;
-    }
-
-    for (int i = 0; i < states->size; i++)
-        actionTable[i] = actionContent + i * terminalsList->size;
-
-    gotoTable = malloc(states->size * sizeof(int*));
-    if (!gotoTable) {
-        handle_out_of_memory_error();
-        return;
-    }
-
-    int* gotoContent = malloc(states->size * nonterminalsList->size * sizeof(int));
-    if (!gotoContent) {
-        handle_out_of_memory_error();
-        return;
-    }
-    for (int i = 0; i < states->size; i++)
-        gotoTable[i] = gotoContent + i * nonterminalsList->size;
+    actionTable = create_matrix(states->size, terminalsList->size, sizeof(ActionCell));
+    gotoTable = create_matrix(states->size, nonterminalsList->size, sizeof(int));
 }
 
 /* fill the tables */
@@ -98,7 +71,7 @@ void build_parsing_tables() {
 
             // if the symbol is a terminal look at action table
             if (!isNonterminal(sym)) {
-                int col = getTerminalIndex(sym);
+                int col = get_terminal_index(sym);
 
                 if (col != -1) {
                     /* i: current state
@@ -110,7 +83,7 @@ void build_parsing_tables() {
             }
             else {
                 // if symbol is a nonterminal look at goto table
-                int col = getNonterminalIndex(sym);
+                int col = get_nonterminal_index(sym);
                 if (col != -1) {
                     /* i: current state
                      * col: the index of the nonterminal
@@ -146,7 +119,7 @@ void build_parsing_tables() {
             if (item->dot == tokenCount) {
                 // for the start state add accept if at end
                 if (strcmp(item->rule->nonterminal, "START'") == 0) {
-                    int dollarIdx = getTerminalIndex("$");
+                    int dollarIdx = get_terminal_index("$");
                     if (dollarIdx != -1) {
                         actionTable[i][dollarIdx] = (ActionCell){ .type = ACCEPT_ACTION };
                     }

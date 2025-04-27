@@ -81,5 +81,8 @@ void set_nonterminals_position();
 int find_row_of_nonterminal_in_table(const char* nonterminal);
 int find_column_of_terminal_in_table(const char* terminal);
 int find_state(Parser_State* s);
-
+void** create_matrix(int rows, int cols, int object_size);
+int get_terminal_index(const char* sym);
+int get_nonterminal_index(const char* sym);
+char* actiontypetostring(int action);
 #endif

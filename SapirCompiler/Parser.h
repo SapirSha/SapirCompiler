@@ -4,5 +4,6 @@
 #include "SyntaxTree.h"
 
 SyntaxTree* commit_parser(Queue* tokens);
+int* new_int_with_allocation(int integer);
 
 #endif

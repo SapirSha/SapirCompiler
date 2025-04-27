@@ -6,16 +6,15 @@
 #include "ErrorHandler.h"
 
 char* actiontypetostring(int action) {
-    switch (action)
-    {
-    case ACCEPT_ACTION: return "A";
-    case REDUCE_ACTION: return "R";
-    case SHIFT_ACTION:  return "S";
-    case ERROR_ACTION:  return "E";
+    static const char* action_type_string_lookup[5] = {
+        [ERROR_ACTION] = "E",
+        [SHIFT_ACTION] = "S",
+        [REDUCE_ACTION] = "R",
+        [ACCEPT_ACTION] = "A",
+        [GOTO_ACTION] = "G",
+    };
 
-    default:
-        return NULL;
-    }
+    return action_type_string_lookup[action];
 }
 
 /*
@@ -31,18 +30,14 @@ A function that counts the number of symbols in the rule
  * symbols are separated by spaces (' ')
 */
 int count_symbols(const char* ruleContent) {
+    char* content_dup = strdup(ruleContent);
+    char* symbol = strtok(content_dup, " ");
     int count = 0;
-    bool inToken = false;
-    while (*ruleContent != '\0') {
-        if (!isspace((char)*ruleContent) && !inToken) {
-            count++;
-            inToken = true;
-        }
-        else if (isspace((char)*ruleContent)) {
-            inToken = false;
-        }
-        ruleContent++;
+    while (symbol != NULL) {
+        count++;
+        symbol = strtok(NULL, " ");
     }
+    free(content_dup);
     return count;
 }
 
@@ -50,34 +45,14 @@ int count_symbols(const char* ruleContent) {
 A function that returns the token in position n in the input
  * Position is the number of symbols passed, and not character position in the string
 */
-char* get_nth_token(char* s, int n) {
-    int currentToken = 0;
-    char* p = s;
-    while (*p) {
-        while (*p && isspace((char)*p))
-            p++;
-        if (*p == '\0') break;
-        if (currentToken == n) {
-            char* start = p;
-            while (*p != '\0' && !isspace((char)*p))
-                p++;
-            int len = (p - start) / sizeof(char);
-            char* token = malloc(len + 1);
-            if (!token) {
-                handle_out_of_memory_error();
-                return NULL;
-            }
-            strncpy(token, start, len);
-            token[len] = '\0';
-            return token;
-        }
-        else {
-            while (*p && !isspace((char)*p))
-                p++;
-            currentToken++;
-        }
-    }
-    return NULL;
+char* get_nth_token(char* content, int n) {
+    char* content_dup = strdup(content);
+    char* symbol = strtok(content_dup, " ");
+    while(n-- > 0)
+        symbol = strtok(NULL, " ");
+    char* result = strdup(symbol);
+    free(content_dup);
+    return result;
 }
 
 /*
@@ -105,7 +80,6 @@ void print_follows() {
     }
 }
 
-
 void print_rules() {
     for (int i = 0; i < rules->size; i++) {
         Rule* r = (Rule*)rules->array[i];
@@ -114,25 +88,20 @@ void print_rules() {
 }
 
 int find_row_of_nonterminal_in_table(const char* nonterminal) {
-    int i;
-    for (i = 0; i < nonterminalsList->size && strcmp(*(char**)arraylist_get(nonterminalsList, i), nonterminal) != 0; i++);
-    if (i < nonterminalsList->size)
-        return i;
+    int i = get_nonterminal_index(nonterminal);
+    if (i != -1) return i;
     else {
-        handle_other_errors("\n\t---UNKNOWN NONTERMINAL\n");
-        exit(1);
+        handle_other_errors("\t--- UNKNOWN NONTERMINAL INVALID BNF");
+        exit(-1);
     }
 }
 
 int find_column_of_terminal_in_table(const char* terminal) {
-    int i;
-    for (i = 0; i < terminalsList->size && strcmp(*(char**)arraylist_get(terminalsList, i), terminal) != 0; i++);
-    if (i < terminalsList->size)
-        return i;
+    int i = get_terminal_index(terminal);
+    if (i != -1) return i;
     else {
-        printf("\n\t---UNKNOWN TERMINAL %s\n", terminal);
-        handle_other_errors("\n\t---UNKNOWN TERMINAL \n");
-        exit(1);
+        handle_other_errors("\t--- UNKNOWN TERMINAL INVALID BNF");
+        exit(-1);
     }
 }
 
@@ -197,4 +166,18 @@ void print_state(Parser_State* s) {
         printf("\n");
         free(contentCopy);
     }
+}
+
+
+void** create_matrix(int rows, int cols, int object_size) {
+    void** row_pointers = malloc(sizeof(void*) * rows);
+    //char for single byte
+    char* matrix = malloc(object_size * rows * cols);
+    if (!row_pointers || !matrix) {
+        handle_out_of_memory_error();
+        return NULL;
+    }
+    for (int row = 0; row < rows; row++)
+        row_pointers[row] = matrix + object_size * row * cols;
+    return row_pointers;
 }
