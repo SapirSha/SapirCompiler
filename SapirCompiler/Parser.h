@@ -1,6 +1,5 @@
 #ifndef PARSER_H
 #define PARSER_H
-
 #include "Queue.h"
 #include "SyntaxTree.h"
 

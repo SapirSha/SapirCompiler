@@ -1,6 +1,8 @@
 #ifndef PARSER_TABLE_GENERATOR_H
 #define PARSER_TABLE_GENERATOR_H
 
+#pragma warning(disable:4996)
+
 #include "Tokens.h"
 #include "ArrayList.h"
 #include "stdbool.h"
@@ -42,15 +44,17 @@ typedef struct {
     int value;
 } ActionCell;
 
-ActionCell** actionTable;
-int** gotoTable;
+extern ActionCell** actionTable;
+extern int** gotoTable;
 
-ArrayList* nonterminalsList;
-ArrayList* terminalsList;
-HashMap* follow;
+extern ArrayList* nonterminalsList;
+extern ArrayList* terminalsList;
 
-int associationArray[NUM_OF_TOKENS];
-ArrayList* rules;
+extern int associationArray[NUM_OF_TOKENS];
+extern ArrayList* rules;
+
+extern ArrayList* states;
+extern HashMap* follow;
 
 int parser_tables_initialized;
 
@@ -63,5 +67,13 @@ void free_parser_table();
 void free_non_and_terminals();
 void free_rules();
 void free_follow();
+
+void add_rule(const char* nonterminal, const char* content);
+void add_rules();
+int count_symbols(const char* ruleContent);
+char* get_next_symbol(LRItem* item);
+char* get_nth_token(char* s, int n);
+void build_states(const char* startNonterminal);
+Parser_State* goto_state(Parser_State* s, const char* symbol);
 
 #endif

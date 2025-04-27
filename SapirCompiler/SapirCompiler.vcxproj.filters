@@ -147,6 +147,24 @@
     <ClCompile Include="Stack.c">
       <Filter>Source Files\DataStructures_c</Filter>
     </ClCompile>
+    <ClCompile Include="ParserTableBNFRules.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTablesHelper.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTableFollow.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTableStates.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTablesTables.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserTableSymbols.c">
+      <Filter>Source Files\ParserPhase_c</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h">

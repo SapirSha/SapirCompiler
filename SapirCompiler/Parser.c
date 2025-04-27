@@ -1,11 +1,12 @@
 #include "Parser.h"
+
+#include <stdlib.h>
+#include <stdio.h>
 #include "ParserTableGenerator.h"
 #include "Stack.h"
 #include "SyntaxTree.h"
-#include <stdlib.h>
 #include "Boolean.h"
 #include "ErrorHandler.h"
-#include <stdio.h>
 
 static int* new_int_with_allocation(int integer) {
 	int* pointer = malloc(sizeof(int));
