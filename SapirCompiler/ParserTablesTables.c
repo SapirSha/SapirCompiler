@@ -5,23 +5,29 @@
 ActionCell** actionTable;
 int** gotoTable;
 
-/* Create the action and goto tables*/
-void init_tables() {
-    actionTable = create_matrix(states->size, terminalsList->size, sizeof(ActionCell));
-    gotoTable = create_matrix(states->size, nonterminalsList->size, sizeof(int));
-}
-
-/* fill the tables */
-void build_parsing_tables() {
+static void init_tables_cells() {
     // initialized all the values as -1 and error
     for (int i = 0; i < states->size; i++) {
         for (int j = 0; j < terminalsList->size; j++) {
             actionTable[i][j] = (ActionCell){ .type = ERROR_ACTION };
         }
-        for (int j = 0; j < nonterminalsList->size; j++) {
+        for (int j = 0; j < nonterminal_list->size; j++) {
             gotoTable[i][j] = -1;
         }
     }
+}
+
+/* Create the action and goto tables*/
+static void init_tables() {
+    actionTable = create_matrix(states->size, terminalsList->size, sizeof(ActionCell));
+    gotoTable = create_matrix(states->size, nonterminal_list->size, sizeof(int));
+
+    init_tables_cells();
+}
+
+/* fill the tables */
+void build_parsing_tables() {
+    init_tables();
 
     // go through all the states
     for (int i = 0; i < states->size; i++) {

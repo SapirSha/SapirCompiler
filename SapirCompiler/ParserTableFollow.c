@@ -1,39 +1,58 @@
 #include "ParserTableGenerator.h"
 #include "HashSet.h"
 #include "HashMap.h"
+#include "Stack.h"
+
 HashMap* follow;
 
-// initialize follow structure
-void init_follow() {
-    follow = createHashMap(nonterminalsList->size, string_hash, string_equals);
-    // for every nonterminal create a hashset that represents the possible terminals that can be after it
-    for (int i = 0; i < nonterminalsList->size; i++) {
-        hashmap_insert(follow, *(char**)arraylist_get(nonterminalsList, i), hashset_create(terminalsList->size, string_hash, string_equals));
-    }
+static bool add_symbol_as_follow(char* to_follow_nonterminal, char* followed_by_symbol);
 
-    hashset_insert(hashmap_get(follow, "START'"), "$");
+static bool inline add_terminal_as_follow(char* nonterminal, char* terminal) {
+    return hashset_insert(hashmap_get(follow, nonterminal), terminal);
 }
 
-bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* rule) {
-    char* next_token = get_nth_token(rule->ruleContent, 0);
-    if (next_token == NULL) return false;
-    if (!isNonterminal(next_token)) {
-        bool changed = hashset_insert(hashmap_get(follow, nonterminal), next_token);
-        if (!changed) free(next_token);
-        return changed;
+// initialize follow structure
+static void init_follow() {
+    follow = createHashMap(nonterminal_list->size, string_hash, string_equals);
+    // for every nonterminal create a hashset that represents the possible terminals that can be after it
+    for (int i = 0; i < nonterminal_list->size; i++) {
+        char* nonterminal = *(char**)arraylist_get(nonterminal_list, i);
+        hashmap_insert(follow, nonterminal, hashset_create(terminalsList->size, string_hash, string_equals));
     }
-    else {
-        bool changed = false;
-        for (int r2 = 0; r2 < rules->size; r2++)
-        {
-            Rule* a_rule = arraylist_get(rules, r2);
-            if (strcmp(a_rule->nonterminal, next_token) == 0) {
-                changed |= add_rules_content_to_nonterminals_follow(nonterminal, a_rule);
-            }
-        }
-        free(next_token);
-        return changed;
+
+    add_terminal_as_follow("START'", "$");
+}
+
+static bool add_nonterminals_rules_first_symbols_as_follows(char* to_follow_nonterminal, char* followed_by_nonterminal) {
+    Rule* current;
+    bool changed = false;
+    Stack* nonterminals_rules = get_all_nonterminals_rule(followed_by_nonterminal);
+    while (nonterminals_rules->size != 0) {
+        Rule* rule = stack_pop(nonterminals_rules);
+        char* first_symbol = get_first_symbol(rule->ruleContent);
+        add_symbol_as_follow(to_follow_nonterminal, first_symbol);
+        free(first_symbol);
     }
+    stack_free(nonterminals_rules, NULL);
+    return changed;
+}
+
+static bool add_symbol_as_follow(char* to_follow_nonterminal, char* followed_by_symbol) {
+    char* symbol_dup = strdup(followed_by_symbol);
+    bool changed = false;
+    if (isNonterminal(followed_by_symbol))
+        changed = add_nonterminals_rules_first_symbols_as_follows(to_follow_nonterminal, symbol_dup);
+    else
+        changed = add_terminal_as_follow(to_follow_nonterminal, symbol_dup);
+    if (!changed) free(symbol_dup);
+    return changed;
+}
+
+static bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* rule) {
+    char* first_symbol = get_first_symbol(rule->ruleContent);
+    bool changed = add_symbol_as_follow(nonterminal, first_symbol);
+    free(first_symbol);
+    return changed;
 }
 
 
@@ -73,43 +92,7 @@ void compute_follow() {
                     // if not last symbol
                     if (j + 1 < tokens->size) {
                         char* after_symbol = *(char**)arraylist_get(tokens, j + 1);
-                        // if the symbol after the nonterminal is a terminal its a follow
-                        if (!isNonterminal(after_symbol)) {
-                            changed |= hashset_insert(hashmap_get(follow, current_symbol), after_symbol);
-                        }
-                        else {
-
-                            // go through all the rules
-                            for (int r = 0; r < rules->size; r++) {
-                                Rule* candidate = (Rule*)rules->array[r];
-
-                                // find the contents of the nonterminal after_symbol
-                                if (strcmp(candidate->nonterminal, after_symbol) == 0) {
-                                    char* sample = strdup(candidate->ruleContent);
-                                    char* firstSym = get_nth_token(sample, 0);
-                                    free(sample);
-                                    // if the first symbol in the content is terminal, add as follow
-                                    if (firstSym && !isNonterminal(firstSym)) {
-                                        bool f = hashset_insert(hashmap_get(follow, current_symbol), firstSym);
-                                        if (!f) free(firstSym);
-                                        changed |= f;
-                                        break;
-                                    }
-                                    // if the first symbol is nonterminal, add its follows to current
-                                    else if (firstSym && isNonterminal(firstSym)) {
-                                        for (int r2 = 0; r2 < rules->size; r2++)
-                                        {
-                                            Rule* a_rule = arraylist_get(rules, r2);
-                                            if (strcmp(a_rule->nonterminal, firstSym) == 0) {
-                                                changed |= add_rules_content_to_nonterminals_follow(current_symbol, a_rule);
-                                            }
-                                        }
-                                        free(firstSym);
-                                    }
-                                    else free(firstSym);
-                                }
-                            }
-                        }
+                        add_symbol_as_follow(current_symbol, after_symbol);
                     }
                     else { // end of rule's content
                         // add to last symbol's follows, the current rule's follows

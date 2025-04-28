@@ -2,20 +2,20 @@
 #include "HashSet.h"
 #include "Parser.h"
 
-ArrayList* nonterminalsList;
+ArrayList* nonterminal_list;
 ArrayList* terminalsList;
 HashMap* symbols_indexes;
 
 static void symbols_init() {
-    nonterminalsList = arraylist_init(sizeof(char*), DEFAULT_AMOUNT_OF_NONTERMINALS);
+    nonterminal_list = arraylist_init(sizeof(char*), DEFAULT_AMOUNT_OF_NONTERMINALS);
     terminalsList = arraylist_init(sizeof(char*), DEFAULT_AMOUNT_OF_TERMINALS);
     symbols_indexes = createHashMap(DEFAULT_AMOUNT_OF_TERMINALS * 2, string_hash, string_equals);
 }
 
 static inline void add_to_nonterminals_list(char* symbol) {
     char* dup = strdup(symbol);
-    int* index = new_int_with_allocation(nonterminalsList->size);
-    arraylist_add(nonterminalsList, &dup);
+    int* index = new_int_with_allocation(nonterminal_list->size);
+    arraylist_add(nonterminal_list, &dup);
     hashmap_insert(symbols_indexes, dup, index);
 }
 
@@ -92,12 +92,12 @@ void free_non_and_terminals() {
     }
     arraylist_free(terminalsList);
 
-    for (int i = 0; i < nonterminalsList->size; i++) {
-        char* symbol = *(char**)nonterminalsList->array[i];
+    for (int i = 0; i < nonterminal_list->size; i++) {
+        char* symbol = *(char**)nonterminal_list->array[i];
         free(hashmap_get(symbols_indexes, symbol));
         free(symbol);
     }
-    arraylist_free(nonterminalsList);
+    arraylist_free(nonterminal_list);
 
     freeHashMap(symbols_indexes);
 }

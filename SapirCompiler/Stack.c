@@ -51,7 +51,8 @@ void stack_free(Stack* stack, void free_function(void*)) {
 	StackNode* current = stack->head;
 	while (current != NULL) {
 		StackNode* next = current->next;
-		free_function(current->value);
+		if (free_function)
+			free_function(current->value);
 		free(current);
 		current = next;
 	}

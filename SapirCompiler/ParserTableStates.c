@@ -61,13 +61,12 @@ static bool state_contains_item(Parser_State* s, LRItem* item) {
 }
 
 static void add_nonterminal_rules_to_state(char* nonterminal, Parser_State* state) {
-    for (int rule_index = 0; rule_index < rules->size; rule_index++) {
-        Rule* current = rules->array[rule_index];
-        if (strcmp(current->nonterminal, nonterminal) == 0) {
-            LRItem new_state_item = (LRItem){ .rule = current , .dot = 0 };
-            if (!state_contains_item(state, &new_state_item))
-                arraylist_add(state->items, &new_state_item);
-        }
+    Stack* nonterminal_rules = get_all_nonterminals_rule(nonterminal);
+    while (nonterminal_rules->size != 0) {
+        Rule* rule = stack_pop(nonterminal_rules);
+        LRItem new_state_item = (LRItem){ .rule = rule , .dot = 0 };
+        if (!state_contains_item(state, &new_state_item))
+            arraylist_add(state->items, &new_state_item);
     }
 }
 

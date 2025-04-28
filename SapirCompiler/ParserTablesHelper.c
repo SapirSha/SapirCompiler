@@ -55,6 +55,10 @@ char* get_nth_token(char* content, int n) {
     return result;
 }
 
+char* get_first_symbol(char* content) {
+    return get_nth_token(content, 0);
+}
+
 /*
  A function that returns the symbol after the dot in an LRItem
 */
@@ -73,8 +77,8 @@ void print_string(char* sym) {
 
 void print_follows() {
     printf("FOLLOWS:\n");
-    for (int i = 0; i < nonterminalsList->size; i++) {
-        char* str = *(char**)arraylist_get(nonterminalsList, i);
+    for (int i = 0; i < nonterminal_list->size; i++) {
+        char* str = *(char**)arraylist_get(nonterminal_list, i);
         printf("%s:\t\t\t", str);
         hashset_print(hashmap_get(follow, str), print_string);
     }
@@ -91,7 +95,7 @@ int find_row_of_nonterminal_in_table(const char* nonterminal) {
     int i = get_nonterminal_index(nonterminal);
     if (i != -1) return i;
     else {
-        handle_other_errors("\t--- UNKNOWN NONTERMINAL INVALID BNF");
+        handle_other_errors("\t--- UNKNOWN NONTERMINAL - INVALID BNF");
         exit(-1);
     }
 }
@@ -100,7 +104,7 @@ int find_column_of_terminal_in_table(const char* terminal) {
     int i = get_terminal_index(terminal);
     if (i != -1) return i;
     else {
-        handle_other_errors("\t--- UNKNOWN TERMINAL INVALID BNF");
+        handle_other_errors("\t--- UNKNOWN TERMINAL - INVALID BNF");
         exit(-1);
     }
 }
@@ -128,13 +132,13 @@ void print_parsing_tables() {
         printf("\n");
     }
     printf("\nGOTO TABLE:\n\t");
-    for (int j = 0; j < nonterminalsList->size; j++) {
-        printf("%.5s\t", *(char**)arraylist_get(nonterminalsList, j));
+    for (int j = 0; j < nonterminal_list->size; j++) {
+        printf("%.5s\t", *(char**)arraylist_get(nonterminal_list, j));
     }
     printf("\n");
     for (int i = 0; i < states->size; i++) {
         printf("%d\t", i);
-        for (int j = 0; j < nonterminalsList->size; j++) {
+        for (int j = 0; j < nonterminal_list->size; j++) {
             if (gotoTable[i][j] == -1)
                 printf("err\t");
             else
@@ -168,7 +172,6 @@ void print_state(Parser_State* s) {
     }
 }
 
-
 void** create_matrix(int rows, int cols, int object_size) {
     void** row_pointers = malloc(sizeof(void*) * rows);
     //char for single byte
@@ -180,4 +183,18 @@ void** create_matrix(int rows, int cols, int object_size) {
     for (int row = 0; row < rows; row++)
         row_pointers[row] = matrix + object_size * row * cols;
     return row_pointers;
+}
+
+inline bool is_nonterminals_rule(char* nonterminal, Rule* rule) {
+    return strcmp(rule->nonterminal, nonterminal) == 0;
+}
+
+Stack* get_all_nonterminals_rule(char* nonterminal) {
+    Stack* result = stack_init();
+    for (int i = 0; i < rules->size; i++) {
+        Rule* current = rules->array[i];
+        if (is_nonterminals_rule(nonterminal, current))
+            stack_push(result, current);
+    }
+    return result;
 }

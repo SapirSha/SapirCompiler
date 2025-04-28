@@ -7,6 +7,7 @@
 #include "ArrayList.h"
 #include "stdbool.h"
 #include "HashMap.h"
+#include "Stack.h"
 
 #define DEFAULT_NUMBER_OF_STATES 100
 #define DEFAULT_NUMBER_OF_RULES 100
@@ -47,7 +48,7 @@ typedef struct {
 extern ActionCell** actionTable;
 extern int** gotoTable;
 
-extern ArrayList* nonterminalsList;
+extern ArrayList* nonterminal_list;
 extern ArrayList* terminalsList;
 
 extern int associationArray[NUM_OF_TOKENS];
@@ -85,4 +86,9 @@ void** create_matrix(int rows, int cols, int object_size);
 int get_terminal_index(const char* sym);
 int get_nonterminal_index(const char* sym);
 char* actiontypetostring(int action);
+void build_parsing_tables();
+char* get_first_symbol(char* content);
+Stack* get_all_nonterminals_rule(char* nonterminal);
+inline bool is_nonterminals_rule(char* nonterminal, Rule* rule);
+
 #endif

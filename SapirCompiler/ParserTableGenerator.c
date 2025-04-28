@@ -22,7 +22,6 @@ int create_parser_tables() {
     build_states("PROGRAM");
     collect_symbols();
     set_nonterminals_position();
-    init_tables();
     compute_follow();
     build_parsing_tables();
     createAssociationMap();

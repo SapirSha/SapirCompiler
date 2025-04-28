@@ -56,12 +56,12 @@ static ArrayList* get_allowed_terminals_in_state(int state_id) {
 }
 
 static ArrayList* get_allowed_nonterminals_in_state(int state_id) {
-	int nonterminals_length = nonterminalsList->size;
+	int nonterminals_length = nonterminal_list->size;
 	ArrayList* allowed_statements = arraylist_init(sizeof(char*), 10);
 
 	for (int i = 0; i < nonterminals_length; i++) {
 		if (gotoTable[state_id][i] != -1)
-			arraylist_add(allowed_statements, nonterminalsList->array[i]);
+			arraylist_add(allowed_statements, nonterminal_list->array[i]);
 	}
 
 	return allowed_statements;
