@@ -68,6 +68,7 @@ static void add_nonterminal_rules_to_state(char* nonterminal, Parser_State* stat
         if (!state_contains_item(state, &new_state_item))
             arraylist_add(state->items, &new_state_item);
     }
+    stack_free(nonterminal_rules, NULL);
 }
 
 /*

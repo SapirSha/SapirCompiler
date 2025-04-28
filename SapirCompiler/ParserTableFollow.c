@@ -55,6 +55,48 @@ static bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* ru
     return changed;
 }
 
+static bool add_last_symbol_nonterminals_follow(char* nonterminal, char* last_symbol) {
+    if (isNonterminal(last_symbol)) {
+        HashSet* currentFollow = hashmap_get(follow, nonterminal);
+        HashSet* LastSymbolSet = hashmap_get(follow, last_symbol);
+        return hashset_union(LastSymbolSet, currentFollow);
+    }
+    return false;
+}
+
+static Stack* split_content_into_symbols(char* content) {
+    Stack* result = stack_init();
+    char* content_dup = strdup(content);
+    char* sym = strtok(content_dup, " ");
+    while (sym) {
+        stack_push(result, strdup(sym));
+        sym = strtok(NULL, " ");
+    }
+    free(content_dup);
+    return result;
+}
+
+static bool add_appropriate_follows_according_to_rule_contents(Rule* rule) {
+    bool changed = false;
+    Stack* rules_symbols = split_content_into_symbols(rule->ruleContent);
+
+
+    char* last_symbol = stack_pop(rules_symbols);
+    changed |= add_last_symbol_nonterminals_follow(rule->nonterminal, last_symbol);
+    char* current_symbol = last_symbol;
+
+    while (rules_symbols->size > 0) {
+        char* after_symbol = current_symbol;
+        current_symbol = stack_pop(rules_symbols);
+        if (isNonterminal(current_symbol))
+            changed |= add_symbol_as_follow(current_symbol, after_symbol);
+        free(after_symbol);
+    }
+
+    free(current_symbol);
+    stack_free(rules_symbols, free);
+    return changed;
+}
 
 /*
 A function that fills the follow structure
@@ -62,48 +104,14 @@ A function that fills the follow structure
 */
 void compute_follow() {
     init_follow();
-
     bool changed = true;
-    // if somthing changed you need to check if something new can be added
+    // if somthing changed need to check if something new can be added
     while (changed) {
         changed = false;
-
         // go through all the rules
         for (int i = 0; i < rules->size; i++) {
             Rule* currentRule = (Rule*)rules->array[i];
-
-            char* currentrule_nonterminal = currentRule->nonterminal;
-            char* contentCopy = strdup(currentRule->ruleContent);
-
-            // holds all the tokens that can be gotten in the state
-            ArrayList* tokens = arraylist_init(sizeof(char*), 50);
-
-            char* tok = strtok(contentCopy, " ");
-            while (tok != NULL) {
-                arraylist_add(tokens, &tok);
-                tok = strtok(NULL, " ");
-            }
-
-            // for every symbol that is in the state
-            for (int j = 0; j < tokens->size; j++) {
-                char* current_symbol = *(char**)arraylist_get(tokens, j);
-
-                if (isNonterminal(current_symbol)) {
-                    // if not last symbol
-                    if (j + 1 < tokens->size) {
-                        char* after_symbol = *(char**)arraylist_get(tokens, j + 1);
-                        add_symbol_as_follow(current_symbol, after_symbol);
-                    }
-                    else { // end of rule's content
-                        // add to last symbol's follows, the current rule's follows
-                        HashSet* LastSymbolSet = hashmap_get(follow, current_symbol);
-                        HashSet* currentFollow = hashmap_get(follow, currentrule_nonterminal);
-                        changed |= hashset_union(LastSymbolSet, currentFollow);
-                    }
-                }
-            }
-            if (!changed) free(contentCopy);
-            arraylist_free(tokens);
+            changed |= add_appropriate_follows_according_to_rule_contents(currentRule);
         }
     }
 }

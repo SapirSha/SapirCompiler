@@ -90,5 +90,5 @@ void build_parsing_tables();
 char* get_first_symbol(char* content);
 Stack* get_all_nonterminals_rule(char* nonterminal);
 inline bool is_nonterminals_rule(char* nonterminal, Rule* rule);
-
+void compute_follow();
 #endif

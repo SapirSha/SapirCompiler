@@ -183,9 +183,9 @@ static void init_parser_variables(ActionCell** action, Queue* tokens, Stack** no
 }
 
 static void handle_parsing_loop(ActionCell* action, Queue* tokens, Stack* nodes, Stack* states) {
-	BOOLEAN should_continue = True;
-	while (should_continue) {
-		should_continue = call_action_type_function(action, tokens, nodes, states);
+	BOOLEAN can_continue = True;
+	while (can_continue) {
+		can_continue = call_action_type_function(action, tokens, nodes, states);
 	}
 }
 
