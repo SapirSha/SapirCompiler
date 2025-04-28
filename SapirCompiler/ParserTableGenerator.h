@@ -57,7 +57,7 @@ extern ArrayList* rules;
 extern ArrayList* states;
 extern HashMap* follow;
 
-int parser_tables_initialized;
+extern int parser_tables_initialized;
 
 int create_parser_tables();
 
@@ -69,7 +69,7 @@ void free_non_and_terminals();
 void free_rules();
 void free_follow();
 
-void add_rule(const char* nonterminal, const char* content);
+void add_rule(char* nonterminal, const char* content);
 void add_rules();
 int count_symbols(const char* ruleContent);
 char* get_next_symbol(LRItem* item);
@@ -91,4 +91,5 @@ char* get_first_symbol(char* content);
 Stack* get_all_nonterminals_rule(char* nonterminal);
 inline bool is_nonterminals_rule(char* nonterminal, Rule* rule);
 void compute_follow();
+void createAssociationMap();
 #endif

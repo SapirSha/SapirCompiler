@@ -315,7 +315,7 @@ IR_Instruction* createDeclareInstruction(Token name) {
 
         *pos = func_enter->arg2.data.num;
 
-        symbol_info->local = true;
+        symbol_info->local = 1;
         
         int size = symbol_info->size;
         int align = symbol_info->alignment;
@@ -328,7 +328,7 @@ IR_Instruction* createDeclareInstruction(Token name) {
         setFunctionCurrnetOffsetInstruction(func_enter, *pos);
     }
     else {
-        symbol_info->local = false;
+        symbol_info->local = 0;
         instr->opcode = IR_DECLARE_GLOBAL;
 
         linkedlist_push(globalVars, &name);
@@ -524,6 +524,7 @@ IR_Instruction* createParameterInstruction(Token param, int param_num) {
     *pos = func_enter->arg2.data.num;
 
     SymbolInfo* symbol_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, param.lexeme);
+    symbol_info->local = 1;
 
     int size = symbol_info->size;
     int align = symbol_info->alignment;

@@ -40,7 +40,7 @@ typedef struct {
 	int size;
 	int alignment;
 
-	bool local;
+	int local;
 	int offset;
 } SymbolInfo;
 

@@ -6,7 +6,7 @@
 #include "ErrorHandler.h"
 
 char* actiontypetostring(int action) {
-    static const char* action_type_string_lookup[5] = {
+    static char* action_type_string_lookup[5] = {
         [ERROR_ACTION] = "E",
         [SHIFT_ACTION] = "S",
         [REDUCE_ACTION] = "R",

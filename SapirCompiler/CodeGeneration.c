@@ -41,8 +41,9 @@ void outputcode(char* str) {
 	temp[len] = '\n';
 	temp[len + 1] = '\0';
 
-	console_out(temp);
-	if (outputcode != NULL) file_out(temp);
+	file_out(temp);
+	if (output_place == NULL)
+		console_out(temp);
 
 	free(temp);
 }

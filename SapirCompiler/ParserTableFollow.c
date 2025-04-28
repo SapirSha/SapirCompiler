@@ -24,7 +24,6 @@ static void init_follow() {
 }
 
 static bool add_nonterminals_rules_first_symbols_as_follows(char* to_follow_nonterminal, char* followed_by_nonterminal) {
-    Rule* current;
     bool changed = false;
     Stack* nonterminals_rules = get_all_nonterminals_rule(followed_by_nonterminal);
     while (nonterminals_rules->size != 0) {

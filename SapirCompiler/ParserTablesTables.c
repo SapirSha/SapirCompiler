@@ -21,8 +21,8 @@ static void init_tables_cells() {
 
 /* Create the action and goto tables */
 static void init_tables() {
-    actionTable = create_matrix(states->size, terminalsList->size, sizeof(ActionCell));
-    gotoTable = create_matrix(states->size, nonterminal_list->size, sizeof(int));
+    actionTable = (ActionCell**)create_matrix(states->size, terminalsList->size, sizeof(ActionCell));
+    gotoTable = (int**)create_matrix(states->size, nonterminal_list->size, sizeof(int));
 
     init_tables_cells();
 }

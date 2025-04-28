@@ -72,13 +72,13 @@ static int inline get_index_of_symbol(char* sym) {
     else return -1;
 }
 
-int get_terminal_index(const char* sym) {
+int get_terminal_index(char* sym) {
     if (!isNonterminal(sym))
         return get_index_of_symbol(sym);
     else return -1;
 }
 
-int get_nonterminal_index(const char* sym) {
+int get_nonterminal_index(char* sym) {
     if (isNonterminal(sym))
         return get_index_of_symbol(sym);
     else return -1;
