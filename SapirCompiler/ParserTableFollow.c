@@ -80,7 +80,6 @@ static bool add_appropriate_follows_according_to_rule_contents(Rule* rule) {
     bool changed = false;
     Stack* rules_symbols = split_content_into_symbols(rule->ruleContent);
 
-
     char* last_symbol = stack_pop(rules_symbols);
     changed |= add_last_symbol_nonterminals_follow(rule->nonterminal, last_symbol);
     char* current_symbol = last_symbol;
