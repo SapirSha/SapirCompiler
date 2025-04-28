@@ -50,7 +50,7 @@ char* get_nth_token(char* content, int n) {
     char* symbol = strtok(content_dup, " ");
     while(n-- > 0)
         symbol = strtok(NULL, " ");
-    char* result = strdup(symbol);
+    char* result = symbol? strdup(symbol) : NULL;
     free(content_dup);
     return result;
 }

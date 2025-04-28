@@ -38,7 +38,7 @@ LinkedListNode* linkedlistnode_init(LinkedList* lst, void* value) {
 	}
 
 	node->next = NULL;
-	node->value = malloc(sizeof(lst->object_byte_size));
+	node->value = malloc(lst->object_byte_size);
 	if (!node->value) {
 		handle_out_of_memory_error();
 		return NULL;
