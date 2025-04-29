@@ -33,7 +33,7 @@ static inline void handle_error(char* code_pointer, int row, int col) {
 
 static inline void handle_new_line(int* current_line, int* latest_line_start, int current_index_in_text) {
 	(*current_line)++;
-	(*latest_line_start) = current_index_in_text + 1;
+	(*latest_line_start) = current_index_in_text;
 }
 
 static int handle_above_maximum_token_length(char* got_until_now, int current_length,
@@ -55,7 +55,7 @@ static int handle_above_maximum_token_length(char* got_until_now, int current_le
 		return remaining_length;
 	}
 }
-
+//function is_even gets int number returns bool { return number % 2 == 0 } $
 static inline void insert_eof_token(Queue* q, int row, int col) {
 	Token eof = {
 		.type = TOKEN_EOF,
@@ -87,9 +87,7 @@ Queue* tokenize(const char* code) {
 	int current_token_start_pos = 0;
 
 	while (*pos != '\0') {
-		if (*pos == NEW_LINE) handle_new_line(&current_line, &current_line_start_pos, pos - code);
 		state = get_next_state(state, *pos);
-
 		if (state == START_STATE) {
 			if (!is_ignored_state(prev_state)) {
 				current_token[current_token_length] = '\0';
@@ -98,7 +96,8 @@ Queue* tokenize(const char* code) {
 			}
 			current_token_length = 0;
 			current_token_start_pos = pos - code + 1;
-			if (prev_state == START_STATE) pos++;
+			if (*pos == NEW_LINE) handle_new_line(&current_line, &current_line_start_pos, pos - code);
+			if (prev_state == START_STATE || *pos == NEW_LINE) pos++;
 		} 
 		else if (state == ERROR_STATE) {
 			handle_error(pos, CURRENT_POSITION(current_line, current_line_start_pos, pos, code));

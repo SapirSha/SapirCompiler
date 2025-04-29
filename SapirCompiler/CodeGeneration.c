@@ -8,7 +8,6 @@
 #include "ErrorHandler.h"
 #include "FileOut.h"
 #include "ConsoleOut.h"
-#include "string.h"
 
 #pragma warning(disable:4996)
 
@@ -320,7 +319,7 @@ void handle_global_vars() {
 		int name = info->id;
 		char* size_name = "DB";
 		char* content = cur->lexeme;
-		snprintf(declaration, 100, "GLOBAL_STRING_%d %s '%s', 0DH, 0AH, '$'", name, size_name, content);
+		snprintf(declaration, 100, "GLOBAL_STRING_%d %s %s, 0DH, 0AH, '$'", name, size_name, content);
 
 		outputcode(declaration);
 	}

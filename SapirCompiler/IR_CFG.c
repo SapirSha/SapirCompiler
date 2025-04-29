@@ -6,7 +6,6 @@
 #include "Tokens.h"
 #include "SymbolTable.h"
 #include "Sementic.h"
-#include "SymbolTable.h"
 #include "IR_CFG.h"
 #include "LinkedList.h"
 #include "HashMap.h"

@@ -183,8 +183,8 @@ static Data_Type decl(SyntaxTree* tree) {
 static Data_Type condition(SyntaxTree* tree) {
 	Data_Type left = accept(tree->info.nonterminal_info.children[0]);
 	Data_Type right = accept(tree->info.nonterminal_info.children[2]);
-
-	return handle_incompatability(tree, left, right);
+	handle_incompatability(tree, left, right);
+	return BOOL_TYPE;
 }
 
 static Data_Type condition_list(SyntaxTree* tree) {
