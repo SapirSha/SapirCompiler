@@ -69,7 +69,11 @@ static ArrayList* get_allowed_nonterminals_in_state(int state_id) {
 
 static BOOLEAN handle_error(ActionCell* action, Queue* tokens, Stack* nodes, Stack* states) {
 	int* current_state = stack_peek(states);
-	Token* latest_passed_token = get_latest_shifted_token_form_nodes(nodes);
+	Token* latest_passed_token;
+	if (nodes->size != 0)
+		latest_passed_token = get_latest_shifted_token_form_nodes(nodes);
+	else
+		latest_passed_token = &(Token){.type = TOKEN_UNKNOWN, .lexeme = "START", .row = 0, .col = 0};
 	Token* next_token = queue_peek(tokens);
 	ArrayList* allowed_terminals = get_allowed_terminals_in_state(*current_state);
 	ArrayList* allowed_nonterminals = get_allowed_nonterminals_in_state(*current_state);

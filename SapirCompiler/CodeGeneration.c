@@ -1245,7 +1245,7 @@ void generate_code(CodeBlock* entry) {
 	handle_global_temps(entry);
 
 
-	int* visitor = calloc(number_of_blocks, sizeof(int));
+	int* visitor = calloc(number_of_blocks + 1, sizeof(int));
 	if (!visitor) handle_out_of_memory_error();
 	traverse_cfg(entry, visitor);
 	free(visitor);
