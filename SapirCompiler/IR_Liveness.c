@@ -50,111 +50,114 @@ bool matters(IR_Value* value) {
 	hashset_insert(current_live, ir_value_pointer);  \
 	hashset_insert(used_at_all, ir_value_pointer); }
 
+static void declare(IR_Instruction* instr) {
+	if (hashset_contains(used_at_all, &instr->arg1)) {
+		instr->is_live = true;
+	}
+}
+
+static void assign(IR_Instruction* instr) {
+	if (hashset_contains(current_live, &instr->arg1)) {
+		hashset_remove(current_live, &instr->arg1);
+		if (matters(&instr->arg2)) {
+			insert_ir_value_to_live(&instr->arg2);
+		}
+		instr->is_live = true;
+	}
+}
+
+static void binary_operation(IR_Instruction* instr) {
+	if (hashset_contains(current_live, &instr->arg1)) {
+		hashset_remove(current_live, &instr->arg1);
+		if (matters(&instr->arg2)) {
+			insert_ir_value_to_live(&instr->arg2);
+		}
+		if (matters(&instr->arg3)) {
+			insert_ir_value_to_live(&instr->arg3);
+		}
+		instr->is_live = true;
+	}
+}
+
+static void condition_branch(IR_Instruction* instr) {
+	if (matters(&instr->arg1)) {
+		insert_ir_value_to_live(&instr->arg1);
+	}
+	instr->is_live = true;
+}
+
+static void return_l(IR_Instruction* instr) {
+	if (matters(&instr->arg1)) {
+		insert_ir_value_to_live(&instr->arg1);
+	}
+	instr->is_live = true;
+}
+
+static void func_call(IR_Instruction* instr) {
+	for (int i = 0; i < instr->arg2.data.values_list->size; i++) {
+		insert_ir_value_to_live(instr->arg2.data.values_list->array[i]);
+	}
+	hashset_remove(current_live, &instr->arg3);
+	instr->is_live = true;
+}
+
+static void print_int(IR_Instruction* instr) {
+	if (matters(&instr->arg1)) {
+		insert_ir_value_to_live(&instr->arg1);
+	}
+	instr->is_live = true;
+}
+
+static void parameter(IR_Instruction* instr) {
+	if (hashset_contains(used_at_all, &instr->arg2)) {
+		instr->is_live = true;
+	}
+	hashset_remove(current_live, &instr->arg2);
+}
+
+static void live(IR_Instruction* instr) {
+	instr->is_live = true;
+}
+
+static void (*liveness_functions_for_instr[IR_INST_COUNT])(IR_Instruction*) = {
+	[IR_DECLARE_GLOBAL] = declare,
+	[IR_DECLARE_LOCAL] = declare,
+	[IR_ASSIGN] = assign,
+	[IR_ADD] = binary_operation,
+	[IR_SUB] = binary_operation,
+	[IR_MUL] = binary_operation,
+	[IR_DIV] = binary_operation,
+	[IR_MOD] = binary_operation,
+	[IR_LT] = binary_operation,
+	[IR_LE] = binary_operation,
+	[IR_GT] = binary_operation,
+	[IR_GE] = binary_operation,
+	[IR_EQ] = binary_operation,
+	[IR_NE] = binary_operation,
+	[IR_AND] = binary_operation,
+	[IR_OR] = binary_operation,
+	[IR_CBR] = condition_branch,
+	[IR_RETURN] = return_l,
+	[IR_CALL] = func_call,
+	[IR_FUNC_START] = live,
+	[IR_FUNC_END] = live,
+	[IR_JMP] = live,
+	[IR_PRINT] = live,
+	[IR_GLOBAL_TEMP_SPACE] = live,
+	[IR_END] = live,
+	[IR_PARAMETER] = parameter,
+	[IR_PRINT_INT] = print_int,
+	[IR_GET_INT] = live,
+};
+
+
 void handle_instruction(CodeBlock* block, int* index_of_instr) {
 	IR_Instruction* instr = *(IR_Instruction**)block->instructions->array[*index_of_instr];
-	switch (instr->opcode)
-	{
-	case IR_RAW_STRING:
-		break;
-	case IR_DECLARE_GLOBAL:
-	case IR_DECLARE_LOCAL:
-		if (hashset_contains(used_at_all, &instr->arg1)) {
-			instr->is_live = true;
-		}
-		break;
-	case IR_ASSIGN:
-		if (hashset_contains(current_live, &instr->arg1)) {
-			hashset_remove(current_live, &instr->arg1);
-			if (matters(&instr->arg2)) {
-				insert_ir_value_to_live(&instr->arg2);
-			}
-			instr->is_live = true;
-		}
-		break;
-	case IR_ADD:
-	case IR_SUB:
-	case IR_MUL:
-	case IR_DIV:
-	case IR_MOD:
-	case IR_LT:
-	case IR_LE:
-	case IR_GT:
-	case IR_GE:
-	case IR_EQ:
-	case IR_NE:
-	case IR_AND:
-	case IR_OR:
-		if (hashset_contains(current_live, &instr->arg1)) {
-			hashset_remove(current_live, &instr->arg1);
-			if (matters(&instr->arg2)) {
-				insert_ir_value_to_live(&instr->arg2);
-			}
-			if (matters(&instr->arg3)) {
-				insert_ir_value_to_live(&instr->arg3);
-			}
-			instr->is_live = true;
-		}
-		break;
-	case IR_CBR:
-		if (matters(&instr->arg1)) {
-			insert_ir_value_to_live(&instr->arg1);
-		}
-		instr->is_live = true;
-		break;
-	case IR_FUNC_START:
-
-		instr->is_live = true;
-		break;
-	case IR_FUNC_END:
-
-		instr->is_live = true;
-		break;
-	case IR_RETURN:
-		if (matters(&instr->arg1)) {
-			insert_ir_value_to_live(&instr->arg1);
-		}
-		instr->is_live = true;
-		break;
-	case IR_CALL:
-		for (int i = 0; i < instr->arg2.data.values_list->size; i++) {
-			insert_ir_value_to_live(instr->arg2.data.values_list->array[i]);
-		}
-		hashset_remove(current_live, &instr->arg3);
-
-		instr->is_live = true;
-		break;
-	case IR_JMP:
-		instr->is_live = true;
-		break;
-	case IR_PRINT:
-		instr->is_live = true;
-		break;
-	case IR_PRINT_INT:
-		if (matters(&instr->arg1)) {
-			insert_ir_value_to_live(&instr->arg1);
-		}
-		instr->is_live = true;
-		break;
-	case IR_GET_INT:
-		instr->is_live = true;
-	case IR_PARAMETER:
-		if (hashset_contains(used_at_all, &instr->arg2)) {
-			instr->is_live = true;
-		}
-		hashset_remove(current_live, &instr->arg2);
-		break;
-	case IR_INST_COUNT:
-	case IR_GLOBAL_TEMP_SPACE:
-	case IR_END:
-		instr->is_live = true;
-		break;
-	default:
-		
-		printf("WRONG %d: \n", instr->opcode);
-		break;
-	}
-
+	if (instr->opcode >= 0 && instr->opcode < IR_INST_COUNT)
+		if (liveness_functions_for_instr[instr->opcode] != 0)
+			liveness_functions_for_instr[instr->opcode](instr);
 }
+
 void remove_instruction(CodeBlock* block, int* i) {
 	if (*i < 0 || *i >= block->instructions->size) {
 		return;

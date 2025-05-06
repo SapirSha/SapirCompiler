@@ -33,7 +33,7 @@ static void expand(HashMap* map) {
         return;
     }
 
-    for (unsigned int i = 0; i < map->capacity; i++) {
+    for (int i = 0; i < map->capacity; i++) {
         HashMapNode* node = map->buckets[i];
         while (node) {
             HashMapNode* next = node->next;
@@ -67,7 +67,7 @@ void hashmap_insert(HashMap* map, void* key, void* value) {
     HashMapNode* new_node = malloc(sizeof(HashMapNode));
     if (!new_node) {
         handle_out_of_memory_error();
-        return NULL;
+        return;
     }
     new_node->key = key;
     new_node->value = value;
@@ -93,7 +93,7 @@ void* hashmap_get(HashMap* map, void* key) {
 void freeHashMap(HashMap* map) {
     if (!map) return;
 
-    for (unsigned int i = 0; i < map->capacity; i++) {
+    for (int i = 0; i < map->capacity; i++) {
         HashMapNode* node = map->buckets[i];
         while (node) {
             HashMapNode* temp = node;

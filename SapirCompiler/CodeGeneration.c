@@ -80,40 +80,21 @@ int available[AMOUNT_OF_REGISTERS];
 char* get_register_name(int register_id, int size) {
 	switch (size) {
 	case 1:
-		switch (register_id)
-		{
-		case AX:
-			return "AL";
-		case BX:
-			return "BL";
-		case CX:
-			return "CL";
-		case DX:
-			return "DL";
-		default:
-			printf("REGISTER is %d?\n", register_id);
-			return "IDK_REG";
+		switch (register_id) {
+		case AX: return "AL";
+		case BX: return "BL";
+		case CX: return "CL";
+		case DX: return "DL";
 		}
 	case 2:
-		switch (register_id)
-		{
-		case AX:
-			return "AX";
-		case BX:
-			return "BX";
-		case CX:
-			return "CX";
-		case DX:
-			return "DX";
-		default:
-			printf("REGISTER is %d?\n", register_id);
-			return "IDK_REG";
+		switch (register_id) {
+		case AX: return "AX";
+		case BX: return "BX";
+		case CX: return "CX";
+		case DX: return "DX";
 		}
-	default:
-		printf("Size is %d?", size);
-		return "IDK";
 	}
-
+	return "";
 }
 
 char* get_leftover_register(int size) {
@@ -180,45 +161,14 @@ char* create_conditionl_continue_label() {
 
 #define sizenamesize 32
 char* size_to_size_name_data_seg(int size) {
-	static char size_name[sizenamesize];
-	switch (size)
-	{
-	case 1:
-		snprintf(size_name, sizenamesize, "DB");
-		break;
-	case 2:
-		snprintf(size_name, sizenamesize, "DW");
-		break;
-	case 3:
-	case 4:
-		snprintf(size_name, sizenamesize, "DD");
-		break;
-	default:
-		snprintf(size_name, sizenamesize, "??");
-		break;
-	}
-	return size_name;
+	if (size == 1) return "DB";
+	if (size == 2) return "DW";
+	return "DD";
 }
 
 char* size_to_size_name_pointer(int size) {
-	static char size_name[sizenamesize];
-	switch (size)
-	{
-	case 1:
-		snprintf(size_name, sizenamesize, "BYTE PTR");
-		break;
-	case 2:
-		snprintf(size_name, sizenamesize, "WORD PTR");
-		break;
-	case 3:
-	case 4:
-		snprintf(size_name, sizenamesize, "CAREFUL");
-		break;
-	default:
-		snprintf(size_name, sizenamesize, "??");
-		break;
-	}
-	return size_name;
+	if (size == 1) return "BYTE PTR";
+	return "WORD PTR";
 }
 
 char* get_instant_name(Token_Types tt, char* lexeme) {
@@ -733,7 +683,7 @@ static int handle_mul_div_instr(IR_Instruction* instr) {
 	return CONTINUE_BLOCK;
 }
 
-void handle_mod_instr(IR_Instruction* instr) {
+static int handle_mod_instr(IR_Instruction* instr) {
 	char* left_access = NULL;
 	char* right_access = NULL;
 	char* temp_access = NULL;
