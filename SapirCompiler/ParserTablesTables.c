@@ -60,12 +60,12 @@ static inline bool is_real_state(Parser_State* state) {
 static void set_transition_from_state_to_state(Parser_State* from_state, Parser_State* to_state, char* transition) {
     int from_state_index = find_state(from_state);
     int to_state_index = find_state(to_state);
-    if (isNonterminal(transition)) {
+    if (isNonterminal(transition)) { // if nonterminals its goto table
         int col = get_nonterminal_index(transition);
         if (col != -1)
             gotoTable[from_state_index][col] = to_state_index;
     }
-    else {
+    else { // if terminal its action table
         int col = get_terminal_index(transition);
         if (col != -1)
             actionTable[from_state_index][col] = (ActionCell){ .type = SHIFT_ACTION, .value = to_state_index };
@@ -73,11 +73,13 @@ static void set_transition_from_state_to_state(Parser_State* from_state, Parser_
 }
 
 static void insert_state_transitions_into_table(Parser_State* from_state) {
+    // the possible chars a state is allowed to get
     Stack* possible_transitions = possible_transitions_in_state(from_state);
     while (possible_transitions->size > 0) {
         char* transition_symbol = stack_pop(possible_transitions);
+        // the state that the symbol would transition to
         Parser_State* to_state = transition_state_would_look_like(from_state, transition_symbol);
-        if (is_real_state(to_state)) 
+        if (is_real_state(to_state)) // if state exists
             set_transition_from_state_to_state(from_state, to_state, transition_symbol);
         free(transition_symbol);
         free(to_state);

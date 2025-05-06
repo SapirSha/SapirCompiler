@@ -4,8 +4,8 @@
 #include "Queue.h"
 #include "LexerFsm.h"
 
-#define MAX_TOKEN_LENGTH 48
+#define MAX_TOKEN_LENGTH 64
 
-Queue* tokenize(const char* input);
+Queue* tokenize(char* input);
 
 #endif

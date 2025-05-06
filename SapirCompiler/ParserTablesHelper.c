@@ -91,7 +91,7 @@ void print_rules() {
     }
 }
 
-int find_row_of_nonterminal_in_table(const char* nonterminal) {
+int find_row_of_nonterminal_in_table(char* nonterminal) {
     int i = get_nonterminal_index(nonterminal);
     if (i != -1) return i;
     else {
@@ -100,7 +100,7 @@ int find_row_of_nonterminal_in_table(const char* nonterminal) {
     }
 }
 
-int find_column_of_terminal_in_table(const char* terminal) {
+int find_column_of_terminal_in_table(char* terminal) {
     int i = get_terminal_index(terminal);
     if (i != -1) return i;
     else {
@@ -189,6 +189,7 @@ inline bool is_nonterminals_rule(char* nonterminal, Rule* rule) {
     return strcmp(rule->nonterminal, nonterminal) == 0;
 }
 
+// get all the rules where the nonterminal is the main name
 Stack* get_all_nonterminals_rule(char* nonterminal) {
     Stack* result = stack_init();
     for (int i = 0; i < rules->size; i++) {

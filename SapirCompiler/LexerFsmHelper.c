@@ -6,6 +6,7 @@ BOOLEAN is_valid_char(char c) {
 }
 
 enum State get_next_state(enum State current_state, char c) {
+    // return error state if not a valid char
 	return is_valid_char(c) ? Lexer_FSM[current_state][c] : ERROR_STATE;
 }
 
@@ -117,6 +118,7 @@ Token_Types convert_state_to_token_type(enum State state) {
 	return state_to_token_lookup[state];
 }
 
+// ignored state is a state that doesnt have a specific token assigned
 BOOLEAN is_ignored_state(enum State state) {
 	return state_to_token_lookup[state] == TOKEN_UNKNOWN;
 }

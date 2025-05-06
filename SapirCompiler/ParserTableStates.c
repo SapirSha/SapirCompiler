@@ -17,6 +17,7 @@ static inline bool lr_arraylist_contains_lr_items(ArrayList* lr_items_list, LRIt
     return arraylist_contains(lr_items_list, item, compare_lr_items);
 }
 
+// items position does not matter, only the contents
 static bool lr_arraylist_equals(ArrayList* lr_items_list1, ArrayList* lr_items_list2) {
     if (!lr_items_list1 || !lr_items_list2) return false;
     if (lr_items_list1->size != lr_items_list2->size) return false;
@@ -60,6 +61,7 @@ static bool state_contains_item(Parser_State* s, LRItem* item) {
     return false;
 }
 
+// if a state can get a nonterminal, it can get its content
 static void add_nonterminal_rules_to_state(char* nonterminal, Parser_State* state) {
     Stack* nonterminal_rules = get_all_nonterminals_rule(nonterminal);
     while (nonterminal_rules->size != 0) {

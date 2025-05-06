@@ -82,6 +82,7 @@ static BOOLEAN handle_error(ActionCell* action, Queue* tokens, Stack* nodes, Sta
 	return False;
 }
 
+// turn a token into syntax tree
 static inline void add_next_token_as_node(Queue* tokens, Stack* nodes) {
 	Token* token = queue_dequeue(tokens);
 	SyntaxTree* node = create_terminal_node(*token);
@@ -90,6 +91,7 @@ static inline void add_next_token_as_node(Queue* tokens, Stack* nodes) {
 }
 
 static BOOLEAN handle_shift(ActionCell* action, Queue* tokens, Stack* nodes, Stack* states) {
+	// 'consume' token and go to appropriate state using action table
 	int next_state = action->value;
 	stack_push(states, new_int_with_allocation(next_state));
 	add_next_token_as_node(tokens, nodes);
@@ -106,6 +108,7 @@ static void add_latest_nodes_to_tree(SyntaxTree* tree, Stack* nodes, Stack* stat
 }
 
 static inline void parent_is_unneccessary_to_save(Stack* states) {
+	// need to change the current state with the parent transition
 	free(stack_pop(states));
 }
 
@@ -114,6 +117,7 @@ static Rule* lookup_rule_for_action(ActionCell* action) {
 	return rules->array[rule_id];
 }
 
+// take the n latest nodes and put them as children for a new node
 static inline void reduce_multiple_children_to_parent(Stack* nodes, Stack* states, Rule* rule) {
 	int rule_length = rule->ruleTerminalCount;
 	SyntaxTree* node = create_nonterminal_node(rule->nonterminal, rule_length);
@@ -124,30 +128,31 @@ static inline void reduce_multiple_children_to_parent(Stack* nodes, Stack* state
 static BOOLEAN handle_reduce(ActionCell* action, Queue* tokens, Stack* nodes, Stack* states) {
 	Rule* rule = lookup_rule_for_action(action);
 	int rule_length = rule->ruleTerminalCount;
-	if (rule_length == 1) {
+	if (rule_length == 1)
 		parent_is_unneccessary_to_save(states);
-	}
-	else {
+	else
 		reduce_multiple_children_to_parent(nodes, states, rule);
-	}
+	// make a goto action to go to the next state 
 	*action = get_next_goto(stack_peek(states), rule);
 	return True;
 }
 
 static BOOLEAN handle_accept(ActionCell* action, Queue* tokens, Stack* nodes, Stack* states) {
-	return False;
+	return False; // stop after accept
 }
 
 static BOOLEAN handle_goto(ActionCell* action, Queue* tokens, Stack* nodes, Stack* states) {
 	if (action->value == -1)
 		return handle_error(action, tokens, nodes, states);
 
+	// change into the state 
 	stack_push(states, new_int_with_allocation(action->value));
 	*action = get_next_action(action->value, queue_peek(tokens));
 	return True;
 }
 
 static ActionCell* new_actioncell() {
+	// allocates spae
 	ActionCell* action = malloc(sizeof(ActionCell));
 	if (action == NULL) {
 		handle_out_of_memory_error();
@@ -164,6 +169,7 @@ static BOOLEAN(*action_functions[])(ActionCell*, Queue*, Stack*, Stack*) = {
 	[GOTO_ACTION] = handle_goto,
 };
 
+// call the proper function depending on the type of action
 static inline BOOLEAN call_action_type_function(ActionCell* looked_at_action, Queue* tokens, Stack* nodes, Stack* states) {
 	return action_functions[looked_at_action->type](looked_at_action, tokens, nodes, states);
 }
@@ -189,6 +195,7 @@ static void init_parser_variables(ActionCell** action, Queue* tokens, Stack** no
 static void handle_parsing_loop(ActionCell* action, Queue* tokens, Stack* nodes, Stack* states) {
 	BOOLEAN can_continue = True;
 	while (can_continue) {
+		// action, tokens, nodes and states change inside the functinos
 		can_continue = call_action_type_function(action, tokens, nodes, states);
 	}
 }
@@ -204,16 +211,12 @@ SyntaxTree* commit_parser(Queue* tokens) {
 	Stack* states = NULL;
 	Stack* nodes = NULL;
 	ActionCell* action = NULL;
+	// init the parser variables
 	init_parser_variables(&action, tokens, &nodes, &states);
 
 	handle_parsing_loop(action, tokens, nodes, states);
 
 	SyntaxTree* root = try_to_extract_main_root_from_stack(action, nodes);
-
-	if (root) {
-		print_tree_postorder(root);
-		print_tree_with_ranks(root);
-	}
 
 	parser_free(action, tokens, nodes, states);
 

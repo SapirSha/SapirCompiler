@@ -34,6 +34,7 @@ BOOLEAN Available_Lookup[CHAR_POSIBILITIES] = {
 
 
 enum State Lexer_FSM[NUM_OF_STATES][CHAR_POSIBILITIES] = {
+    //['STATE'] = { ['CHAR'] = 'TRANSITION-STATE', ...}
     [STATE0] = {
         ['0'] = NUMBER,['1'] = NUMBER,['2'] = NUMBER,['3'] = NUMBER,
         ['4'] = NUMBER,['5'] = NUMBER,['6'] = NUMBER,['7'] = NUMBER,

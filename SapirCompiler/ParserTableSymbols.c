@@ -9,6 +9,7 @@ HashMap* symbols_indexes;
 static void symbols_init() {
     nonterminal_list = arraylist_init(sizeof(char*), DEFAULT_AMOUNT_OF_NONTERMINALS);
     terminalsList = arraylist_init(sizeof(char*), DEFAULT_AMOUNT_OF_TERMINALS);
+    // holds the indexes of the symbol on the respective list
     symbols_indexes = createHashMap(DEFAULT_AMOUNT_OF_TERMINALS * 2, string_hash, string_equals);
 }
 
@@ -36,7 +37,7 @@ static void add_symbol(char* symbol) {
         }
     }
 }
-
+// content is a string of symbols(separeted by spaces)
 static void add_symbols_in_content(char* rule_content) {
     char* copy = strdup(rule_content);
     char* symbol = strtok(copy, " ");
@@ -48,8 +49,8 @@ static void add_symbols_in_content(char* rule_content) {
 }
 
 static inline void add_rule_content_to_symbol_lists(Rule* rule) {
-    add_symbol(rule->nonterminal);
-    add_symbols_in_content(rule->ruleContent);
+    add_symbol(rule->nonterminal); // add the nonterminal
+    add_symbols_in_content(rule->ruleContent); // add its content
 }
 
 /*

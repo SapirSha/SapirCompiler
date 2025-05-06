@@ -35,7 +35,7 @@ void outputcode(char* str) {
 		return;
 	}
 
-	
+	// add new line
 	strncpy(temp, str, len * sizeof(char));
 	temp[len] = '\n';
 	temp[len + 1] = '\0';
@@ -47,6 +47,7 @@ void outputcode(char* str) {
 	free(temp);
 }
 
+// convert a number to a string
 char* get_number_str(int num) {
 	static char number[32];
 	char* prefix;
@@ -73,10 +74,11 @@ typedef enum {
 	CL,
 	DL,
 } Register;
-
+#define AX_REGISTER AX
+#define DEFAULT_REGISTER AX
 
 int available[AMOUNT_OF_REGISTERS];
-
+// convert a register id to name 
 char* get_register_name(int register_id, int size) {
 	switch (size) {
 	case 1:
@@ -97,17 +99,13 @@ char* get_register_name(int register_id, int size) {
 	return "";
 }
 
+// return the leftover register (mod)
 char* get_leftover_register(int size) {
 	if (size == 1) return "AH";
-	else if (size == 2) return "DX";
-	else return "IDK?";
+	return "DX";
 }
 
-
-#define AX_REGISTER AX
-#define DEFAULT_REGISTER AX
-
-
+// try to appoint a register to a temp if possible
 int try_to_appoint_register(int temp_id) {
 	for (int i = 0; i < AVAILABLE_REG; i++) {
 		if (available[i] == -1 || available[i] == temp_id){
@@ -117,10 +115,7 @@ int try_to_appoint_register(int temp_id) {
 	}
 	return -1;
 }
-
-
-
-
+// get the register id that the temp is appointed to, if appointed
 int appoint_name(int temp_id) {
 	for (int i = 0; i < AVAILABLE_REG; i++) {
 		if (available[i] == temp_id) {
@@ -130,6 +125,7 @@ int appoint_name(int temp_id) {
 	return -1;
 }
 
+// free a register, using temp_id
 void free_register(int temp_id) {
 	int index = appoint_name(temp_id);
 	if (index != -1) {
@@ -137,6 +133,7 @@ void free_register(int temp_id) {
 	}
 }
 
+// create a label for a jump instr
 char* create_label(int block_id) {
 	char* label_buffer = malloc(sizeof(char) * 20);
 	if (!label_buffer) handle_out_of_memory_error();
@@ -145,19 +142,21 @@ char* create_label(int block_id) {
 	return label_buffer;
 }
 
+// create a label for conditional yes
 int yes_counter = 0;
 char* create_conditionl_yes_label() {
 	static char yes_label[20];
 	snprintf(yes_label, 20, "YES%d", yes_counter++);
 	return yes_label;
 }
-
+// create a label for conditional continue
 int continue_counter = 0;
 char* create_conditionl_continue_label() {
 	static char con_label[20];
 	snprintf(con_label, 20, "CON%d", continue_counter++);
 	return con_label;
 }
+
 
 #define sizenamesize 32
 char* size_to_size_name_data_seg(int size) {
@@ -170,7 +169,7 @@ char* size_to_size_name_pointer(int size) {
 	if (size == 1) return "BYTE PTR";
 	return "WORD PTR";
 }
-
+// get the name of the instant in the assembly
 char* get_instant_name(Token_Types tt, char* lexeme) {
 	if (tt == TOKEN_TRUE) return "1";
 	else if (tt == TOKEN_FALSE) return "0";
@@ -178,18 +177,17 @@ char* get_instant_name(Token_Types tt, char* lexeme) {
 }
 
 #define MAX_IDENTIFIER 50
-
-
+// check if a value is instant
 int is_instant_value(IR_Value* val) {
 	if (val->type == IR_TOKEN) {
 		Token t = val->data.token;
-		if (t.type == TOKEN_IDENTIFIER) {
-		}
+		if (t.type == TOKEN_IDENTIFIER) {}
 		else return 1;
 	}
 	return 0;
 }
 
+// get the size of an ir value
 int get_size(IR_Value* value) {
 	int size = 2;
 	if (value->type == IR_TEMPORARY_ID) {
@@ -207,6 +205,7 @@ int get_size(IR_Value* value) {
 	return size;
 }
 
+// get the string which a value can be accessed with
 char* get_access_name(IR_Value* val) {
 	char* str = malloc(MAX_IDENTIFIER);
 	if (!str) handle_out_of_memory_error();
@@ -217,14 +216,17 @@ char* get_access_name(IR_Value* val) {
 			if (info) {
 				char* size_pointer = size_to_size_name_pointer(info->size);
 				if (info->local) {
+					// if local, use its position in the stack
 					snprintf(str, MAX_IDENTIFIER, "%s BP[%s] ", size_pointer, get_number_str(info->offset));
 				}
 				else {
+					// if global, use its name
 					snprintf(str, MAX_IDENTIFIER, "%s %s", size_pointer, info->origin_name);
 				}
 			}
 		}
 		else {
+			// instant value
 			char* inst_name = get_instant_name(t.type, t.lexeme);
 			snprintf(str, MAX_IDENTIFIER, "%s", inst_name);
 		}
@@ -234,26 +236,27 @@ char* get_access_name(IR_Value* val) {
 		TempSymbolInfo* info = hashmap_get(temp_map, &id);
 
 		if (appoint_name(id) == -1) {
+			// if does not have appointed register, use stack pos
 			char* size_pointer = size_to_size_name_pointer(info->size);
 			TempSymbolInfo* info = hashmap_get(temp_map, &id);
 			snprintf(str, MAX_IDENTIFIER, "%s BP[%s] ", size_pointer, get_number_str(info->offset));
 		}
 		else {
+			// if has assigned register, use the register
 			char* register_name = get_register_name(appoint_name(id), info->size);
 			snprintf(str, MAX_IDENTIFIER, "%s", register_name);
 		}
-	}
-	else {
-		snprintf(str, MAX_IDENTIFIER, "WHAT --------------------------------------- %d", val->type);
 	}
 
 	return str;
 }
 
+// insert global vars to data seg
 void handle_global_vars() {
 	Token* cur;
 	static char declaration[100];
 	outputcode("DATA SEGMENT");
+	//global vars
 	while (globalVars->size != 0) {
 		cur = (Token*)linkedlist_pop(globalVars);
 		SymbolInfo* info = hashmap_get(symbol_map, cur->lexeme);
@@ -263,6 +266,7 @@ void handle_global_vars() {
 
 		outputcode(declaration);
 	}
+	//global strings
 	while (globalStrings->size != 0) {
 		cur = (Token*)linkedlist_pop(globalStrings);
 		StringInfo* info = hashmap_get(symbol_table->GlobalStrings, cur->lexeme);
@@ -273,6 +277,7 @@ void handle_global_vars() {
 
 		outputcode(declaration);
 	}
+	// built in messeges
 	outputcode("INVALID_NUMBER_INPUT DB 0DH, 0AH, 'Input was not a number! Start Over', 0DH, 0AH, '$'");
 	outputcode("NEW_LINE_CHARS DB 0DH, 0AH, '$'");
 	outputcode("NUMBER_OUT_PUT_BUFFER DB 8 DUP(?)");
@@ -281,6 +286,7 @@ void handle_global_vars() {
 }
 
 void out_put_in_out_functions() {
+	// get number proc
 	if (used_get_num) {
 		outputcode("GETNUM PROC");
 		outputcode("PUSH BX");
@@ -343,7 +349,7 @@ void out_put_in_out_functions() {
 		outputcode("RET");
 		outputcode("GETNUM ENDP");
 	}
-
+	// print number proc
 	if (used_print_num) {
 		outputcode("PRINTNUM PROC");
 		outputcode("PUSH AX");
@@ -410,7 +416,7 @@ void out_put_in_out_functions() {
 		outputcode("RET");
 		outputcode("PRINTNUM ENDP");
 	}
-
+	// print string proc
 	if (used_print_string) {
 		outputcode("PRINTSTRING PROC");
 		outputcode("PUSH DX");
@@ -423,6 +429,7 @@ void out_put_in_out_functions() {
 	}
 }
 
+// assign space in the stack for global temps
 void handle_global_temps(CodeBlock* main) {
 	static char global_temp[25];
 	IR_Instruction* global_temps_instr = *(IR_Instruction**)main->instructions->array[0];
@@ -433,17 +440,21 @@ void handle_global_temps(CodeBlock* main) {
 	outputcode(global_temp);
 }
 
+// release a register using its id
 void release_register(int register_id) {
 	int temp_id = available[register_id];
 	if (temp_id == -1) return;
 
 	TempSymbolInfo* info = hashmap_get(temp_map, &temp_id);
 
+	// place its value in the appropriate position if needed
 	snprintf(main_str_buffer, ONEHUNDRED, "MOV BP[%s], %s", get_number_str(info->offset), get_register_name(register_id, info->size));
 	outputcode(main_str_buffer);
 }
 
+// appoint a register to a temporary
 int appoint_register(int register_id, int temp_id) {
+	if (register_id == -1) return -1;
 	if (available[register_id] != -1) release_register(register_id);
 	available[register_id] = temp_id;
 	return register_id;
@@ -452,8 +463,9 @@ int appoint_register(int register_id, int temp_id) {
 static int handle_assign_instr(IR_Instruction* instr) {
 	char* dest = get_access_name(&instr->arg1);
 	char* src = get_access_name(&instr->arg2);
-
+	
 	if (appoint_name(instr->arg1.data.num) != -1 || appoint_name(instr->arg2.data.num) != -1) {
+		// if one has a register allocated, use the register in one command
 		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", dest, src);
 		outputcode(main_str_buffer);
 
@@ -462,42 +474,14 @@ static int handle_assign_instr(IR_Instruction* instr) {
 		}
 	}
 	else {
-		int size1 = 2;
-		int size2 = 2;
-		if (instr->arg1.type == IR_TEMPORARY_ID) {
-			TempSymbolInfo* info = (TempSymbolInfo*)hashmap_get(temp_map, &instr->arg1.data.num);
-			size1 = info->size;
-		}
-		else {
-			if (!is_instant_value(&instr->arg1)) {
-				SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
-				size1 = info->size;
-			}
-		}
+		// if nither have register
+		int size1 = get_size(&instr->arg1);
+		int size2 = get_size(&instr->arg2);
 
-		if (!is_instant_value(&instr->arg2)) {
-			if (instr->arg1.type == IR_TEMPORARY_ID) {
-				TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
-				size1 = info->size;
-			}
-			else if (instr->arg1.type == IR_TOKEN) {
-				SymbolInfo* info = hashmap_get(symbol_map, instr->arg1.data.token.lexeme);
-				size1 = info->size;
-			}
-		}
-		if (!is_instant_value(&instr->arg2)) {
-			if (instr->arg2.type == IR_TEMPORARY_ID) {
-				TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg2.data.num);
-				size2 = info->size;
-			}
-			else if (instr->arg2.type == IR_TOKEN) {
-				SymbolInfo* info = hashmap_get(symbol_map, instr->arg2.data.token.lexeme);
-				size2 = info->size;
-			}
-		}
-
+		// put at temporary register
 		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX, size2), src);
 		outputcode(main_str_buffer);
+		// then assign
 		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", dest, get_register_name(AX, size1));
 		outputcode(main_str_buffer);
 	}
@@ -537,9 +521,10 @@ static int handle_add_sub_or_and_instr(IR_Instruction* instr) {
 		|| (instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) != -1)
 		) 
 	{
+		// if ont of the values have an appointment
 		int appointment = -1;
 		int register_was_left = 0;
-		
+		// find appointment
 		if (appoint_name(instr->arg2.data.num) != -1) {
 			appointment = appoint_name(instr->arg2.data.num);
 			register_was_left = 1;
@@ -555,11 +540,13 @@ static int handle_add_sub_or_and_instr(IR_Instruction* instr) {
 		TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 		int size = info->size;
 		
+		// appoint register for new temp
 		appoint_register(appointment, instr->arg1.data.num);
 		char* temp_access = get_access_name(&instr->arg1);
 
-
+		// if appropriate position
 		if (!left_right_matters(instr->opcode) || register_was_left) {
+			// put operation in the register
 			if (register_was_left == 1)
 				snprintf(main_str_buffer, ONEHUNDRED, "%s %s, %s ", opcode_to_action[instr->opcode], left_access, right_access);
 			else 
@@ -568,6 +555,7 @@ static int handle_add_sub_or_and_instr(IR_Instruction* instr) {
 			outputcode(main_str_buffer);
 		}
 		else {
+			// else put at temporary register
 			snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX, size), left_access);
 			outputcode(main_str_buffer);
 
@@ -584,15 +572,19 @@ static int handle_add_sub_or_and_instr(IR_Instruction* instr) {
 		free(temp_access);
 	}
 	else {
+		// if neither have register
 		char* left_access = get_access_name(&instr->arg2);
 		char* right_access = get_access_name(&instr->arg3);
 		int appointment = try_to_appoint_register(instr->arg1.data.num);
+		// try to appoint a register for temp
 		char* temp_access = get_access_name(&instr->arg1);
 		TempSymbolInfo* info = hashmap_get(temp_map, &instr->arg1.data.num);
 		int size = info->size;
 
 
 		if (appointment == -1) {
+			// if there isnt an empty register
+			// use temporary register
 			snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(DEFAULT_REGISTER, size), left_access);
 			outputcode(main_str_buffer);
 
@@ -603,14 +595,13 @@ static int handle_add_sub_or_and_instr(IR_Instruction* instr) {
 			outputcode(main_str_buffer);
 		}
 		else {
+			// if there is an empty register, use it
 			snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(appointment, size), left_access);
 			outputcode(main_str_buffer);
 
 			snprintf(main_str_buffer, ONEHUNDRED, "%s %s, %s ", opcode_to_action[instr->opcode], get_register_name(appointment, size), right_access);
 			outputcode(main_str_buffer);
 		}
-
-
 
 		free(left_access);
 		free(right_access);
@@ -633,6 +624,7 @@ static int handle_mul_div_instr(IR_Instruction* instr) {
 		|| (instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) != -1)
 		)
 	{
+		// if either of the values have a register, appoint the register to temp
 		int appointment = (appoint_name(instr->arg2.data.num) != -1) ?
 			appoint_name(instr->arg2.data.num) :
 			appoint_name(instr->arg3.data.num)
@@ -644,15 +636,17 @@ static int handle_mul_div_instr(IR_Instruction* instr) {
 		temp_access = get_access_name(&instr->arg1);
 	}
 	else {
+		// if neither have register, try to appoint to temp a register
 		left_access = get_access_name(&instr->arg2);
 		right_access = get_access_name(&instr->arg3);
 		try_to_appoint_register(instr->arg1.data.num);
 		temp_access = get_access_name(&instr->arg1);
 	}
 
-	release_register(DX);
+	release_register(DX);// release DX for carry
 
 	if (is_instant_value(&instr->arg3)) {
+		// if instr 3 is instant value, need to put at another register
 		release_register(CX);
 		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX, size), left_access);
 		outputcode(main_str_buffer);
@@ -696,11 +690,13 @@ static int handle_mod_instr(IR_Instruction* instr) {
 		|| (instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) != -1)
 		)
 	{
+		// if either of the values have a register, appoint the register to temp
+
 		int appointment = (appoint_name(instr->arg2.data.num) != -1) ?
 			appoint_name(instr->arg2.data.num) :
 			appoint_name(instr->arg3.data.num)
 			;
-		if (left_right_matters(instr->opcode)) {/* In this case it doesnt no matter what */ }
+		if (left_right_matters(instr->opcode)) {/* In this case for mod it doesnt no matter what */ }
 		else {
 			left_access = get_access_name(&instr->arg2);
 			right_access = get_access_name(&instr->arg3);
@@ -709,12 +705,13 @@ static int handle_mod_instr(IR_Instruction* instr) {
 		}
 	}
 	else {
+		// if neither have register, try to appoint to temp a register
 		left_access = get_access_name(&instr->arg2);
 		right_access = get_access_name(&instr->arg3);
 		try_to_appoint_register(instr->arg1.data.num);
 		temp_access = get_access_name(&instr->arg1);
 	}
-
+	// release DX for carry
 	release_register(DX);
 
 	if (is_instant_value(&instr->arg3)) {
@@ -771,6 +768,7 @@ static int handle_condition_instr(IR_Instruction* instr) {
 		|| (instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) != -1)
 		)
 	{
+		// if either values have appointed register, use it
 		int appointment = (appoint_name(instr->arg2.data.num) != -1) ?
 			appoint_name(instr->arg2.data.num) :
 			appoint_name(instr->arg3.data.num)
@@ -779,17 +777,18 @@ static int handle_condition_instr(IR_Instruction* instr) {
 		left_access = get_access_name(&instr->arg2);
 		right_access = get_access_name(&instr->arg3);
 
-		temp_access = get_register_name( appoint_register(appointment, instr->arg1.data.num),size);
+		temp_access = get_register_name(appoint_register(appointment, instr->arg1.data.num),size);
 		need_to_free_temp = 0;
 	}
 	else {
+		// if neither values have register, try appoint new one
 		left_access = get_access_name(&instr->arg2);
 		right_access = get_access_name(&instr->arg3);
 		try_to_appoint_register(instr->arg1.data.num);
 		temp_access = get_access_name(&instr->arg1);
 		need_to_free_temp = 1;
-
 	}
+
 	if ((!is_instant_value(&instr->arg2) &&
 		(instr->arg2.type == IR_TEMPORARY_ID && appoint_name(instr->arg2.data.num) == -1 ||
 		instr->arg2.type == IR_TOKEN)) &&
@@ -797,7 +796,8 @@ static int handle_condition_instr(IR_Instruction* instr) {
 			(instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) == -1 ||
 			instr->arg3.type == IR_TOKEN)))
 	{
-		
+		// if both are not instant and both are not in a register
+		// use temp register for left access
 		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX, left_size), left_access);
 		outputcode(main_str_buffer);
 		free(left_access);
@@ -808,7 +808,7 @@ static int handle_condition_instr(IR_Instruction* instr) {
 	snprintf(main_str_buffer, ONEHUNDRED, "CMP %s, %s ", left_access, right_access);
 	outputcode(main_str_buffer);
 	snprintf(main_str_buffer, ONEHUNDRED, "%s %s ", opcode_to_action[instr->opcode], yes_label);
-	outputcode(main_str_buffer);
+	outputcode(main_str_buffer); // false
 	char* access_helper = get_access_name(&instr->arg1);
 	snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", access_helper, "0");
 	outputcode(main_str_buffer);
@@ -817,7 +817,7 @@ static int handle_condition_instr(IR_Instruction* instr) {
 	snprintf(main_str_buffer, ONEHUNDRED, "JMP %s ", con_label);
 	outputcode(main_str_buffer);
 	snprintf(main_str_buffer, ONEHUNDRED, "%s:", yes_label);
-	outputcode(main_str_buffer);
+	outputcode(main_str_buffer); // true
 
 	access_helper = get_access_name(&instr->arg1);
 	snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", access_helper, "1");
@@ -839,6 +839,7 @@ static int handle_condition_instr(IR_Instruction* instr) {
 static int handle_branch_instr(IR_Instruction* instr) {
 	char* condition_access = get_access_name(&instr->arg1);
 	int flag;
+	// if condition is instant insert to a register
 	if (is_instant_value(&instr->arg1)) {
 		snprintf(main_str_buffer, ONEHUNDRED, "MOV %s, %s ", get_register_name(AX_REGISTER, 2), "1");
 		outputcode(main_str_buffer);
@@ -851,12 +852,13 @@ static int handle_branch_instr(IR_Instruction* instr) {
 	char* block1 = create_label(instr->arg2.data.num);
 	char* block2 = create_label(instr->arg3.data.num);
 
+	// if condition is true(1)
 	snprintf(main_str_buffer, ONEHUNDRED, "TEST %s, %s ", condition_access, "1");
 	outputcode(main_str_buffer);
-
+	// jmp to true
 	snprintf(main_str_buffer, ONEHUNDRED, "JNZ %s ", block1);
 	outputcode(main_str_buffer);
-
+	// jmp to false
 	snprintf(main_str_buffer, ONEHUNDRED, "JMP %s ", block2);
 	outputcode(main_str_buffer);
 
@@ -876,15 +878,14 @@ static int handle_jump_instr(IR_Instruction* instr) {
 	free(block_name);
 	return FORCE_END_BLOCK;
 }
+// end of program instr
 static int handle_end_instr(IR_Instruction* instr) {
 	outputcode("MOV AX, 4C00H");
 	outputcode("INT 21H");
 	return CONTINUE_BLOCK;
 }
 
-
-
-
+// release all registers that are used, and place their content in the respective place in the stack
 static void release_all_registers() {
 	for (int i = 0; i < AVAILABLE_REG; i++) {
 		if (available[i] != -1) {
@@ -897,7 +898,7 @@ static void release_all_registers() {
 static int handle_func_start_instr(IR_Instruction* instr) {
 	outputcode("PUSH BP");
 	outputcode("MOV BP, SP");
-
+	// reserve space for variables
 	int reserve_space = instr->arg2.data.num;
 	snprintf(main_str_buffer, 100, "SUB SP, %d",  reserve_space * 2);
 	outputcode(main_str_buffer);
@@ -908,7 +909,7 @@ static int handle_func_end_instr(IR_Instruction* instr) {
 	int reserve_space = instr->arg2.data.num;
 	snprintf(main_str_buffer, 100, "ADD SP, %d", reserve_space * 2);
 	outputcode(main_str_buffer);
-
+	// remove reserved space from stack
 	outputcode("POP BP");
 	int params_space = instr->arg3.data.num;
 	snprintf(main_str_buffer, 100, "RET %d", params_space);
@@ -919,6 +920,7 @@ static int handle_func_end_instr(IR_Instruction* instr) {
 static int handle_parameter_instr(IR_Instruction* instr) {
 	SymbolInfo* info = hashmap_get(symbol_map, instr->arg2.data.token.lexeme);
 	char* size_pointer = size_to_size_name_pointer(info->size);
+	// move from after stack to function reserved stack
 	snprintf(main_str_buffer, 100, "MOV %s, %s BP[%s]", get_register_name(AX_REGISTER, info->size), size_pointer, get_number_str( -info->offset - DEFAULT_OFFSET));
 	outputcode(main_str_buffer);
 	snprintf(main_str_buffer, 100, "MOV BP[%s], %s", get_number_str(info->offset), get_register_name(AX_REGISTER, info->size));
@@ -933,6 +935,7 @@ static int handle_return_instr(IR_Instruction* instr) {
 
 	int size = get_size(&instr->arg1);
 
+	// move to bx return value
 	snprintf(main_str_buffer, 100, "MOV %s, %s", get_register_name(BX, size), access_ret_value);
 	outputcode(main_str_buffer);
 
@@ -958,18 +961,14 @@ static int handle_call_instr(IR_Instruction* instr) {
 				
 				SymbolInfo* info = hashmap_get(symbol_map, t.lexeme);
 				if (info->size == 1) {
-					outputcode("XOR AH, AH");
+					outputcode("XOR AH, AH"); // clear ah
 					snprintf(main_str_buffer, 100, "MOV %s, %s", get_register_name(AX, info->size), access_name);
 					outputcode(main_str_buffer);
 					outputcode("PUSH AX");
 				}
-				else if (info->size == 2) {
+				else {
 					snprintf(main_str_buffer, 100, "PUSH %s", access_name);
 					outputcode(main_str_buffer);
-				}
-				else {
-					handle_other_errors("\n\t---INVALID SYMBOL SIZE\n");
-					exit(1);
 				}
 				free(access_name);
 			}
@@ -985,23 +984,20 @@ static int handle_call_instr(IR_Instruction* instr) {
 
 			TempSymbolInfo* info = hashmap_get(temp_map, &cur->data.num);
 			if (info->size == 1) {
-				outputcode("XOR AH, AH");
+				outputcode("XOR AH, AH"); // clear ah
 				snprintf(main_str_buffer, 100, "MOV AL, %s", access_name);
 				outputcode(main_str_buffer);
 				outputcode("PUSH AX");
 			}
-			else if (info->size == 2) {
+			else{
 				snprintf(main_str_buffer, 100, "PUSH %s", access_name);
 				outputcode(main_str_buffer);
-			}
-			else {
-				handle_other_errors("\t\n---INVALID SYMBOL SIZE\n\n");
-				exit(1);
 			}
 			free(access_name);
 		}
 
 	}
+	// release all register before function call
 	release_all_registers();
 
 	char* function_label = create_label(dest_block_id);
@@ -1009,7 +1005,7 @@ static int handle_call_instr(IR_Instruction* instr) {
 	outputcode(main_str_buffer);
 	free(function_label);
 
-
+	// put return value to temp
 	TempSymbolInfo* temp_info = hashmap_get(temp_map, &temp_dest_id);
 	snprintf(main_str_buffer, 100, "MOV BP[%s], %s", get_number_str(temp_info->offset), get_register_name(BX, temp_info->size));
 	outputcode(main_str_buffer);
@@ -1038,7 +1034,7 @@ static int handle_print_int(IR_Instruction* instr) {
 	}
 	char* src_access = get_access_name(&instr->arg1);
 	if (size == 1)
-		outputcode("XOR AH, AH");
+		outputcode("XOR AH, AH"); //clear ah since we send ax 
 
 	snprintf(main_str_buffer, 100, "MOV %s, %s", get_register_name(AX, size), src_access);
 	outputcode(main_str_buffer);
@@ -1106,6 +1102,8 @@ int handle_block_instruction(IR_Instruction* instr) {
 	if (instr->opcode >= 0 && instr->opcode < IR_INST_COUNT) {
 		int(*opcode_function)(IR_Instruction*) = instruction_to_assembly_function[instr->opcode];
 		if (opcode_function != NULL)
+			// call the function for the appropriate opcode
+			// if opcode says to break out of block, stop
 			should_break_from_block = opcode_function(instr);
 	}
 	return should_break_from_block;
@@ -1118,12 +1116,14 @@ void traverse_instructions(CodeBlock* block) {
 		if (special_action == FORCE_END_BLOCK) return;
 	}
 }
-
+// print label for block
 void print_label_start(char* block_label) {
 	snprintf(main_str_buffer, ONEHUNDRED, "%s:", block_label);
 	outputcode(main_str_buffer);
 }
+// go through all blocks
 void traverse_cfg(CodeBlock* entry, int* visitor) {
+	// go through unique blocks
 	if (visitor[entry->id] == 1) return;
 	else visitor[entry->id] = 1;
 

@@ -23,6 +23,7 @@ static void init_follow() {
     add_terminal_as_follow("START'", "$");
 }
 
+// add the first symbol in a nonterminal rule as a follow to the nonterminal
 static bool add_nonterminals_rules_first_symbols_as_follows(char* to_follow_nonterminal, char* followed_by_nonterminal) {
     bool changed = false;
     Stack* nonterminals_rules = get_all_nonterminals_rule(followed_by_nonterminal);
@@ -39,6 +40,7 @@ static bool add_nonterminals_rules_first_symbols_as_follows(char* to_follow_nont
 static bool add_symbol_as_follow(char* to_follow_nonterminal, char* followed_by_symbol) {
     char* symbol_dup = strdup(followed_by_symbol);
     bool changed = false;
+    // if the symbol as a nonterminal, all its first possible symbols are follows
     if (isNonterminal(followed_by_symbol))
         changed = add_nonterminals_rules_first_symbols_as_follows(to_follow_nonterminal, symbol_dup);
     else
@@ -47,18 +49,12 @@ static bool add_symbol_as_follow(char* to_follow_nonterminal, char* followed_by_
     return changed;
 }
 
-static bool add_rules_content_to_nonterminals_follow(char* nonterminal, Rule* rule) {
-    char* first_symbol = get_first_symbol(rule->ruleContent);
-    bool changed = add_symbol_as_follow(nonterminal, first_symbol);
-    free(first_symbol);
-    return changed;
-}
-
+// adds to the last symbol nonterminal's follow
 static bool add_last_symbol_nonterminals_follow(char* nonterminal, char* last_symbol) {
     if (isNonterminal(last_symbol)) {
-        HashSet* currentFollow = hashmap_get(follow, nonterminal);
-        HashSet* LastSymbolSet = hashmap_get(follow, last_symbol);
-        return hashset_union(LastSymbolSet, currentFollow);
+        HashSet* nonterminal_follows = hashmap_get(follow, nonterminal);
+        HashSet* last_symbol_follows = hashmap_get(follow, last_symbol);
+        return hashset_union(last_symbol_follows, nonterminal_follows);
     }
     return false;
 }
@@ -66,7 +62,7 @@ static bool add_last_symbol_nonterminals_follow(char* nonterminal, char* last_sy
 static Stack* split_content_into_symbols(char* content) {
     Stack* result = stack_init();
     char* content_dup = strdup(content);
-    char* sym = strtok(content_dup, " ");
+    char* sym = strtok(content_dup, " "); // symbols are separated by spaces
     while (sym) {
         stack_push(result, strdup(sym));
         sym = strtok(NULL, " ");
@@ -75,16 +71,17 @@ static Stack* split_content_into_symbols(char* content) {
     return result;
 }
 
+// go through the rule and add follows
 static bool add_appropriate_follows_according_to_rule_contents(Rule* rule) {
     bool changed = false;
     Stack* rules_symbols = split_content_into_symbols(rule->ruleContent);
 
-    char* last_symbol = stack_pop(rules_symbols);
+    char* last_symbol = stack_pop(rules_symbols); // last symbol is first in the stack
     changed |= add_last_symbol_nonterminals_follow(rule->nonterminal, last_symbol);
-    char* current_symbol = last_symbol;
+    char* current_symbol = last_symbol; // would be prev_symbol
 
     while (rules_symbols->size > 0) {
-        char* after_symbol = current_symbol;
+        char* after_symbol = current_symbol; // after symbol comes first becuase its a stack
         current_symbol = stack_pop(rules_symbols);
         if (isNonterminal(current_symbol))
             changed |= add_symbol_as_follow(current_symbol, after_symbol);
