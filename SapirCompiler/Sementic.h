@@ -4,7 +4,6 @@
 #include "SyntaxTree.h"
 #include "SymbolTable.h"
 #include <stdlib.h>
-#include "SymbolTable.h"
 
 int sementic_analysis(SyntaxTree* tree);
 

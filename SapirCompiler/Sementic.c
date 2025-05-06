@@ -21,7 +21,7 @@ static bool compatible(Data_Type left, Data_Type right) {
 	return left == right || left == UNKNOWN || right == UNKNOWN;
 }
 
-static Data_Type TOKEN_TO_DATA_TYPE[100] = {
+static Data_Type TOKEN_TO_DATA_TYPE[NUM_OF_TOKENS] = {
 	[TOKEN_INT] = INT_TYPE, [TOKEN_NUMBER] = INT_TYPE,
 	[TOKEN_STRING_LITERAL] = STRING,
 	[TOKEN_BOOL] = BOOL_TYPE, 
@@ -256,7 +256,6 @@ static Data_Type for_statement(SyntaxTree* tree) {
 	symbol_table_add_scope(symbol_table);
 	Data_Type variable = accept(tree->info.nonterminal_info.children[1]);
 	Data_Type condition = accept(tree->info.nonterminal_info.children[3]);
-
 	accept(tree->info.nonterminal_info.children[4]);
 	symbol_table_remove_scope(symbol_table);
 	return NONE;
@@ -266,11 +265,8 @@ static Data_Type for_change_statement(SyntaxTree* tree) {
 	symbol_table_add_scope(symbol_table);
 	Data_Type variable = accept(tree->info.nonterminal_info.children[1]);
 	Data_Type condition = accept(tree->info.nonterminal_info.children[3]);
-
 	accept(tree->info.nonterminal_info.children[4]);
-
 	accept(tree->info.nonterminal_info.children[6]);
-
 	symbol_table_remove_scope(symbol_table);
 	return NONE;
 }
@@ -290,21 +286,16 @@ static Data_Type parameter(SyntaxTree* tree) {
 		handle_out_of_memory_error();
 		return NONE;
 	}
-
 	info->data_type = get_type(tree->info.nonterminal_info.children[0]);
 	info->identifier_name = id.lexeme;
 	info->identifier_type = VARIABLE;
 	info->info = NULL;
 	bool added = symbol_table_add_symbol(symbol_table, info);
-
 	if (!added) {
 		handle_sementic_error_identifier_already_defined(id);
 		return NONE;
 	}
-
 	tree->info.nonterminal_info.children[1]->info.terminal_info.token.lexeme = info->identifier_new_name;
-
-
 	char* supposed_name = strdup(CURRENT_FUNCTION_SYMBOL);
 	FunctionInfo* cur_info = ((FunctionInfo*)symbol_table_lookup_symbol(symbol_table, &supposed_name)->info);
 	int cur_number_of_params = cur_info->num_of_params;
@@ -316,7 +307,6 @@ static Data_Type parameter(SyntaxTree* tree) {
 		handle_out_of_memory_error();
 		return NONE;
 	}
-
 	cur_info->params[cur_number_of_params].data_type = info->data_type;
 	cur_info->params[cur_number_of_params].identifier_name = info->identifier_name;
 	return NONE;
@@ -781,25 +771,14 @@ void init_visitor() {
 	hashmap_insert(ir_visitor, "GET_DECLARE_STATEMENT", &get_decl_sementic);
 	hashmap_insert(ir_visitor, "GET_STATEMENT", &get_sementic);
 	hashmap_insert(ir_visitor, "FUNCTION_STATEMENTS", &statements);
-	
 	hashmap_insert(ir_visitor, "PRINT_STATEMENT", &print_sem);
 	hashmap_insert(ir_visitor, "PRINT_INT_EXPRESSION", &print_sem_int);
-
-
-
 }
-
-
 
 int sementic_analysis(SyntaxTree* tree) {
 	ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT, string_hash, string_equals);
 	init_visitor();
-
-
 	symbol_table = symbol_table_init();
-
 	accept(tree);
-
-
     return 0;
 }

@@ -499,7 +499,7 @@ int appoint_register(int register_id, int temp_id) {
 	return register_id;
 }
 
-void handle_assign_instr(IR_Instruction* instr) {
+static int handle_assign_instr(IR_Instruction* instr) {
 	char* dest = get_access_name(&instr->arg1);
 	char* src = get_access_name(&instr->arg2);
 
@@ -554,6 +554,7 @@ void handle_assign_instr(IR_Instruction* instr) {
 
 	free(dest);
 	free(src);
+	return CONTINUE_BLOCK;
 }
 
 char* opcode_to_action[OPCODE_LENGTH] = {
@@ -580,7 +581,7 @@ bool left_right_matters(int instr_opcode) {
 	return left_right_matters_array[instr_opcode] == 1;
 }
 
-void handle_add_sub_or_and_instr(IR_Instruction* instr) {
+static int handle_add_sub_or_and_instr(IR_Instruction* instr) {
 	if (
 		(instr->arg2.type == IR_TEMPORARY_ID && appoint_name(instr->arg2.data.num) != -1)
 		|| (instr->arg3.type == IR_TEMPORARY_ID && appoint_name(instr->arg3.data.num) != -1)
@@ -665,9 +666,10 @@ void handle_add_sub_or_and_instr(IR_Instruction* instr) {
 		free(right_access);
 		free(temp_access);
 	}
+	return CONTINUE_BLOCK;
 }
 
-void handle_mul_div_instr(IR_Instruction* instr) {
+static int handle_mul_div_instr(IR_Instruction* instr) {
 	char* left_access = NULL;
 	char* right_access = NULL;
 	char* temp_access = NULL;
@@ -728,6 +730,7 @@ void handle_mul_div_instr(IR_Instruction* instr) {
 		free(right_access);
 	if (temp_access)
 		free(temp_access);
+	return CONTINUE_BLOCK;
 }
 
 void handle_mod_instr(IR_Instruction* instr) {
@@ -792,9 +795,10 @@ void handle_mod_instr(IR_Instruction* instr) {
 		free(right_access);
 	if (temp_access)
 		free(temp_access);
+	return CONTINUE_BLOCK;
 }
 
-void handle_condition_instr(IR_Instruction* instr) {
+static int handle_condition_instr(IR_Instruction* instr) {
 	char* left_access = NULL;
 	char* right_access = NULL;
 	char* temp_access = NULL;
@@ -879,9 +883,10 @@ void handle_condition_instr(IR_Instruction* instr) {
 		free(right_access);
 	if (temp_access && need_to_free_temp)
 		free(temp_access);
+	return CONTINUE_BLOCK;
 }
 
-void handle_branch_instr(IR_Instruction* instr) {
+static int handle_branch_instr(IR_Instruction* instr) {
 	char* condition_access = get_access_name(&instr->arg1);
 	int flag;
 	if (is_instant_value(&instr->arg1)) {
@@ -910,25 +915,27 @@ void handle_branch_instr(IR_Instruction* instr) {
 
 	if (flag)
 		free(condition_access);
-
+	return CONTINUE_BLOCK;
 }
 
-void handle_jump_instr(IR_Instruction* instr) {
+static int handle_jump_instr(IR_Instruction* instr) {
 	char* block_name = create_label(instr->arg1.data.num);
 
 	snprintf(main_str_buffer, ONEHUNDRED, "JMP %s ", block_name);
 	outputcode(main_str_buffer);
 	free(block_name);
+	return FORCE_END_BLOCK;
 }
-void handle_end_instr(IR_Instruction* instr) {
+static int handle_end_instr(IR_Instruction* instr) {
 	outputcode("MOV AX, 4C00H");
 	outputcode("INT 21H");
+	return CONTINUE_BLOCK;
 }
 
 
 
 
-void release_all_registers() {
+static void release_all_registers() {
 	for (int i = 0; i < AVAILABLE_REG; i++) {
 		if (available[i] != -1) {
 			release_register(i);
@@ -937,17 +944,17 @@ void release_all_registers() {
 	}
 }
 
-void handle_func_start_instr(IR_Instruction* instr) {
+static int handle_func_start_instr(IR_Instruction* instr) {
 	outputcode("PUSH BP");
 	outputcode("MOV BP, SP");
 
 	int reserve_space = instr->arg2.data.num;
 	snprintf(main_str_buffer, 100, "SUB SP, %d",  reserve_space * 2);
 	outputcode(main_str_buffer);
-
+	return CONTINUE_BLOCK;
 }
 
-void handle_func_end_instr(IR_Instruction* instr) {
+static int handle_func_end_instr(IR_Instruction* instr) {
 	int reserve_space = instr->arg2.data.num;
 	snprintf(main_str_buffer, 100, "ADD SP, %d", reserve_space * 2);
 	outputcode(main_str_buffer);
@@ -956,18 +963,20 @@ void handle_func_end_instr(IR_Instruction* instr) {
 	int params_space = instr->arg3.data.num;
 	snprintf(main_str_buffer, 100, "RET %d", params_space);
 	outputcode(main_str_buffer);
+	return CONTINUE_BLOCK;
 }
 
-void handle_parameter_instr(IR_Instruction* instr) {
+static int handle_parameter_instr(IR_Instruction* instr) {
 	SymbolInfo* info = hashmap_get(symbol_map, instr->arg2.data.token.lexeme);
 	char* size_pointer = size_to_size_name_pointer(info->size);
 	snprintf(main_str_buffer, 100, "MOV %s, %s BP[%s]", get_register_name(AX_REGISTER, info->size), size_pointer, get_number_str( -info->offset - DEFAULT_OFFSET));
 	outputcode(main_str_buffer);
 	snprintf(main_str_buffer, 100, "MOV BP[%s], %s", get_number_str(info->offset), get_register_name(AX_REGISTER, info->size));
 	outputcode(main_str_buffer);
+	return CONTINUE_BLOCK;
 }
 
-void handle_return_instr(IR_Instruction* instr) {
+static int handle_return_instr(IR_Instruction* instr) {
 	int end_id = instr->arg2.data.num;
 	char* access_ret_value = get_access_name(&instr->arg1);
 	char* end_block_label = create_label(end_id);
@@ -982,9 +991,10 @@ void handle_return_instr(IR_Instruction* instr) {
 
 	free(end_block_label);
 	free(access_ret_value);
+	return FORCE_END_BLOCK;
 }
 
-void handle_call_instr(IR_Instruction* instr) {
+static int handle_call_instr(IR_Instruction* instr) {
 	int dest_block_id = instr->arg1.data.num;
 	ArrayList* arguments = instr->arg2.data.values_list;
 	int temp_dest_id = instr->arg3.data.num;
@@ -1053,16 +1063,18 @@ void handle_call_instr(IR_Instruction* instr) {
 	TempSymbolInfo* temp_info = hashmap_get(temp_map, &temp_dest_id);
 	snprintf(main_str_buffer, 100, "MOV BP[%s], %s", get_number_str(temp_info->offset), get_register_name(BX, temp_info->size));
 	outputcode(main_str_buffer);
+	return CONTINUE_BLOCK;
 }
 
-void handle_print(IR_Instruction* instr) {
+static int handle_print(IR_Instruction* instr) {
 	int string_id = instr->arg1.data.num;
 	snprintf(main_str_buffer, 100, "LEA AX, GLOBAL_STRING_%d", string_id);
 	outputcode(main_str_buffer);
 	outputcode("CALL PRINTSTRING");
 	used_print_string = true;
+	return CONTINUE_BLOCK;
 }
-void handle_print_int(IR_Instruction* instr) {
+static int handle_print_int(IR_Instruction* instr) {
 	int size = 2;
 	if (instr->arg1.type == IR_TEMPORARY_ID) {
 		TempSymbolInfo* info = (TempSymbolInfo*)hashmap_get(temp_map, &instr->arg1.data.num);
@@ -1084,9 +1096,10 @@ void handle_print_int(IR_Instruction* instr) {
 	free(src_access);
 
 	used_print_num = true;
+	return CONTINUE_BLOCK;
 }
 
-void handle_get_int(IR_Instruction* instr) {
+static int handle_get_int(IR_Instruction* instr) {
 	outputcode("CALL GETNUM");
 	
 	int size = 2;
@@ -1105,77 +1118,47 @@ void handle_get_int(IR_Instruction* instr) {
 
 	free(src_access);
 	used_get_num = true;
+	return CONTINUE_BLOCK;
 }
 
+static int(*instruction_to_assembly_function[IR_INST_COUNT])(IR_Instruction*) = {
+	[IR_ASSIGN] = handle_assign_instr,
+	[IR_ADD] = handle_add_sub_or_and_instr,
+	[IR_SUB] = handle_add_sub_or_and_instr,
+	[IR_AND] = handle_add_sub_or_and_instr,
+	[IR_OR] = handle_add_sub_or_and_instr,
+	[IR_MUL] = handle_mul_div_instr,
+	[IR_DIV] = handle_mul_div_instr,
+	[IR_MOD] = handle_mod_instr,
+	[IR_LT] = handle_condition_instr,
+	[IR_LE] = handle_condition_instr,
+	[IR_GE] = handle_condition_instr,
+	[IR_GT] = handle_condition_instr,
+	[IR_EQ] = handle_condition_instr,
+	[IR_NE] = handle_condition_instr,
+	[IR_CBR] = handle_branch_instr,
+	[IR_JMP] = handle_jump_instr,
+	[IR_FUNC_START] = handle_func_start_instr,
+	[IR_FUNC_END] = handle_func_end_instr,
+	[IR_RETURN] = handle_return_instr,
+	[IR_CALL] = handle_call_instr,
+	[IR_PARAMETER] = handle_parameter_instr,
+	[IR_END] = handle_end_instr,
+	[IR_PRINT] = handle_print,
+	[IR_PRINT_INT] = handle_print_int,
+	[IR_GET_INT] = handle_get_int,
+};
+
+
+
 int handle_block_instruction(IR_Instruction* instr) {
-	switch (instr->opcode)
-	{
-	case IR_ASSIGN:
-		handle_assign_instr(instr);
-		break;
-	case IR_ADD:
-	case IR_SUB:
-	case IR_AND:
-	case IR_OR:
-		handle_add_sub_or_and_instr(instr);
-		break;
-	case IR_MUL:
-	case IR_DIV:
-		handle_mul_div_instr(instr);
-		break;
-	case IR_MOD:
-		handle_mod_instr(instr);
-		break;
-	case IR_LT:
-	case IR_LE:
-	case IR_GT:
-	case IR_GE:
-	case IR_EQ:
-	case IR_NE:
-		handle_condition_instr(instr);
-		break;
-	case IR_CBR:
-		handle_branch_instr(instr);
-		break;
-	case IR_JMP:
-		handle_jump_instr(instr);
-		return FORCE_END_BLOCK;
-	case IR_FUNC_START:
-		handle_func_start_instr(instr);
-		break;
-	case IR_FUNC_END:
-		handle_func_end_instr(instr);
-		break;
-	case IR_RETURN:
-		handle_return_instr(instr);
-		return FORCE_END_BLOCK;
-	case IR_CALL:
-		handle_call_instr(instr);
-		break;
-	case IR_DECLARE_GLOBAL:
-	case IR_DECLARE_LOCAL:
-	case IR_GLOBAL_TEMP_SPACE:
-		break;
-	case IR_PARAMETER:
-		handle_parameter_instr(instr);
-		break;
-	case IR_END:
-		handle_end_instr(instr);
-		break;
-	case IR_PRINT:
-		handle_print(instr);
-		break; 
-	case IR_PRINT_INT:
-		handle_print_int(instr);
-		break;
-	case IR_GET_INT:
-		handle_get_int(instr);
-		break;
-	default:
-		printf("UNKNOWN INSTR\n");
-		break;
+	int should_break_from_block = CONTINUE_BLOCK;
+	if (instr->opcode >= 0 && instr->opcode < IR_INST_COUNT) {
+		int(*opcode_function)(IR_Instruction*) = instruction_to_assembly_function[instr->opcode];
+		if (opcode_function != NULL)
+			should_break_from_block = opcode_function(instr);
 	}
-	return CONTINUE_BLOCK;
+	return should_break_from_block;
 }
 
 void traverse_instructions(CodeBlock* block) {

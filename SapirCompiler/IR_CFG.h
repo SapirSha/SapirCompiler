@@ -39,7 +39,7 @@ typedef enum {
     IR_PARAMETER,
     IR_END, //
     IR_GET_INT,
-    IT_INST_COUNT,
+    IR_INST_COUNT,
     OPCODE_LENGTH
 } IR_Opcode;
 

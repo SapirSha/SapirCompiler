@@ -89,7 +89,7 @@ void symbol_table_remove_scope(SymbolTable* table);
 bool symbol_table_add_symbol(SymbolTable* table, IdentifiersInfo* info);
 IdentifiersInfo* symbol_table_lookup_symbol(SymbolTable* table, char** name);
 void print_all_symbols(SymbolTable* table);
-SymbolTable* symbol_table;
+extern SymbolTable* symbol_table;
 
 
 #endif

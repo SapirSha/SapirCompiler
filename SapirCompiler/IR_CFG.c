@@ -12,6 +12,7 @@
 #include "ArrayList.h"
 #include <stdbool.h>
 #include "ErrorHandler.h"
+#include "Parser.h"
 
 #define NONTERMINAL_COUNT_DEFUALT2 100
 
@@ -19,70 +20,57 @@
 
 static HashMap* ir_visitor = NULL;
 
+static HashMap* opcode_size;
+static HashMap* token_size;
 
-int temporary_size(IR_Value v1, IR_Value v2, IR_Opcode opcode) {
-    SymbolInfo* symbol_info;
+static void init_variable_sizes() {
+    static int size1 = 1;
+    static int size2 = 2;
 
-    switch (opcode)
-    {
-    case IR_LE:
-    case IR_LT:
-    case IR_EQ:
-    case IR_NE:
-    case IR_GE:
-    case IR_GT:
-    case IR_OR:
-    case IR_AND:
-        return 1;
-    default:
-        break;
+    opcode_size = createHashMap(10, int_hash, int_equals);
+    token_size = createHashMap(10, int_hash, int_equals);
+
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_LE), &size1);
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_LT), &size1);
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_GT), &size1);
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_GE), &size1);
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_OR), &size1);
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_AND), &size1);
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_EQ), &size1);
+    hashmap_insert(opcode_size, new_int_with_allocation(IR_NE), &size1);
+
+    hashmap_insert(token_size, new_int_with_allocation(TOKEN_NUMBER), &size2);
+    hashmap_insert(token_size, new_int_with_allocation(TOKEN_TRUE), &size1);
+    hashmap_insert(token_size, new_int_with_allocation(TOKEN_FALSE), &size1);
+}
+
+static int size_of_token(Token* token) {
+    if (hashmap_get(token_size, &token->type) != NULL)
+        return *(int*)hashmap_get(token_size, &token->type);
+    if (token->type == TOKEN_IDENTIFIER) {
+        SymbolInfo* sym_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, token->lexeme);
+        return sym_info->size;
     }
+    return 2;
+}
 
-    int size1 = 2;
-    if (v1.type == IR_TOKEN) {
-        Token t1 = v1.data.token;
-        switch (t1.type) {
-        case TOKEN_IDENTIFIER:
-            symbol_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, t1.lexeme);
-            size1 = symbol_info->size;
-            break;
-        case TOKEN_NUMBER:
-            size1 = 2;
-            break;
-        case TOKEN_TRUE:
-        case TOKEN_FALSE:
-            size1 = 1;
-        default:
-            handle_other_errors("\n\t---INVALID TEMPORARY SIZE\n");
-            exit(-1);
-        }
-    } if (v1.type == IR_TEMPORARY_ID) {
+static int size_of_ir_value(IR_Value v1) {
+    if (v1.type == IR_TEMPORARY_ID) {
         TempSymbolInfo* tempinfo = hashmap_get(symbol_table->TemporaryVarMap, &v1.data.num);
-        size1 = tempinfo->size;
+        return tempinfo->size;
     }
+    if (v1.type == IR_TOKEN) {
+        return size_of_token(&v1.data.token);
+    }
+    return 2;
+}
 
-    int size2 = 2;
-    if (v2.type == IR_TOKEN) {
-        Token t2 = v2.data.token;
-        switch (t2.type) {
-        case TOKEN_IDENTIFIER:
-            symbol_info = (SymbolInfo*)hashmap_get(symbol_table->SymbolMap, t2.lexeme);
-            size2 = symbol_info->size;
-            break;
-        case TOKEN_NUMBER:
-            size2 = 2;
-            break;
-        case TOKEN_TRUE:
-        case TOKEN_FALSE:
-            size2 = 1;
-        default:
-            handle_other_errors("\n\t---INVALID TEMPORARY SIZE\n");
-            exit(-1);
-        }
-    } if (v2.type == IR_TEMPORARY_ID) {
-        TempSymbolInfo* tempinfo = hashmap_get(symbol_table->TemporaryVarMap, &v2.data.num);
-        size2 = tempinfo->size;
-    }
+static int temporary_size(IR_Value v1, IR_Value v2, IR_Opcode opcode) {
+    if (hashmap_get(opcode_size, &opcode) != NULL)
+        return *(int*)hashmap_get(opcode_size, &opcode);
+    
+    int size1 = size_of_ir_value(v1);
+    int size2 = size_of_ir_value(v2);
 
     return size1 > size2 ? size1 : size2;
 }
@@ -121,12 +109,6 @@ int ir_value_equals(IR_Value* key1, IR_Value* key2) {
     default:
         return 0;
     }
-}
-
-char* int_to_string(int num) {
-    char buffer[20];
-    snprintf(buffer, 20, "%d", num);
-    return strdup(buffer);
 }
 
 LinkedList* function_entry_blocks = NULL;
@@ -388,15 +370,12 @@ IR_Instruction* createReturnInstruction(IR_Value ret_val, int end_id) {
 }
 
 IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR_Value dest_temp) {
-    IR_Instruction* instr  = createIRInstructionBase();
+    IR_Instruction* instr = createIRInstructionBase();
     instr->opcode = IR_CALL;
-
     instr->arg1.type = IR_BLOCK_ID;
     instr->arg1.data.num = func_start_id;
-
     instr->arg2.type = IR_TOKEN_LIST;
     instr->arg2.data.values_list = arg_list;
-
     instr->arg3 = dest_temp;
 
 
@@ -409,17 +388,37 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
             handle_out_of_memory_error();
             return NULL;
         }
-
         *pos = func_enter->arg2.data.num;
-
-
         int size = 2;
         int align = align_size(size);
-
         int aligned = (*pos + align - 1) / align * align;
         int offset = -(aligned + size);
+        TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
+        if (!info) {
+            handle_out_of_memory_error();
+            return NULL;
+        }
+        info->id = dest_temp.data.num;
+        info->size = size;
+        info->alignment = align;
+        info->offset = offset;
+        info->local = 1;
+        hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
+        *pos = aligned + size;
+        setFunctionCurrnetOffsetInstruction(func_enter, *pos);
+    }
+    else {
+
+        int id = dest_temp.data.num;
+        int temp_size = 2;
+        int temp_align = align_size(temp_size);
 
 
+        int aligned = (symbol_table->temporary_vars_offset + temp_align - 1) / temp_align * temp_align;
+        int offset = -(aligned + temp_size);
+        symbol_table->temporary_vars_offset = aligned + temp_size;
+
+        setGlobalTemps(*(IR_Instruction**)mainBlock->instructions->array[0], aligned + temp_size);
 
         TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
         if (!info) {
@@ -427,44 +426,13 @@ IR_Instruction* createCallInstruction(int func_start_id, ArrayList* arg_list, IR
             return NULL;
         }
 
-        info->id = dest_temp.data.num;
-        info->size = size;
-        info->alignment = align;
+        info->id = id;
+        info->size = temp_size;
+        info->alignment = temp_align;
         info->offset = offset;
-        info->local = 1;
-
+        info->local = 0;
 
         hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
-
-        *pos = aligned + size;
-        setFunctionCurrnetOffsetInstruction(func_enter, *pos);
-    }
-    else {
-
-            int id = dest_temp.data.num;
-            int temp_size = 2;
-            int temp_align = align_size(temp_size);
-
-
-            int aligned = (symbol_table->temporary_vars_offset + temp_align - 1) / temp_align * temp_align;
-            int offset = -(aligned + temp_size);
-            symbol_table->temporary_vars_offset = aligned + temp_size;
-
-            setGlobalTemps(*(IR_Instruction**)mainBlock->instructions->array[0], aligned + temp_size);
-
-            TempSymbolInfo* info = malloc(sizeof(TempSymbolInfo));
-            if (!info) {
-                handle_out_of_memory_error();
-                return NULL;
-            }
-
-            info->id = id;
-            info->size = temp_size;
-            info->alignment = temp_align;
-            info->offset = offset;
-            info->local = 0;
-
-            hashmap_insert(symbol_table->TemporaryVarMap, &info->id, info);
     }
 
 
@@ -642,7 +610,7 @@ static HashMap* operatorMap = NULL;
         hashmap_insert(operatorMap, (str), tmp);                            \
     }
 
-IR_Opcode mapComparisonOperator(char* opStr) {
+static IR_Opcode mapComparisonOperator(char* opStr) {
     if (operatorMap == NULL) {
         operatorMap = createHashMap(32, string_hash, string_equals);
         INSERT_OPCODE(IR_LT, "<");
@@ -1333,6 +1301,7 @@ void printTOKEN3(Token* token) {
 }
 
 CodeBlock* mainCFG(SyntaxTree* tree) {
+    init_variable_sizes();
     number_of_blocks = 0;
     ir_visitor = createHashMap(NONTERMINAL_COUNT_DEFUALT2, string_hash, string_equals);
     init_ir_visitor();

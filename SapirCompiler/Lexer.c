@@ -15,6 +15,12 @@
 #define MAX_TOKEN_LENGTH 64
 #define NEW_LINE '\n'
 
+#define CURRENT_POSITION(current_line, current_line_start_pos, code_pointer, code)\
+                current_line, pos - code - current_line_start_pos + 1
+
+#define CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos)\
+				current_line, current_token_start_pos - current_line_start_pos + 1
+
 static void add_token(Queue* tokens, enum State state, const char* lexeme, int row, int col) {
 	Token_Types type = convert_state_to_token_type(state);
 	Token token = {
@@ -27,8 +33,12 @@ static void add_token(Queue* tokens, enum State state, const char* lexeme, int r
 	queue_enqueue(tokens, &token);
 }
 
-static inline void handle_error(char* code_pointer, int row, int col) {
-	handle_unknown_character_error(*code_pointer, row, col);
+static inline void handle_error(char** code_pointer, int row, int col,
+	int* current_token_length, enum State* current_state) {
+	handle_unknown_character_error(**code_pointer, row, col);
+	(*current_token_length) = 0;
+	(*current_state) = START_STATE;
+	(*code_pointer)++;
 }
 
 static inline void handle_new_line(int* current_line, int* latest_line_start, int current_index_in_text) {
@@ -55,7 +65,22 @@ static int handle_above_maximum_token_length(char* got_until_now, int current_le
 		return remaining_length;
 	}
 }
-//function is_even gets int number returns bool { return number % 2 == 0 } $
+
+static void add_to_current_token(char* current_token, int* current_token_length, char** code_pointer,
+	int current_line, int current_token_start_pos, int current_line_start_pos, enum State* current_state) {
+	if (*current_token_length > MAX_TOKEN_LENGTH) {
+		*code_pointer += handle_above_maximum_token_length(current_token, *current_token_length,
+			*code_pointer, CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos) - 1);
+		*current_token_length = 0;
+		*current_state = START_STATE;
+	}
+	else {
+		current_token[*current_token_length] = **code_pointer;
+		(*current_token_length)++;
+		(*code_pointer)++;
+	}
+}
+
 static inline void insert_eof_token(Queue* q, int row, int col) {
 	Token eof = {
 		.type = TOKEN_EOF,
@@ -67,11 +92,19 @@ static inline void insert_eof_token(Queue* q, int row, int col) {
 	queue_enqueue(q, &eof);
 }
 
-#define CURRENT_POSITION(current_line, current_line_start_pos, code_pointer, code)\
-                current_line, pos - code - current_line_start_pos + 1
-
-#define CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos)\
-				current_line, current_token_start_pos - current_line_start_pos + 1
+static void handle_end_of_path(Queue* tokens, enum State prev_state, char* current_token, 
+	int* current_token_length, int* current_line, int* current_token_start_pos, int* current_line_start_pos,
+	char** pos, char* code) {
+	if (!is_ignored_state(prev_state)) {
+		current_token[*current_token_length] = '\0';
+		add_token(tokens, prev_state, current_token,
+			CURRENT_TOKEN_POSITION(*current_line, *current_token_start_pos, *current_line_start_pos));
+	}
+	*current_token_length = 0;
+	*current_token_start_pos = *pos - code + 1;
+	if (**pos == NEW_LINE) handle_new_line(current_line, current_line_start_pos, *pos - code);
+	if (prev_state == START_STATE || **pos == NEW_LINE) (*pos)++;
+}
 
 Queue* tokenize(const char* code) {
 	enum State state = START_STATE;
@@ -89,34 +122,17 @@ Queue* tokenize(const char* code) {
 	while (*pos != '\0') {
 		state = get_next_state(state, *pos);
 		if (state == START_STATE) {
-			if (!is_ignored_state(prev_state)) {
-				current_token[current_token_length] = '\0';
-				add_token(tokens, prev_state, current_token, 
-					CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos));
-			}
-			current_token_length = 0;
-			current_token_start_pos = pos - code + 1;
-			if (*pos == NEW_LINE) handle_new_line(&current_line, &current_line_start_pos, pos - code);
-			if (prev_state == START_STATE || *pos == NEW_LINE) pos++;
+			handle_end_of_path(tokens, prev_state, current_token, 
+				&current_token_length, &current_line, &current_token_start_pos,
+				&current_line_start_pos, &pos, code);
 		} 
 		else if (state == ERROR_STATE) {
-			handle_error(pos, CURRENT_POSITION(current_line, current_line_start_pos, pos, code));
-			current_token_length = 0;
-			state = START_STATE;
-			pos++;
+			handle_error(&pos, CURRENT_POSITION(current_line, current_line_start_pos, pos, code),
+				&current_token_length, &state);
 		}
 		else {
-			if (current_token_length > MAX_TOKEN_LENGTH) {
-				pos += handle_above_maximum_token_length(current_token, current_token_length,
-					pos, CURRENT_TOKEN_POSITION(current_line, current_token_start_pos, current_line_start_pos) - 1);
-				current_token_length = 0;
-				state = START_STATE;
-			}
-			else {
-				current_token[current_token_length] = *pos;
-				current_token_length++;
-				pos++;
-			}
+			add_to_current_token(current_token, &current_token_length, &pos, current_line,
+				current_token_start_pos, current_line_start_pos, &state);
 		}
 		prev_state = state;
 	}

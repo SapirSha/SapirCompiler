@@ -18,17 +18,14 @@ HashSet* current_live = NULL;
 HashSet* used_at_all = NULL;
 
 void fill_liveness_queue(CodeBlock* entry) {
-
 	if (hashset_contains(seen, &entry->id)) {
 		return;
 	}
-
 	hashset_insert(seen, &entry->id);
 	for (int i = 0; i < entry->successors->size; i++) {
 		CodeBlock* succ = *(CodeBlock**)entry->successors->array[i];
 		fill_liveness_queue(succ);
 	}
-	
 	queue_enqueue(Blocks, &entry);
 }
 
@@ -146,7 +143,7 @@ void handle_instruction(CodeBlock* block, int* index_of_instr) {
 		}
 		hashset_remove(current_live, &instr->arg2);
 		break;
-	case IT_INST_COUNT:
+	case IR_INST_COUNT:
 	case IR_GLOBAL_TEMP_SPACE:
 	case IR_END:
 		instr->is_live = true;

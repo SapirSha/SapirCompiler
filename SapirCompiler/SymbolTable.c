@@ -7,6 +7,7 @@
 
 #pragma warning(disable:4996)
 
+SymbolTable* symbol_table;
 int names_id = 1;
 
 int type_to_size(Data_Type type){
